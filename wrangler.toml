@@ -1,0 +1,49 @@
+name = "freeway"
+main = "./dist/worker.mjs"
+compatibility_date = "2022-10-03"
+compatibility_flags = [
+  "streams_enable_constructors"
+]
+
+[build]
+command = "npm run build"
+
+# PROD!
+[env.production]
+account_id = "fffa4b4363a7e5250af8357087263b3a"
+route = "freeway.dag.haus"
+
+[[env.production.r2_buckets]]
+bucket_name = "carpark-prod-0"
+binding = "CARPARK"
+
+# Staging!
+[env.staging]
+account_id = "fffa4b4363a7e5250af8357087263b3a"
+route = "freeway-staging.dag.haus"
+
+[[env.staging.r2_buckets]]
+bucket_name = "carpark-staging-0"
+binding = "CARPARK"
+
+# Test!
+[env.test]
+workers_dev = true
+
+[env.test.vars]
+DEBUG = "true"
+
+[[env.test.r2_buckets]]
+bucket_name = "carpark-test-0"
+binding = "CARPARK"
+
+[env.alanshaw]
+workers_dev = true
+account_id = "4fe12d085474d33bdcfd8e9bed4d8f95"
+
+[env.alanshaw.vars]
+DEBUG = "true"
+
+[[env.alanshaw.r2_buckets]]
+bucket_name = "carpark-alanshaw-0"
+binding = "CARPARK"

@@ -1,0 +1,39 @@
+{
+  "name": "freeway",
+  "version": "0.0.0",
+  "description": "An IPFS gateway for accessing UnixFS data via CAR CIDs",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "npm run build && miniflare dist/worker.mjs --watch --debug -m",
+    "build": "node build.js",
+    "test": "npm run build && node --test --experimental-vm-modules"
+  },
+  "keywords": [
+    "IPFS",
+    "gateway",
+    "CAR",
+    "CID",
+    "IPLD",
+    "UnixFS"
+  ],
+  "author": "Alan Shaw",
+  "license": "Apache-2.0 OR MIT",
+  "dependencies": {
+    "@ipld/car": "^4.1.5",
+    "@ipld/dag-pb": "^2.1.18",
+    "cardex": "^0.0.0",
+    "events": "^3.3.0",
+    "ipfs-unixfs-exporter": "^8.0.6",
+    "multiformats": "^9.9.0"
+  },
+  "devDependencies": {
+    "ava": "^4.3.3",
+    "esbuild": "^0.15.10",
+    "ipfs-car": "^0.8.1",
+    "miniflare": "^2.9.0",
+    "standard": "^17.0.0",
+    "uint8arrays": "^3.1.0"
+  }
+}
