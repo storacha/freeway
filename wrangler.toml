@@ -4,6 +4,9 @@ compatibility_date = "2022-10-03"
 compatibility_flags = [
   "streams_enable_constructors"
 ]
+r2_buckets = [
+  { binding = "CARPARK", bucket_name = "carpark-dev-0" }
+]
 
 [build]
 command = "npm run build"
@@ -46,4 +49,5 @@ DEBUG = "true"
 
 [[env.alanshaw.r2_buckets]]
 bucket_name = "carpark-alanshaw-0"
+preview_bucket_name = "carpark-alanshaw-preview-0"
 binding = "CARPARK"

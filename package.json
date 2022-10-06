@@ -24,6 +24,7 @@
     "@ipld/car": "^4.1.5",
     "@ipld/dag-pb": "^2.1.18",
     "cardex": "^0.0.0",
+    "ipfs-car-extract": "^1.1.0",
     "ipfs-unixfs-exporter": "^8.0.6",
     "multiformats": "^9.9.0"
   },

@@ -4,8 +4,8 @@ import { base58btc } from 'multiformats/bases/base58'
 import { CarReader } from '@ipld/car'
 import { exporter } from 'ipfs-unixfs-exporter'
 import { MultihashIndexSortedReader } from 'cardex'
+import { extract } from 'ipfs-car-extract'
 import { errorHandler } from './middleware/error-handler.js'
-import { extract } from './lib/extract.js'
 import { toReadableStream, toIterable } from './util/streams.js'
 import { HttpError } from './util/errors.js'
 
@@ -20,7 +20,7 @@ const carCode = 0x0202
  * @typedef {(r: Request, env: Env, ctx: Context) => Promise<Response>} Handler
  */
 
-const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 10
+const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 100
 
 export default {
   /** @type Handler */
@@ -45,7 +45,7 @@ async function handler (request, env) {
   } else {
     const idxPath = `${carCid}/${carCid}.car.idx`
     const idxObj = await env.CARPARK.get(idxPath)
-    if (!idxObj) throw new HttpError('not found', { status: 404 })
+    if (!idxObj) throw new HttpError('index not found', { status: 404 })
 
     const idxReader = MultihashIndexSortedReader.fromIterable(toIterable(idxObj.body))
     const mhToKey = mh => base58btc.encode(mh)
@@ -72,7 +72,6 @@ async function handler (request, env) {
   const blocks = extract(bucketStore, `${dagCid}${path}`)
   const blockstore = {
     async get (key) {
-      console.log(`get ${key}`)
       const { done, value } = await blocks.next()
       if (done) throw new Error('unexpected EOF')
       if (value.cid.toString() !== key.toString()) {
