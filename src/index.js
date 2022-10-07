@@ -1,13 +1,11 @@
 /* eslint-env worker */
 import { CID } from 'multiformats/cid'
-import { base58btc } from 'multiformats/bases/base58'
 import { CarReader } from '@ipld/car'
-import { exporter } from 'ipfs-unixfs-exporter'
-import { MultihashIndexSortedReader } from 'cardex'
-import { extract } from 'ipfs-car-extract'
+import { exporter } from '@web3-storage/fast-unixfs-exporter'
 import { errorHandler } from './middleware/error-handler.js'
 import { toReadableStream, toIterable } from './util/streams.js'
 import { HttpError } from './util/errors.js'
+import { R2MultiIndexBlockstore } from './lib/blockstore.js'
 
 const carCode = 0x0202
 
@@ -33,51 +31,26 @@ export default {
 async function handler (request, env) {
   const { carCids, dagCid, path } = parseUrl(request.url)
 
-  const carPath = `${carCid}/${carCid}.car`
-  const headObj = await env.CARPARK.head(carPath)
-  if (!headObj) throw new HttpError('not found', { status: 404 })
+  /** @type {{ get: (cid: CID) => Promise<{ bytes: Uint8Array, cid: CID } | undefined> }} */
+  let bucketStore = new R2MultiIndexBlockstore(env.CARPARK, carCids)
 
-  /** @type {import('./lib/extract').Blockstore} */
-  let bucketStore
-  if (headObj.size < MAX_CAR_BYTES_IN_MEMORY) {
-    const obj = await env.CARPARK.get(carPath)
-    bucketStore = await CarReader.fromIterable(toIterable(obj.body))
-  } else {
-    const idxPath = `${carCid}/${carCid}.car.idx`
-    const idxObj = await env.CARPARK.get(idxPath)
-    if (!idxObj) throw new HttpError('index not found', { status: 404 })
-
-    const idxReader = MultihashIndexSortedReader.fromIterable(toIterable(idxObj.body))
-    const mhToKey = mh => base58btc.encode(mh)
-
-    /** @type {Map<string, import('cardex/mh-index-sorted').IndexEntry>} */
-    const idx = new Map()
-    for await (const entry of idxReader.entries()) {
-      // TODO: multihash to string
-      idx.set(mhToKey(entry.multihash), entry)
-    }
-
-    bucketStore = {
-      /** @param {CID} key */
-      async get (key) {
-        const entry = idx.get(mhToKey(key.multihash))
-        if (!entry) throw new HttpError(`missing CID: ${key}`, { status: 404 })
-        // env.CARPARK.get(key, { range: { offset: entry.offset, length: ??? })
-        // TODO
-        throw new Error('big CAR support not implemented')
-      }
+  if (carCids.length === 1) {
+    const carPath = `${carCids[0]}/${carCids[0]}.car`
+    const headObj = await env.CARPARK.head(carPath)
+    if (!headObj) throw new HttpError('not found', { status: 404 })
+    if (headObj.size < MAX_CAR_BYTES_IN_MEMORY) {
+      console.log('Small CAR, reading into memory')
+      const obj = await env.CARPARK.get(carPath)
+      bucketStore = await CarReader.fromIterable(toIterable(obj.body))
     }
   }
 
-  const blocks = extract(bucketStore, `${dagCid}${path}`)
   const blockstore = {
     async get (key) {
-      const { done, value } = await blocks.next()
-      if (done) throw new Error('unexpected EOF')
-      if (value.cid.toString() !== key.toString()) {
-        throw new Error(`CID mismatch, expected: ${key}, received: ${value.cid}`)
-      }
-      return value.bytes
+      console.log(`Get ${key}`)
+      const block = await bucketStore.get(key)
+      if (!block) throw new Error(`missing block: ${key}`)
+      return block.bytes
     }
   }
   const entry = await exporter(`${dagCid}${path}`, blockstore)

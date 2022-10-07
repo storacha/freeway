@@ -1,6 +1,6 @@
 import { base58btc } from 'multiformats/bases/base58'
 import { MultihashIndexSortedReader } from 'cardex'
-import { toIterable } from './util/streams.js'
+import { toIterable } from '../util/streams.js'
 
 /**
  * @typedef {import('multiformats').CID} CID
@@ -37,11 +37,11 @@ export class MultiCarIndex {
 
   /** @param {Iterable<[CID, CarIndex]>} indexes */
   static fromIterable (indexes) {
-    const idx = new MultiCarIndex()
+    const multiIdx = new MultiCarIndex()
     for (const [carCid, idx] of indexes) {
-      idx.addIndex(carCid, idx)
+      multiIdx.addIndex(carCid, idx)
     }
-    return idx
+    return multiIdx
   }
 }
 
@@ -56,7 +56,7 @@ export class CarIndex {
 
   /** @param {CID} cid */
   get (cid) {
-    return this.#idx.get(mhToKey(cid.multihash))
+    return this.#idx.get(mhToKey(cid.multihash.bytes))
   }
 
   /**
@@ -67,8 +67,7 @@ export class CarIndex {
     const idx = new Map()
     const idxReader = MultihashIndexSortedReader.fromIterable(toIterable(stream))
     for await (const entry of idxReader.entries()) {
-      // TODO: multihash to string
-      idx.set(mhToKey(entry.multihash), entry)
+      idx.set(mhToKey(entry.multihash.bytes), entry)
     }
     return new CarIndex(idx)
   }

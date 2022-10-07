@@ -65,6 +65,7 @@ export class R2MultiIndexBlockstore {
       const idxPath = `${carCid}/${carCid}.car.idx`
       const idxObj = await this.#bucket.get(idxPath)
       if (!idxObj) throw Object.assign(new Error(`index not found: ${carCid}`), { code: 'ERR_MISSING_INDEX' })
+      console.log('Reading index', idxPath)
       return [carCid, await CarIndex.fromReadableStream(idxObj.body)]
     }))
     return MultiCarIndex.fromIterable(indexes)
@@ -78,6 +79,7 @@ export class R2MultiIndexBlockstore {
     const [carCid, entry] = multiIdxEntry
     const carPath = `${carCid}/${carCid}.car`
     const range = { offset: entry.offset }
+    console.log(`get ${cid} @ ${entry.offset}`)
     const res = await this.#bucket.get(carPath, { range })
     if (!res) return
 
@@ -95,8 +97,8 @@ export class R2MultiIndexBlockstore {
     })())
 
     const blockHeader = await readBlockHead(bytesReader)
-    const data = await bytesReader.exactly(blockHeader.blockLength)
+    const bytes = await bytesReader.exactly(blockHeader.blockLength)
     reader.cancel()
-    return data
+    return { cid, bytes }
   }
 }
