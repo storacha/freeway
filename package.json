@@ -26,7 +26,8 @@
     "cardex": "^0.0.0",
     "ipfs-car-extract": "^1.1.0",
     "ipfs-unixfs-exporter": "^8.0.6",
-    "multiformats": "^9.9.0"
+    "multiformats": "^9.9.0",
+    "p-defer": "^4.0.0"
   },
   "devDependencies": {
     "ava": "^4.3.3",

@@ -31,7 +31,7 @@ export default {
 
 /** @type Handler */
 async function handler (request, env) {
-  const { carCid, dagCid, path } = parseUrl(request.url)
+  const { carCids, dagCid, path } = parseUrl(request.url)
 
   const carPath = `${carCid}/${carCid}.car`
   const headObj = await env.CARPARK.head(carPath)
@@ -90,14 +90,17 @@ async function handler (request, env) {
  * @param {string} url
  */
 function parseUrl (url) {
-  const { hostname, pathname, searchParams } = new URL(url)
-  const carCid = parseCid(searchParams.get('in') || hostname.split('.').shift())
-  if (carCid.code !== carCode) throw new HttpError(`not a CAR CID: ${carCid}`, { status: 400 })
+  const { pathname, searchParams } = new URL(url)
+  const carCids = searchParams.getAll('origin').map(str => {
+    const cid = parseCid(str)
+    if (cid.code !== carCode) throw new HttpError(`not a CAR CID: ${cid}`, { status: 400 })
+    return cid
+  })
   const pathParts = pathname.split('/')
   if (pathParts[1] !== 'ipfs') throw new HttpError('missing "/ipfs" in path', { status: 400 })
   const dagCid = parseCid(pathParts[2])
   const path = pathParts.slice(3).join('/')
-  return { carCid, dagCid, path: path ? `/${path}` : '' }
+  return { carCids, dagCid, path: path ? `/${path}` : '' }
 }
 
 function parseCid (str) {
