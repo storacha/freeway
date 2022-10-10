@@ -6,6 +6,7 @@ import defer from 'p-defer'
  * @typedef {import('multiformats').CID} CID
  * @typedef {import('cardex/mh-index-sorted').IndexEntry} IndexEntry
  * @typedef {string} MultihashString
+ * @typedef {{ get: (c: CID) => Promsie<IndexEntry|undefined> }} CarIndex
  */
 
 export class MultiCarIndex {
@@ -36,21 +37,9 @@ export class MultiCarIndex {
   }
 }
 
-export class CarIndex {
-  /** @type {Map<MultihashString, IndexEntry>} */
-  #idx
-
-  /** @param {Map<MultihashString, IndexEntry>} idx */
-  constructor (idx) {
-    this.#idx = idx
-  }
-
-  /** @param {CID} cid */
-  async get (cid) {
-    return this.#idx.get(mhToKey(cid.multihash.bytes))
-  }
-}
-
+/**
+ * @implements {CarIndex}
+ */
 export class StreamingCarIndex {
   /** @type {Map<MultihashString, IndexEntry>} */
   #idx = new Map()
