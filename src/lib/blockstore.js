@@ -45,7 +45,7 @@ export class R2Blockstore {
 
   /** @param {CID} cid */
   async get (cid) {
-    console.log(`get ${cid}`)
+    // console.log(`get ${cid}`)
     const multiIdxEntry = await this._idx.get(cid)
     if (!multiIdxEntry) return
     const [carCid, entry] = multiIdxEntry
@@ -133,7 +133,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
             const key = mhToKey(blockHeader.cid.multihash.bytes)
             const blocks = batchBlocks.get(key)
             if (blocks) {
-              console.log(`got wanted block for ${blockHeader.cid}`)
+              // console.log(`got wanted block for ${blockHeader.cid}`)
               blocks.forEach(b => b.resolve({ cid: blockHeader.cid, bytes }))
             }
           } catch {
@@ -147,7 +147,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
   }
 
   async get (cid) {
-    console.log(`get ${cid}`)
+    // console.log(`get ${cid}`)
     const multiIdxEntry = await this._idx.get(cid)
     if (!multiIdxEntry) return
 
