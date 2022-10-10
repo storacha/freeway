@@ -38,7 +38,7 @@ describe('freeway', () => {
     const bucket = await miniflare.getR2Bucket('CARPARK')
     await bucket.put(`${carCid}/${carCid}.car`, carBytes)
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}?in=${carCid}`)
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}?origin=${carCid}`)
     if (!res.ok) assert.fail(`unexpected response: ${(await res.json()).error}`)
 
     const output = new Uint8Array(await res.arrayBuffer())
@@ -57,7 +57,7 @@ describe('freeway', () => {
     const bucket = await miniflare.getR2Bucket('CARPARK')
     await bucket.put(`${carCid}/${carCid}.car`, carBytes)
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input.path}?in=${carCid}`)
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input.path}?origin=${carCid}`)
     if (!res.ok) assert.fail(`unexpected response: ${(await res.json()).error}`)
 
     const output = new Uint8Array(await res.arrayBuffer())

@@ -29,7 +29,7 @@ export default {
 
 /** @type Handler */
 async function handler (request, env) {
-  const { carCids, dagCid, path } = parseUrl(request.url)
+  const { carCids, dataCid, path } = parseUrl(request.url)
 
   /** @type {{ get: (cid: CID) => Promise<{ bytes: Uint8Array, cid: CID } | undefined> }} */
   let bucketStore = new R2MultiIndexBlockstore(env.CARPARK, carCids)
@@ -39,7 +39,6 @@ async function handler (request, env) {
     const headObj = await env.CARPARK.head(carPath)
     if (!headObj) throw new HttpError('not found', { status: 404 })
     if (headObj.size < MAX_CAR_BYTES_IN_MEMORY) {
-      console.log('Small CAR, reading into memory')
       const obj = await env.CARPARK.get(carPath)
       bucketStore = await CarReader.fromIterable(toIterable(obj.body))
     }
@@ -47,15 +46,19 @@ async function handler (request, env) {
 
   const blockstore = {
     async get (key) {
-      console.log(`Get ${key}`)
       const block = await bucketStore.get(key)
       if (!block) throw new Error(`missing block: ${key}`)
       return block.bytes
     }
   }
-  const entry = await exporter(`${dagCid}${path}`, blockstore)
+  const entry = await exporter(`${dataCid}${path}`, blockstore)
   // TODO: IDK? directory listing?
-  if (entry.type === 'directory') throw new HttpError(`${dagCid}${path} is a directory`, { status: 400 })
+  if (entry.type.includes('directory')) throw new HttpError(`${dataCid}${path} is a directory`, { status: 400 })
+
+  // to see console logs in dev, uncomment me
+  // const chunks = []
+  // for await (const c of entry.content()) { chunks.push(c) }
+  // return new Response(new Blob(chunks))
   return new Response(toReadableStream(entry.content()))
 }
 
@@ -63,17 +66,31 @@ async function handler (request, env) {
  * @param {string} url
  */
 function parseUrl (url) {
-  const { pathname, searchParams } = new URL(url)
-  const carCids = searchParams.getAll('origin').map(str => {
-    const cid = parseCid(str)
-    if (cid.code !== carCode) throw new HttpError(`not a CAR CID: ${cid}`, { status: 400 })
-    return cid
+  const { hostname, pathname, searchParams } = new URL(url)
+  const carCids = searchParams.getAll('origin').flatMap(str => {
+    return str.split(',').map(str => {
+      const cid = parseCid(str)
+      if (cid.code !== carCode) throw new HttpError(`not a CAR CID: ${cid}`, { status: 400 })
+      return cid
+    })
   })
+
+  const hostParts = hostname.split('.')
+  let dataCid = tryParseCid(hostParts[0])
+  if (dataCid) {
+    if (hostParts[1] !== 'ipfs') {
+      throw new HttpError(`unsupported protocol: ${hostParts[1]}`, { status: 400 })
+    }
+    return { carCids, dataCid, path: pathname, searchParams }
+  }
+
   const pathParts = pathname.split('/')
-  if (pathParts[1] !== 'ipfs') throw new HttpError('missing "/ipfs" in path', { status: 400 })
-  const dagCid = parseCid(pathParts[2])
+  if (pathParts[1] !== 'ipfs') {
+    throw new HttpError(`unsupported protocol: ${pathParts[1]}`, { status: 400 })
+  }
+  dataCid = parseCid(pathParts[2])
   const path = pathParts.slice(3).join('/')
-  return { carCids, dagCid, path: path ? `/${path}` : '' }
+  return { carCids, dataCid, path: path ? `/${path}` : '', searchParams }
 }
 
 function parseCid (str) {
@@ -83,3 +100,5 @@ function parseCid (str) {
     throw new Error('invalid CID', { reason: err })
   }
 }
+
+const tryParseCid = str => { try { return CID.parse(str) } catch {} }
