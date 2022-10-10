@@ -30,10 +30,15 @@ export class MultiCarIndex {
    * @returns {Promise<[CID, IndexEntry] | undefined>}
    */
   async get (cid) {
-    for (const [carCid, idx] of this.#idxs.entries()) {
+    const deferred = defer()
+    const idxEntries = Array.from(this.#idxs.entries())
+    await Promise.allSettled(idxEntries.map(async ([carCid, idx]) => {
       const entry = await idx.get(cid)
-      if (entry) return [carCid, entry]
-    }
+      if (entry) deferred.resolve([carCid, entry])
+      return entry
+    }))
+    deferred.resolve()
+    return deferred.promise
   }
 }
 

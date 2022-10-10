@@ -5,7 +5,7 @@ import { exporter } from '@web3-storage/fast-unixfs-exporter'
 import { errorHandler } from './middleware/error-handler.js'
 import { toReadableStream, toIterable } from './util/streams.js'
 import { HttpError } from './util/errors.js'
-import { R2MultiIndexBlockstore } from './lib/blockstore.js'
+import { BatchingR2Blockstore } from './lib/blockstore.js'
 
 const carCode = 0x0202
 
@@ -32,7 +32,7 @@ async function handler (request, env) {
   const { carCids, dataCid, path } = parseUrl(request.url)
 
   /** @type {{ get: (cid: CID) => Promise<{ bytes: Uint8Array, cid: CID } | undefined> }} */
-  let bucketStore = new R2MultiIndexBlockstore(env.CARPARK, carCids)
+  let bucketStore = new BatchingR2Blockstore(env.CARPARK, carCids)
 
   if (carCids.length === 1) {
     const carPath = `${carCids[0]}/${carCids[0]}.car`
