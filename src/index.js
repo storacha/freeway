@@ -1,13 +1,11 @@
 /* eslint-env worker */
 import { CID } from 'multiformats/cid'
-import { base58btc } from 'multiformats/bases/base58'
 import { CarReader } from '@ipld/car'
-import { exporter } from 'ipfs-unixfs-exporter'
-import { MultihashIndexSortedReader } from 'cardex'
-import { extract } from 'ipfs-car-extract'
+import { exporter } from '@web3-storage/fast-unixfs-exporter'
 import { errorHandler } from './middleware/error-handler.js'
 import { toReadableStream, toIterable } from './util/streams.js'
 import { HttpError } from './util/errors.js'
+import { BatchingR2Blockstore } from './lib/blockstore.js'
 
 const carCode = 0x0202
 
@@ -31,58 +29,36 @@ export default {
 
 /** @type Handler */
 async function handler (request, env) {
-  const { carCid, dagCid, path } = parseUrl(request.url)
+  const { carCids, dataCid, path } = parseUrl(request.url)
 
-  const carPath = `${carCid}/${carCid}.car`
-  const headObj = await env.CARPARK.head(carPath)
-  if (!headObj) throw new HttpError('not found', { status: 404 })
+  /** @type {{ get: (cid: CID) => Promise<{ bytes: Uint8Array, cid: CID } | undefined> }} */
+  let bucketStore = new BatchingR2Blockstore(env.CARPARK, carCids)
 
-  /** @type {import('./lib/extract').Blockstore} */
-  let bucketStore
-  if (headObj.size < MAX_CAR_BYTES_IN_MEMORY) {
-    const obj = await env.CARPARK.get(carPath)
-    bucketStore = await CarReader.fromIterable(toIterable(obj.body))
-  } else {
-    const idxPath = `${carCid}/${carCid}.car.idx`
-    const idxObj = await env.CARPARK.get(idxPath)
-    if (!idxObj) throw new HttpError('index not found', { status: 404 })
-
-    const idxReader = MultihashIndexSortedReader.fromIterable(toIterable(idxObj.body))
-    const mhToKey = mh => base58btc.encode(mh)
-
-    /** @type {Map<string, import('cardex/mh-index-sorted').IndexEntry>} */
-    const idx = new Map()
-    for await (const entry of idxReader.entries()) {
-      // TODO: multihash to string
-      idx.set(mhToKey(entry.multihash), entry)
-    }
-
-    bucketStore = {
-      /** @param {CID} key */
-      async get (key) {
-        const entry = idx.get(mhToKey(key.multihash))
-        if (!entry) throw new HttpError(`missing CID: ${key}`, { status: 404 })
-        // env.CARPARK.get(key, { range: { offset: entry.offset, length: ??? })
-        // TODO
-        throw new Error('big CAR support not implemented')
-      }
+  if (carCids.length === 1) {
+    const carPath = `${carCids[0]}/${carCids[0]}.car`
+    const headObj = await env.CARPARK.head(carPath)
+    if (!headObj) throw new HttpError('not found', { status: 404 })
+    if (headObj.size < MAX_CAR_BYTES_IN_MEMORY) {
+      const obj = await env.CARPARK.get(carPath)
+      bucketStore = await CarReader.fromIterable(toIterable(obj.body))
     }
   }
 
-  const blocks = extract(bucketStore, `${dagCid}${path}`)
   const blockstore = {
     async get (key) {
-      const { done, value } = await blocks.next()
-      if (done) throw new Error('unexpected EOF')
-      if (value.cid.toString() !== key.toString()) {
-        throw new Error(`CID mismatch, expected: ${key}, received: ${value.cid}`)
-      }
-      return value.bytes
+      const block = await bucketStore.get(key)
+      if (!block) throw new Error(`missing block: ${key}`)
+      return block.bytes
     }
   }
-  const entry = await exporter(`${dagCid}${path}`, blockstore)
+  const entry = await exporter(`${dataCid}${path}`, blockstore)
   // TODO: IDK? directory listing?
-  if (entry.type === 'directory') throw new HttpError(`${dagCid}${path} is a directory`, { status: 400 })
+  if (entry.type.includes('directory')) throw new HttpError(`${dataCid}${path} is a directory`, { status: 400 })
+
+  // to see console logs in dev, uncomment me
+  // const chunks = []
+  // for await (const c of entry.content()) { chunks.push(c) }
+  // return new Response(new Blob(chunks))
   return new Response(toReadableStream(entry.content()))
 }
 
@@ -91,13 +67,30 @@ async function handler (request, env) {
  */
 function parseUrl (url) {
   const { hostname, pathname, searchParams } = new URL(url)
-  const carCid = parseCid(searchParams.get('in') || hostname.split('.').shift())
-  if (carCid.code !== carCode) throw new HttpError(`not a CAR CID: ${carCid}`, { status: 400 })
+  const carCids = searchParams.getAll('origin').flatMap(str => {
+    return str.split(',').map(str => {
+      const cid = parseCid(str)
+      if (cid.code !== carCode) throw new HttpError(`not a CAR CID: ${cid}`, { status: 400 })
+      return cid
+    })
+  })
+
+  const hostParts = hostname.split('.')
+  let dataCid = tryParseCid(hostParts[0])
+  if (dataCid) {
+    if (hostParts[1] !== 'ipfs') {
+      throw new HttpError(`unsupported protocol: ${hostParts[1]}`, { status: 400 })
+    }
+    return { carCids, dataCid, path: pathname, searchParams }
+  }
+
   const pathParts = pathname.split('/')
-  if (pathParts[1] !== 'ipfs') throw new HttpError('missing "/ipfs" in path', { status: 400 })
-  const dagCid = parseCid(pathParts[2])
+  if (pathParts[1] !== 'ipfs') {
+    throw new HttpError(`unsupported protocol: ${pathParts[1]}`, { status: 400 })
+  }
+  dataCid = parseCid(pathParts[2])
   const path = pathParts.slice(3).join('/')
-  return { carCid, dagCid, path: path ? `/${path}` : '' }
+  return { carCids, dataCid, path: path ? `/${path}` : '', searchParams }
 }
 
 function parseCid (str) {
@@ -107,3 +100,5 @@ function parseCid (str) {
     throw new Error('invalid CID', { reason: err })
   }
 }
+
+const tryParseCid = str => { try { return CID.parse(str) } catch {} }
