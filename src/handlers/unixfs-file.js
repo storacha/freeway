@@ -46,6 +46,7 @@ export async function handleUnixfsFile (request, env, ctx) {
       }
       // FixedLengthStream does not like when you send less than what you said
       if (bytesWritten < entry.size) {
+        console.warn(`padding with ${entry.size - bytesWritten} zeroed bytes`)
         yield new Uint8Array(entry.size - bytesWritten)
       }
     } catch (err) {

@@ -27,6 +27,7 @@
     "@ipld/dag-pb": "^2.1.18",
     "@web3-storage/fast-unixfs-exporter": "^0.2.0",
     "cardex": "^0.0.0",
+    "chardet": "^1.5.0",
     "magic-bytes.js": "^1.0.12",
     "mrmime": "^1.0.1",
     "multiformats": "^9.9.0",
@@ -39,6 +40,6 @@
     "ipfs-car": "^0.8.1",
     "miniflare": "^2.9.0",
     "standard": "^17.0.0",
-    "uint8arrays": "^3.1.0"
+    "uint8arrays": "^3.1.1"
   }
 }
