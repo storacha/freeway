@@ -9,11 +9,8 @@ import { BlockBatch } from './block-batch.js'
  * @typedef {import('multiformats').CID} CID
  * @typedef {import('cardex/mh-index-sorted').IndexEntry} IndexEntry
  * @typedef {string} MultihashString
- * @typedef {{ cid: CID, bytes: bytes }} Block
- * @typedef {{ body: ReadableStream, size: number }} R2Object
- * @typedef {{ range?: { offset: number, length?: number} }} R2GetOptions
- * @typedef {(k: string, o?: R2GetOptions) => Promise<R2Object | null>} R2BucketGetter
- * @typedef {{ get: R2BucketGetter, head: R2BucketGetter }} R2Bucket
+ * @typedef {import('../bindings')} Block
+ * @typedef {import('../bindings')} R2Bucket
  */
 
 const MAX_BLOCK_LENGTH = 1024 * 1024 * 4

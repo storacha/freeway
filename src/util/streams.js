@@ -6,9 +6,12 @@
  * @returns {ReadableStream<T>}
  */
 export function toReadableStream (iterable) {
+  /** @type {AsyncIterator<Uint8Array>} */
+  let iterator
   return new ReadableStream({
     async pull (controller) {
-      const { value, done } = await iterable.next()
+      iterator = iterator || iterable[Symbol.asyncIterator]()
+      const { value, done } = await iterator.next()
       if (done) return controller.close()
       controller.enqueue(value)
     }

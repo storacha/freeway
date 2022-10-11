@@ -22,11 +22,16 @@
   "license": "Apache-2.0 OR MIT",
   "dependencies": {
     "@ipld/car": "^4.1.5",
+    "@ipld/dag-cbor": "^7.0.3",
+    "@ipld/dag-json": "^8.0.11",
     "@ipld/dag-pb": "^2.1.18",
     "@web3-storage/fast-unixfs-exporter": "^0.2.0",
     "cardex": "^0.0.0",
+    "magic-bytes.js": "^1.0.12",
+    "mrmime": "^1.0.1",
     "multiformats": "^9.9.0",
-    "p-defer": "^4.0.0"
+    "p-defer": "^4.0.0",
+    "streaming-iterables": "^7.1.0"
   },
   "devDependencies": {
     "ava": "^4.3.3",
