@@ -10,13 +10,15 @@ export async function handleUnixfs (request, env, ctx) {
   if (path == null) throw new Error('missing URL pathname')
   if (!blockstore) throw new Error('missing blockstore')
 
-  const entry = ctx.unixfsEntry = await exporter(`${dataCid}${path}`, {
-    async get (key) {
-      const block = await blockstore.get(key)
-      if (!block) throw new HttpError(`missing block: ${key}`, { status: 404 })
-      return block.bytes
-    }
-  })
+  /** @param {import('multiformats').CID} key */
+  const getBlockBytes = async key => {
+    const block = await blockstore.get(key)
+    if (!block) throw new HttpError(`missing block: ${key}`, { status: 404 })
+    return block.bytes
+  }
+
+  // @ts-expect-error exporter requires blockstore but only uses `get`
+  const entry = ctx.unixfsEntry = await exporter(`${dataCid}${path}`, { get: getBlockBytes })
 
   if (!['file', 'raw', 'identity'].includes(entry.type)) {
     throw new HttpError('unsupported entry type', { status: 501 })

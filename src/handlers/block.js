@@ -9,16 +9,18 @@ export async function handleBlock (request, env, ctx) {
   if (path == null) throw new Error('missing URL path')
   if (!blockstore) throw new Error('missing blockstore')
 
+  /** @param {import('multiformats').CID} key */
+  const getBlockBytes = async key => {
+    const block = await blockstore.get(key)
+    if (!block) throw new HttpError(`missing block: ${key}`, { status: 404 })
+    return block.bytes
+  }
+
   /** @type {import('multiformats').CID} */
   let cid
   if (path && path !== '/') {
-    const entry = await exporter(`${dataCid}/${path}`, {
-      async get (key) {
-        const block = await blockstore.get(key)
-        if (!block) throw new HttpError(`missing block: ${key}`, { status: 404 })
-        return block.bytes
-      }
-    })
+    // @ts-expect-error exporter requires blockstore but only uses `get`
+    const entry = await exporter(`${dataCid}/${path}`, { get: getBlockBytes })
     cid = entry.cid
   } else {
     cid = dataCid
@@ -29,7 +31,7 @@ export async function handleBlock (request, env, ctx) {
     return new Response(null, { status: 304 })
   }
 
-  const bytes = await blockstore.get(cid)
+  const bytes = await getBlockBytes(cid)
   const { searchParams } = new URL(request.url)
 
   const name = searchParams.get('filename') || `${cid}.bin`
@@ -42,7 +44,7 @@ export async function handleBlock (request, env, ctx) {
     'X-Content-Type-Options': 'nosniff',
     Etag: etag,
     'Cache-Control': 'public, max-age=29030400, immutable',
-    'Content-Length': bytes.length,
+    'Content-Length': bytes.length.toString(),
     'Content-Disposition': `attachment; filename="${asciiName}"; filename*=UTF-8''${utf8Name}`
   }
 

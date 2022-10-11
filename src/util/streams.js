@@ -6,7 +6,7 @@
  * @returns {ReadableStream<T>}
  */
 export function toReadableStream (iterable) {
-  /** @type {AsyncIterator<Uint8Array>} */
+  /** @type {AsyncIterator<T>} */
   let iterator
   return new ReadableStream({
     async pull (controller) {
@@ -24,6 +24,7 @@ export function toReadableStream (iterable) {
  * @returns {AsyncIterable<T>}
  */
 export function toIterable (readable) {
+  // @ts-ignore
   if (readable[Symbol.asyncIterator] != null) return readable
 
   // Browser ReadableStream

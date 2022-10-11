@@ -12,7 +12,9 @@ export function detectContentType (fileName, bytes) {
   if (infos.length) {
     const idx = fileName.lastIndexOf('.')
     const ext = idx === -1 ? '' : fileName.slice(idx + 1)
-    return infos.find(i => i.mime && i.extension === ext) || infos[0].mime
+    const info = infos.find(i => i.mime && i.extension === ext)
+    if (info?.mime) return info.mime
+    if (infos[0].mime) return infos[0].mime
   }
   return lookup(fileName) || detectTextContent(bytes)
 }

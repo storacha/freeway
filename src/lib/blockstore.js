@@ -9,8 +9,8 @@ import { BlockBatch } from './block-batch.js'
  * @typedef {import('multiformats').CID} CID
  * @typedef {import('cardex/mh-index-sorted').IndexEntry} IndexEntry
  * @typedef {string} MultihashString
- * @typedef {import('../bindings')} Block
- * @typedef {import('../bindings')} R2Bucket
+ * @typedef {import('../bindings').Block} Block
+ * @typedef {import('../bindings').R2Bucket} R2Bucket
  */
 
 const MAX_BLOCK_LENGTH = 1024 * 1024 * 4
@@ -156,6 +156,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
     }
     batch.add(entry.offset)
 
+    if (!entry.multihash) throw new Error('missing entry multihash')
     const key = mhToKey(entry.multihash.bytes)
     let blocks = this.#batchBlocks.get(key)
     if (!blocks) {
@@ -169,4 +170,4 @@ export class BatchingR2Blockstore extends R2Blockstore {
   }
 }
 
-const mhToKey = mh => base58btc.encode(mh)
+const mhToKey = (/** @type {Uint8Array} */ mh) => base58btc.encode(mh)

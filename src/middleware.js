@@ -93,7 +93,8 @@ export function withParsedUrl (handler) {
       if (hostParts[1] !== 'ipfs') {
         throw new HttpError(`unsupported protocol: ${hostParts[1]}`, { status: 400 })
       }
-      return { carCids, dataCid, path: pathname, searchParams }
+      Object.assign(ctx, { carCids, dataCid, path: pathname, searchParams })
+      return handler(request, env, ctx)
     }
 
     const pathParts = pathname.split('/')
@@ -107,14 +108,16 @@ export function withParsedUrl (handler) {
   }
 }
 
+/** @param {string} str */
 function parseCid (str) {
   try {
     return CID.parse(str)
   } catch (err) {
-    throw new Error('invalid CID', { reason: err })
+    throw new Error('invalid CID', { cause: err })
   }
 }
 
+/** @param {string} str */
 const tryParseCid = str => { try { return CID.parse(str) } catch {} }
 
 /**
@@ -135,6 +138,7 @@ export function withBlockstore (handler) {
       if (!headObj) throw new HttpError('CAR not found', { status: 404 })
       if (headObj.size < MAX_CAR_BYTES_IN_MEMORY) {
         const obj = await env.CARPARK.get(carPath)
+        if (!obj) throw new HttpError('CAR not found', { status: 404 })
         ctx.blockstore = await CarReader.fromIterable(toIterable(obj.body))
       }
     }

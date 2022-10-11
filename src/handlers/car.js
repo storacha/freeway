@@ -11,6 +11,8 @@ import { transform } from 'streaming-iterables'
 import { toReadableStream } from '../util/streams.js'
 import { HttpError } from '../util/errors.js'
 
+/** @typedef {import('multiformats').CID} CID */
+
 const Decoders = {
   [raw.code]: raw,
   [dagPb.code]: dagPb,
@@ -25,16 +27,18 @@ export async function handleCar (request, env, ctx) {
   if (path == null) throw new Error('missing URL path')
   if (!blockstore) throw new Error('missing blockstore')
 
-  /** @type {import('multiformats').CID} */
+  /** @param {CID} key */
+  const getBlockBytes = async key => {
+    const block = await blockstore.get(key)
+    if (!block) throw new HttpError(`missing block: ${key}`, { status: 404 })
+    return block.bytes
+  }
+
+  /** @type {CID} */
   let cid
   if (path && path !== '/') {
-    const entry = await exporter(`${dataCid}/${path}`, {
-      async get (key) {
-        const block = await blockstore.get(key)
-        if (!block) throw new HttpError(`missing block: ${key}`, { status: 404 })
-        return block.bytes
-      }
-    })
+    // @ts-expect-error exporter requires blockstore but only uses `get`
+    const entry = await exporter(`${dataCid}/${path}`, { get: getBlockBytes })
     cid = entry.cid
   } else {
     cid = dataCid
@@ -53,7 +57,7 @@ export async function handleCar (request, env, ctx) {
   const { writer, out } = CarWriter.create(cid)
   ;(async () => {
     try {
-      for await (const block of exportBlocks(cid, blockstore)) {
+      for await (const block of exportBlocks(cid, getBlockBytes)) {
         await writer.put(block)
       }
     } catch (err) {
@@ -84,14 +88,15 @@ export async function handleCar (request, env, ctx) {
 }
 
 /**
- * @param {import('multiformats').CID} rootCid
- * @param {import('../bindings').Blockstore} blockstore
+ * @param {CID} rootCid
+ * @param {(c: CID) => Promise<Uint8Array>} getBlockBytes
  */
-async function * exportBlocks (rootCid, blockstore) {
+async function * exportBlocks (rootCid, getBlockBytes) {
   let cids = [rootCid]
   while (true) {
     const fetchBlocks = transform(cids.length, async cid => {
-      return await blockstore.get(cid)
+      const bytes = await getBlockBytes(cid)
+      return { cid, bytes }
     })
     const nextCids = []
     for await (const { cid, bytes } of fetchBlocks(cids)) {

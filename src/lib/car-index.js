@@ -6,7 +6,7 @@ import defer from 'p-defer'
  * @typedef {import('multiformats').CID} CID
  * @typedef {import('cardex/mh-index-sorted').IndexEntry} IndexEntry
  * @typedef {string} MultihashString
- * @typedef {{ get: (c: CID) => Promsie<IndexEntry|undefined> }} CarIndex
+ * @typedef {{ get: (c: CID) => Promise<IndexEntry|undefined> }} CarIndex
  */
 
 export class MultiCarIndex {
@@ -66,6 +66,7 @@ export class StreamingCarIndex {
     this.#building = true
     const idxReader = MultihashIndexSortedReader.fromIterable(stream)
     for await (const entry of idxReader.entries()) {
+      if (!entry.multihash) throw new Error('missing entry multihash')
       const key = mhToKey(entry.multihash.bytes)
 
       // set this value in the index so any future requests for this key get
@@ -109,4 +110,4 @@ export class StreamingCarIndex {
   }
 }
 
-const mhToKey = mh => base58btc.encode(mh)
+const mhToKey = (/** @type {Uint8Array} */ mh) => base58btc.encode(mh)

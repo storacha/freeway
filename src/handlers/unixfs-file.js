@@ -29,7 +29,7 @@ export async function handleUnixfsFile (request, env, ctx) {
     return new Response(null, { status: 204, headers })
   }
 
-  const fileName = entry.path.split('/').pop()
+  const fileName = entry.path.split('/').pop() || ''
   const contentType = detectContentType(fileName, firstChunk)
   if (contentType) {
     headers['Content-Type'] = contentType
@@ -40,6 +40,7 @@ export async function handleUnixfsFile (request, env, ctx) {
     let bytesWritten = firstChunk.length
     yield firstChunk
     try {
+      // @ts-ignore
       for await (const chunk of contentIterator) {
         bytesWritten += chunk.length
         yield chunk
@@ -56,7 +57,8 @@ export async function handleUnixfsFile (request, env, ctx) {
   })())
 
   return new Response(
-    toReadableStream(stream).pipeThrough(new FixedLengthStream(entry.size)),
+    // @ts-ignore FixedLengthStream is a cloudflare global
+    stream.pipeThrough(new FixedLengthStream(entry.size)),
     { headers }
   )
 }
