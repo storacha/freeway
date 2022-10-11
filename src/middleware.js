@@ -10,7 +10,7 @@ import { toIterable } from './util/streams.js'
  * @typedef {(h: Handler) => Handler} Middleware
  */
 
-const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 100
+const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
 const CAR_CODE = 0x0202
 
 /**
