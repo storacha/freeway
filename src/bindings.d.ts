@@ -1,5 +1,5 @@
 import type { CID } from 'multiformats/cid'
-import type { IpfsUrlContext } from '@web3-storage/gateway-lib'
+import type { Context } from '@web3-storage/gateway-lib'
 
 export {}
 
@@ -8,7 +8,7 @@ export interface Environment {
   CARPARK: R2Bucket
 }
 
-export interface CarCidsContext {
+export interface CarCidsContext extends Context {
   carCids: CID[]
 }
 

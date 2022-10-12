@@ -64,37 +64,45 @@ export class StreamingCarIndex {
   async #buildIndex (stream) {
     console.log('building index')
     this.#building = true
-    const idxReader = MultihashIndexSortedReader.fromIterable(stream)
-    for await (const entry of idxReader.entries()) {
-      if (!entry.multihash) throw new Error('missing entry multihash')
-      const key = mhToKey(entry.multihash.bytes)
+    try {
+      const idxReader = MultihashIndexSortedReader.fromIterable(stream)
+      for await (const entry of idxReader.entries()) {
+        if (!entry.multihash) throw new Error('missing entry multihash')
+        const key = mhToKey(entry.multihash.bytes)
 
-      // set this value in the index so any future requests for this key get
-      // the value immediately, without joining the promised index, even if we
-      // are still building the index.
-      this.#idx.set(key, entry)
+        // set this value in the index so any future requests for this key get
+        // the value immediately, without joining the promised index, even if we
+        // are still building the index.
+        this.#idx.set(key, entry)
 
-      // get any promises for this key, resolve them, and remove the key from
-      // the promised index. No future requests for the key will join the
-      // promised index because the real index is checked _first_.
-      const promises = this.#promisedIdx.get(key) || []
-      promises.forEach(({ resolve }) => {
-        console.log(`found requested entry before index finished building: ${key} => ${entry.offset}`)
-        resolve(entry)
-      })
-      this.#promisedIdx.delete(key)
-    }
+        // get any promises for this key, resolve them, and remove the key from
+        // the promised index. No future requests for the key will join the
+        // promised index because the real index is checked _first_.
+        const promises = this.#promisedIdx.get(key) || []
+        promises.forEach(({ resolve }) => {
+          console.log(`found requested entry before index finished building: ${key} => ${entry.offset}`)
+          resolve(entry)
+        })
+        this.#promisedIdx.delete(key)
+      }
 
-    // signal we are done building the index
-    this.#building = false
-    console.log('finished building index')
-    // resolve any keys in the promised index as "not found" - we're done
-    // building so they will not get resolved otherwise.
-    for (const [key, promises] of this.#promisedIdx.entries()) {
-      promises.forEach(({ resolve }) => {
-        console.warn(`index data not found: ${key}`)
-        resolve()
-      })
+      // signal we are done building the index
+      this.#building = false
+      console.log('finished building index')
+      // resolve any keys in the promised index as "not found" - we're done
+      // building so they will not get resolved otherwise.
+      for (const [key, promises] of this.#promisedIdx.entries()) {
+        promises.forEach(({ resolve }) => {
+          console.warn(`index data not found: ${key}`)
+          resolve()
+        })
+      }
+    } catch (err) {
+      this.#building = false
+      console.error('failed to build index', err)
+      for (const promises of this.#promisedIdx.values()) {
+        promises.forEach(({ reject }) => reject(err))
+      }
     }
   }
 
