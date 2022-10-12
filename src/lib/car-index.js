@@ -32,12 +32,21 @@ export class MultiCarIndex {
   async get (cid) {
     const deferred = defer()
     const idxEntries = Array.from(this.#idxs.entries())
-    await Promise.allSettled(idxEntries.map(async ([carCid, idx]) => {
-      const entry = await idx.get(cid)
-      if (entry) deferred.resolve([carCid, entry])
-      return entry
-    }))
-    deferred.resolve()
+
+    Promise
+      .allSettled(idxEntries.map(async ([carCid, idx]) => {
+        const entry = await idx.get(cid)
+        if (entry) deferred.resolve([carCid, entry])
+      }))
+      .then(results => {
+        // if not already resolved, check for rejections and reject
+        for (const r of results) {
+          if (r.status === 'rejected') return deferred.reject(r.reason)
+        }
+        // if no rejections, then entry was simply not found in any index
+        deferred.resolve()
+      })
+
     return deferred.promise
   }
 }
@@ -54,6 +63,9 @@ export class StreamingCarIndex {
 
   /** @type {boolean} */
   #building = false
+
+  /** @type {Error?} */
+  #buildError = null
 
   /** @param {AsyncIterable<Uint8Array>} stream */
   constructor (stream) {
@@ -97,17 +109,21 @@ export class StreamingCarIndex {
           resolve()
         })
       }
-    } catch (err) {
-      this.#building = false
+    } catch (/** @type {any} */ err) {
       console.error('failed to build index', err)
+      this.#building = false
+      this.#buildError = err
       for (const promises of this.#promisedIdx.values()) {
-        promises.forEach(({ reject }) => reject(err))
+        promises.forEach(p => p.reject(new Error('failed to build index', { cause: err })))
       }
     }
   }
 
   /** @param {CID} cid */
   async get (cid) {
+    if (this.#buildError) {
+      throw new Error('failed to build index', { cause: this.#buildError })
+    }
     const key = mhToKey(cid.multihash.bytes)
     const entry = this.#idx.get(key)
     if (entry != null) return entry

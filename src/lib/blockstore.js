@@ -72,7 +72,7 @@ export class R2Blockstore {
 }
 
 export class BatchingR2Blockstore extends R2Blockstore {
-  /** @type {Map<string, Array<import('p-defer').DeferredPromise<Block|undefined>>} */
+  /** @type {Map<string, Array<import('p-defer').DeferredPromise<Block|undefined>>>} */
   #batchBlocks = new Map()
 
   /** @type {Map<CID, BlockBatch>} */
