@@ -79,7 +79,7 @@ export class StreamingCarIndex {
       // promised index because the real index is checked _first_.
       const promises = this.#promisedIdx.get(key) || []
       promises.forEach(({ resolve }) => {
-        console.log(`resolving ${key} => ${entry.offset}`)
+        console.log(`found requested entry before index finished building: ${key} => ${entry.offset}`)
         resolve(entry)
       })
       this.#promisedIdx.delete(key)
@@ -90,8 +90,11 @@ export class StreamingCarIndex {
     console.log('finished building index')
     // resolve any keys in the promised index as "not found" - we're done
     // building so they will not get resolved otherwise.
-    for (const promises of this.#promisedIdx.values()) {
-      promises.forEach(({ resolve }) => resolve())
+    for (const [key, promises] of this.#promisedIdx.entries()) {
+      promises.forEach(({ resolve }) => {
+        console.warn(`index data not found: ${key}`)
+        resolve()
+      })
     }
   }
 

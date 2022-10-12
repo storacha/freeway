@@ -1,81 +1,28 @@
 /* eslint-env browser */
-import { CID } from 'multiformats/cid'
+import { Dagula } from 'dagula'
 import { CarReader } from '@ipld/car'
+import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
 import { BatchingR2Blockstore } from './lib/blockstore.js'
-import { HttpError } from './util/errors.js'
-import { toIterable } from './util/streams.js'
-
-/**
- * @typedef {import('./bindings').Handler} Handler
- * @typedef {(h: Handler) => Handler} Middleware
- */
 
 const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
 const CAR_CODE = 0x0202
 
 /**
- * Adds CORS headers to the response.
- * @type {Middleware}
+ * @typedef {import('./bindings').Environment} Environment
+ * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} IpfsUrlContext
+ * @typedef {import('./bindings').CarCidsContext} CarCidsContext
+ * @typedef {import('@web3-storage/gateway-lib').DagulaContext} DagulaContext
  */
-export function withCorsHeaders (handler) {
-  return async (request, env, ctx) => {
-    let response = await handler(request, env, ctx)
-    // Clone the response so that it's no longer immutable (like if it comes
-    // from cache or fetch)
-    response = new Response(response.body, response)
-    const origin = request.headers.get('origin')
-    if (origin) {
-      response.headers.set('Access-Control-Allow-Origin', origin)
-      response.headers.set('Vary', 'Origin')
-    } else {
-      response.headers.set('Access-Control-Allow-Origin', '*')
-    }
-    response.headers.set('Access-Control-Allow-Methods', 'GET')
-    // response.headers.append('Access-Control-Allow-Headers', 'Range')
-    // response.headers.append('Access-Control-Allow-Headers', 'Content-Range')
-    response.headers.append('Access-Control-Expose-Headers', 'Content-Length')
-    // response.headers.append('Access-Control-Expose-Headers', 'Content-Range')
-    return response
-  }
-}
 
 /**
- * Catches any errors, logs them and returns a suitable response.
- * @type {Middleware}
+ * Extracts CAR CIDs search params from the URL querystring.
+ * @type {import('@web3-storage/gateway-lib').Middleware<CarCidsContext & IpfsUrlContext, IpfsUrlContext>}
  */
-export function withErrorHandler (handler) {
-  return async (request, env, ctx) => {
-    try {
-      return await handler(request, env, ctx)
-    } catch (err) {
-      if (!err.status || err.status >= 500) console.error(err.stack)
-      const msg = env.DEBUG === 'true' ? err.stack : err.message
-      return new Response(msg, { status: err.status || 500 })
-    }
-  }
-}
-
-/**
- * Validates the request uses a HTTP GET method.
- * @type {Middleware}
- */
-export function withHttpGet (handler) {
+export function withCarCids (handler) {
   return (request, env, ctx) => {
-    if (request.method !== 'GET') {
-      throw Object.assign(new Error('method not allowed'), { status: 405 })
-    }
-    return handler(request, env, ctx)
-  }
-}
+    if (!ctx.searchParams) throw new Error('missing URL search params')
 
-/**
- * Extracts CAR CIDs, the data CID, the path and search params from the URL.
- * @type {Middleware}
- */
-export function withParsedUrl (handler) {
-  return (request, env, ctx) => {
-    const { hostname, pathname, searchParams } = new URL(request.url)
-    const carCids = searchParams.getAll('origin').flatMap(str => {
+    const carCids = ctx.searchParams.getAll('origin').flatMap(str => {
       return str.split(',').map(str => {
         const cid = parseCid(str)
         if (cid.code !== CAR_CODE) throw new HttpError(`not a CAR CID: ${cid}`, { status: 400 })
@@ -87,50 +34,22 @@ export function withParsedUrl (handler) {
       throw new HttpError('missing origin CAR CID(s)', { status: 400 })
     }
 
-    const hostParts = hostname.split('.')
-    let dataCid = tryParseCid(hostParts[0])
-    if (dataCid) {
-      if (hostParts[1] !== 'ipfs') {
-        throw new HttpError(`unsupported protocol: ${hostParts[1]}`, { status: 400 })
-      }
-      Object.assign(ctx, { carCids, dataCid, path: pathname, searchParams })
-      return handler(request, env, ctx)
-    }
-
-    const pathParts = pathname.split('/')
-    if (pathParts[1] !== 'ipfs') {
-      throw new HttpError(`unsupported protocol: ${pathParts[1]}`, { status: 400 })
-    }
-    dataCid = parseCid(pathParts[2])
-    const path = pathParts.slice(3).join('/')
-    Object.assign(ctx, { carCids, dataCid, path: path ? `/${path}` : '', searchParams })
-    return handler(request, env, ctx)
+    return handler(request, env, { ...ctx, carCids })
   }
 }
-
-/** @param {string} str */
-function parseCid (str) {
-  try {
-    return CID.parse(str)
-  } catch (err) {
-    throw new Error('invalid CID', { cause: err })
-  }
-}
-
-/** @param {string} str */
-const tryParseCid = str => { try { return CID.parse(str) } catch {} }
 
 /**
- * Creates a blockstore for use by the UnixFS exporter.
- * @type {Middleware}
+ * Creates a dagula instance backed by the R2 blockstore.
+ * @type {import('@web3-storage/gateway-lib').Middleware<DagulaContext & CarCidsContext & IpfsUrlContext, CarCidsContext & IpfsUrlContext, Environment>}
  */
-export function withBlockstore (handler) {
+export function withDagula (handler) {
   return async (request, env, ctx) => {
     const { carCids, searchParams } = ctx
     if (!carCids) throw new Error('missing CAR CIDs in context')
     if (!searchParams) throw new Error('missing URL search params in context')
 
-    ctx.blockstore = new BatchingR2Blockstore(env.CARPARK, carCids)
+    /** @type {import('dagula').Blockstore} */
+    let blockstore = new BatchingR2Blockstore(env.CARPARK, carCids)
 
     if (carCids.length === 1) {
       const carPath = `${carCids[0]}/${carCids[0]}.car`
@@ -139,18 +58,11 @@ export function withBlockstore (handler) {
       if (headObj.size < MAX_CAR_BYTES_IN_MEMORY) {
         const obj = await env.CARPARK.get(carPath)
         if (!obj) throw new HttpError('CAR not found', { status: 404 })
-        ctx.blockstore = await CarReader.fromIterable(toIterable(obj.body))
+        blockstore = await CarReader.fromIterable(toIterable(obj.body))
       }
     }
 
-    return handler(request, env, ctx)
+    const dagula = new Dagula(blockstore)
+    return handler(request, env, { ...ctx, dagula })
   }
-}
-
-/**
- * @param {...Middleware} middlewares
- * @returns {Middleware}
- */
-export function composeMiddleware (...middlewares) {
-  return handler => middlewares.reduceRight((h, m) => m(h), handler)
 }

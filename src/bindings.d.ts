@@ -1,5 +1,5 @@
 import type { CID } from 'multiformats/cid'
-import type { UnixFSEntry } from '@web3-storage/fast-unixfs-exporter'
+import type { IpfsUrlContext } from '@web3-storage/gateway-lib'
 
 export {}
 
@@ -8,27 +8,8 @@ export interface Environment {
   CARPARK: R2Bucket
 }
 
-export interface Context {
-  waitUntil(promise: Promise<void>): void
-  carCids?: CID[]
-  dataCid?: CID
-  path?: string
-  searchParams?: URLSearchParams
-  blockstore?: Blockstore
-  unixfsEntry?: UnixFSEntry
-}
-
-export interface Handler {
-  (request: Request, env: Environment, ctx: Context): Promise<Response>
-}
-
-export interface Block {
-  cid: CID
-  bytes: Uint8Array
-}
-
-export interface Blockstore {
-  get: (cid: CID) => Promise<Block|undefined>
+export interface CarCidsContext {
+  carCids: CID[]
 }
 
 export interface R2GetOptions {

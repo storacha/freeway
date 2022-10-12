@@ -1,15 +1,15 @@
 import { readBlockHead, asyncIterableReader } from '@ipld/car/decoder'
 import { base58btc } from 'multiformats/bases/base58'
 import defer from 'p-defer'
+import { toIterable } from '@web3-storage/gateway-lib/util'
 import { MultiCarIndex, StreamingCarIndex } from './car-index.js'
-import { toIterable } from '../util/streams.js'
 import { BlockBatch } from './block-batch.js'
 
 /**
  * @typedef {import('multiformats').CID} CID
  * @typedef {import('cardex/mh-index-sorted').IndexEntry} IndexEntry
  * @typedef {string} MultihashString
- * @typedef {import('../bindings').Block} Block
+ * @typedef {import('dagula').Block} Block
  * @typedef {import('../bindings').R2Bucket} R2Bucket
  */
 
@@ -143,6 +143,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
     }
   }
 
+  /** @param {CID} cid */
   async get (cid) {
     // console.log(`get ${cid}`)
     const multiIdxEntry = await this._idx.get(cid)
