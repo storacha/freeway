@@ -8,7 +8,8 @@
     "start": "npm run dev",
     "dev": "npm run build && miniflare dist/worker.mjs --watch --debug -m",
     "build": "esbuild --bundle src/index.js --format=esm --sourcemap --minify --outfile=dist/worker.mjs",
-    "test": "npm run build && node --test --experimental-vm-modules"
+    "test": "npm run build && node --test --experimental-vm-modules",
+    "lint": "standard"
   },
   "keywords": [
     "IPFS",
