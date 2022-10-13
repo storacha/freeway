@@ -6,6 +6,7 @@ export {}
 export interface Environment {
   DEBUG: string
   CARPARK: R2Bucket
+  DUDEWHERE: R2Bucket
 }
 
 export interface CarCidsContext extends Context {
@@ -19,16 +20,25 @@ export interface R2GetOptions {
   }
 }
 
+export interface R2ListOptions {
+  prefix?: string
+  cursor?: string
+}
+
 export interface R2Object {
   body: ReadableStream
   size: number
+  key: string
 }
 
-export interface R2BucketGetter {
-  (k: string, o?: R2GetOptions): Promise<R2Object | null>
+export interface R2Objects {
+  objects: R2Object[]
+  truncated: boolean
+  cursor?: string
 }
 
 export interface R2Bucket {
-  get: R2BucketGetter
-  head: R2BucketGetter
+  get (k: string, o?: R2GetOptions): Promise<R2Object | null>
+  head (k: string, o?: R2GetOptions): Promise<R2Object | null>
+  list (o?: R2ListOptions): Promise<R2Objects | null>
 }

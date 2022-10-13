@@ -15,20 +15,41 @@ const CAR_CODE = 0x0202
  */
 
 /**
- * Extracts CAR CIDs search params from the URL querystring.
- * @type {import('@web3-storage/gateway-lib').Middleware<CarCidsContext & IpfsUrlContext, IpfsUrlContext>}
+ * Extracts CAR CIDs search params from the URL querystring or DUDEWHERE bucket.
+ * @type {import('@web3-storage/gateway-lib').Middleware<CarCidsContext & IpfsUrlContext, IpfsUrlContext, Environment>}
  */
 export function withCarCids (handler) {
-  return (request, env, ctx) => {
+  return async (request, env, ctx) => {
+    if (!ctx.dataCid) throw new Error('missing data CID')
     if (!ctx.searchParams) throw new Error('missing URL search params')
 
     const carCids = ctx.searchParams.getAll('origin').flatMap(str => {
-      return str.split(',').map(str => {
-        const cid = parseCid(str)
-        if (cid.code !== CAR_CODE) throw new HttpError(`not a CAR CID: ${cid}`, { status: 400 })
-        return cid
-      })
+      return str.split(',')
+        .reduce((/** @type {import('multiformats').CID[]} */cids, str) => {
+          try {
+            const cid = parseCid(str)
+            if (cid.code !== CAR_CODE) {
+              throw new HttpError(`not a CAR CID: ${cid}`, { status: 400 })
+            }
+            cids.push(cid)
+          } catch {}
+          return cids
+        }, [])
     })
+
+    // if origins were not specified or invalid
+    if (!carCids.length) {
+      /** @type {string|undefined} */
+      let cursor
+      while (true) {
+        const results = await env.DUDEWHERE.list({ prefix: `${ctx.dataCid}/`, cursor })
+        if (!results || !results.objects.length) break
+        carCids.push(...results.objects.map(o => parseCid(o.key.split('/')[1])))
+        if (!results.truncated) break
+        cursor = results.cursor
+      }
+      console.log('dude where\'s my CAR?', carCids)
+    }
 
     if (!carCids.length) {
       throw new HttpError('missing origin CAR CID(s)', { status: 400 })
