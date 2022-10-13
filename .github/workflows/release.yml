@@ -1,0 +1,33 @@
+on:
+  push:
+    branches:
+      - main
+name: Release
+jobs:
+  release-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/test
+      - name: Deploy to Staging
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{secrets.CF_TOKEN }}
+          environment: 'staging'
+  release-production:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          release-type: node
+          package-name: freeway
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/test
+      - name: Deploy to Production
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{ secrets.CF_TOKEN }}
+          environment: 'production'
+        if: ${{ steps.release.outputs.release_created }}
+        
