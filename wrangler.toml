@@ -14,6 +14,7 @@ command = "npm run build"
 # PROD!
 [env.production]
 account_id = "fffa4b4363a7e5250af8357087263b3a"
+zone_id = "f2f8a5b1c557202c6e3d0ce0e98e4c8e"
 route = "freeway.dag.haus"
 
 [[env.production.r2_buckets]]
@@ -23,6 +24,7 @@ binding = "CARPARK"
 # Staging!
 [env.staging]
 account_id = "fffa4b4363a7e5250af8357087263b3a"
+zone_id = "f2f8a5b1c557202c6e3d0ce0e98e4c8e"
 route = "freeway-staging.dag.haus"
 
 [[env.staging.r2_buckets]]
