@@ -69,9 +69,8 @@ export function withDagula (handler) {
     if (!carCids) throw new Error('missing CAR CIDs in context')
     if (!searchParams) throw new Error('missing URL search params in context')
 
-    /** @type {import('dagula').Blockstore} */
-    let blockstore = new BatchingR2Blockstore(env.SATNAV, carCids)
-
+    /** @type {import('dagula').Blockstore?} */
+    let blockstore = null
     if (carCids.length === 1) {
       const carPath = `${carCids[0]}/${carCids[0]}.car`
       const headObj = await env.CARPARK.head(carPath)
@@ -81,6 +80,10 @@ export function withDagula (handler) {
         if (!obj) throw new HttpError('CAR not found', { status: 404 })
         blockstore = await CarReader.fromIterable(toIterable(obj.body))
       }
+    }
+
+    if (!blockstore) {
+      blockstore = new BatchingR2Blockstore(env.SATNAV, carCids)
     }
 
     const dagula = new Dagula(blockstore)
