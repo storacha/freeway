@@ -105,7 +105,9 @@ export class BatchingR2Blockstore extends R2Blockstore {
         console.log(`requesting ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
         const res = await this._dataBucket.get(carPath, { range })
         if (!res) {
-          // TODO: resolve batchBlocks to undefined
+          for (const blocks of batchBlocks.values()) {
+            blocks.forEach(b => b.resolve())
+          }
           return
         }
 
