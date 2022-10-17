@@ -83,7 +83,7 @@ export function withDagula (handler) {
     }
 
     if (!blockstore) {
-      blockstore = new BatchingR2Blockstore(env.SATNAV, carCids)
+      blockstore = new BatchingR2Blockstore(env.CARPARK, env.SATNAV, carCids)
     }
 
     const dagula = new Dagula(blockstore)

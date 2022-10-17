@@ -22,16 +22,17 @@ const MAX_BLOCK_LENGTH = 1024 * 1024 * 4
  */
 export class R2Blockstore {
   /**
-   * @param {R2Bucket} bucket
+   * @param {R2Bucket} dataBucket
+   * @param {R2Bucket} indexBucket
    * @param {CID[]} carCids
    */
-  constructor (bucket, carCids) {
-    this._bucket = bucket
+  constructor (dataBucket, indexBucket, carCids) {
+    this._dataBucket = dataBucket
     this._idx = new MultiCarIndex()
     for (const carCid of carCids) {
       this._idx.addIndex(carCid, new StreamingCarIndex((async function * () {
         const idxPath = `${carCid}/${carCid}.car.idx`
-        const idxObj = await bucket.get(idxPath)
+        const idxObj = await indexBucket.get(idxPath)
         if (!idxObj) {
           throw Object.assign(new Error(`index not found: ${carCid}`), { code: 'ERR_MISSING_INDEX' })
         }
@@ -48,7 +49,7 @@ export class R2Blockstore {
     const [carCid, entry] = multiIdxEntry
     const carPath = `${carCid}/${carCid}.car`
     const range = { offset: entry.offset }
-    const res = await this._bucket.get(carPath, { range })
+    const res = await this._dataBucket.get(carPath, { range })
     if (!res) return
 
     const reader = res.body.getReader()
@@ -102,7 +103,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
         const carPath = `${carCid}/${carCid}.car`
         const range = { offset: batch[0], length: batch[batch.length - 1] - batch[0] + MAX_BLOCK_LENGTH }
         console.log(`requesting ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
-        const res = await this._bucket.get(carPath, { range })
+        const res = await this._dataBucket.get(carPath, { range })
         if (!res) {
           // TODO: resolve batchBlocks to undefined
           return
