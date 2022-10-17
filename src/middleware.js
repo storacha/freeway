@@ -15,6 +15,22 @@ const CAR_CODE = 0x0202
  */
 
 /**
+ * Validates the request does not contain unsupported features.
+ * Returns 501 Not Implemented in case it has.
+ * @type {import('@web3-storage/gateway-lib').Middleware<import('@web3-storage/gateway-lib').Context>}
+ */
+export function withUnsupportedFeaturesHandler (handler) {
+  return (request, env, ctx) => {
+    // Range request https://github.com/web3-storage/gateway-lib/issues/12
+    if (request.headers.get('range')) {
+      throw new HttpError('Not Implemented', { status: 501 })
+    }
+
+    return handler(request, env, ctx)
+  }
+}
+
+/**
  * Extracts CAR CIDs search params from the URL querystring or DUDEWHERE bucket.
  * @type {import('@web3-storage/gateway-lib').Middleware<CarCidsContext & IpfsUrlContext, IpfsUrlContext, Environment>}
  */
