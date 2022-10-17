@@ -12,7 +12,7 @@ import {
   handleBlock,
   handleCar
 } from '@web3-storage/gateway-lib/handlers'
-import { withDagula, withCarCids } from './middleware.js'
+import { withDagula, withCarCids, withUnsupportedFeaturesHandler } from './middleware.js'
 
 /**
  * @typedef {import('./bindings').Environment} Environment
@@ -29,6 +29,7 @@ export default {
       withCorsHeaders,
       withContentDispositionHeader,
       withErrorHandler,
+      withUnsupportedFeaturesHandler,
       withHttpGet,
       withParsedIpfsUrl,
       withCarCids,
