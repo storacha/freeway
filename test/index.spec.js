@@ -24,7 +24,7 @@ describe('freeway', () => {
       buildCommand: undefined,
       wranglerConfigEnv: 'test',
       modules: true,
-      r2Buckets: ['CARPARK']
+      r2Buckets: ['CARPARK', 'SATNAV', 'DUDEWHERE']
     })
   })
 
@@ -66,7 +66,7 @@ describe('freeway', () => {
 })
 
 /**
- * @template <T>
+ * @template T
  * @param {AsyncIterable<T>} collectable
  */
 async function collect (collectable) {

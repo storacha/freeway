@@ -48,7 +48,7 @@ export function withCarCids (handler) {
         if (!results.truncated) break
         cursor = results.cursor
       }
-      console.log('dude where\'s my CAR?', carCids)
+      console.log(`dude where's my CAR? ${ctx.dataCid} => ${carCids}`)
     }
 
     if (!carCids.length) {
@@ -70,7 +70,7 @@ export function withDagula (handler) {
     if (!searchParams) throw new Error('missing URL search params in context')
 
     /** @type {import('dagula').Blockstore} */
-    let blockstore = new BatchingR2Blockstore(env.CARPARK, carCids)
+    let blockstore = new BatchingR2Blockstore(env.SATNAV, carCids)
 
     if (carCids.length === 1) {
       const carPath = `${carCids[0]}/${carCids[0]}.car`

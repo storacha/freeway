@@ -7,6 +7,7 @@ export interface Environment {
   DEBUG: string
   CARPARK: R2Bucket
   DUDEWHERE: R2Bucket
+  SATNAV: R2Bucket
 }
 
 export interface CarCidsContext extends Context {
