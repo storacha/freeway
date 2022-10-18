@@ -4,6 +4,7 @@ import {
   withContentDispositionHeader,
   withErrorHandler,
   withHttpGet,
+  withCdnCache,
   withParsedIpfsUrl,
   composeMiddleware
 } from '@web3-storage/gateway-lib/middleware'
@@ -26,6 +27,7 @@ export default {
   fetch (request, env, ctx) {
     console.log(request.method, request.url)
     const middleware = composeMiddleware(
+      withCdnCache,
       withCorsHeaders,
       withContentDispositionHeader,
       withErrorHandler,
@@ -42,10 +44,6 @@ export default {
 /** @type {import('@web3-storage/gateway-lib').Handler<DagulaContext & CarCidsContext & IpfsUrlContext, Environment>} */
 async function handler (request, env, ctx) {
   const { headers } = request
-  if (headers.get('Cache-Control') === 'only-if-cached') {
-    return new Response(null, { status: 412 })
-  }
-
   const { searchParams } = ctx
   if (!searchParams) throw new Error('missing URL search params')
 
