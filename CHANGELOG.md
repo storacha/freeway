@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/web3-storage/freeway/compare/v1.1.3...v1.2.0) (2022-10-18)
+
+
+### Features
+
+* add CDN cache ([#8](https://github.com/web3-storage/freeway/issues/8)) ([9ddf0fa](https://github.com/web3-storage/freeway/commit/9ddf0fa11dabdb174c827b95cfbf06c594529da0))
+
 ## [1.1.3](https://github.com/web3-storage/freeway/compare/v1.1.2...v1.1.3) (2022-10-17)
 
 
