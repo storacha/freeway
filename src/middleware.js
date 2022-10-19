@@ -4,6 +4,7 @@ import { CarReader } from '@ipld/car'
 import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
 import { BatchingR2Blockstore } from './lib/blockstore.js'
 import { MemoryBudget } from './lib/mem-budget.js'
+import { version } from '../package.json'
 
 const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
 const CAR_CODE = 0x0202
@@ -150,7 +151,7 @@ export function withDagula (handler) {
 export function withVersionHeader (handler) {
   return async (request, env, ctx) => {
     const response = await handler(request, env, ctx)
-    response.headers.set('x-freeway-version', '1.3.0')
+    response.headers.set('x-freeway-version', version)
     return response
   }
 }
