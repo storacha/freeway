@@ -81,13 +81,32 @@ export class BatchingR2Blockstore extends R2Blockstore {
 
   #scheduled = false
 
+  /** @type {Promise<void>|null} */
+  #processing = null
+
   #scheduleBatchProcessing () {
     if (this.#scheduled) return
     this.#scheduled = true
-    setTimeout(() => {
+
+    const startProcessing = async () => {
       this.#scheduled = false
-      this.#processBatch()
-    })
+      const { promise, resolve } = defer()
+      this.#processing = promise
+      try {
+        await this.#processBatch()
+      } finally {
+        this.#processing = null
+        resolve()
+      }
+    }
+
+    // If already running, then start when finished
+    if (this.#processing) {
+      return this.#processing.then(startProcessing)
+    }
+
+    // If not running, then start on the next tick
+    setTimeout(startProcessing)
   }
 
   async #processBatch () {
