@@ -46,8 +46,8 @@ export default {
       withCarCids,
       withMemoryBudget,
       withDagula,
-      withResponseMemoryRelease,
-      withFixedLengthStream
+      withFixedLengthStream,
+      withResponseMemoryRelease
     )
     return middleware(handler)(request, env, ctx)
   }

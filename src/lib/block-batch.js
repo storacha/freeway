@@ -1,5 +1,5 @@
 const MAX_BYTES_BETWEEN = 1024 * 1024 * 2
-const MAX_BATCH_SIZE = 100
+const MAX_BATCH_SIZE = 10
 
 export class BlockBatch {
   /** @type {number[]} */

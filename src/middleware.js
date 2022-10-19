@@ -8,7 +8,7 @@ import { version } from '../package.json'
 
 const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
 const CAR_CODE = 0x0202
-const MAX_MEMORY_BUDGET = 1024 * 1024 * 25
+const MAX_MEMORY_BUDGET = 1024 * 1024 * 50
 
 /**
  * @typedef {import('./bindings').Environment} Environment
