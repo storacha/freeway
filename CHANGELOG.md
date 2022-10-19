@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.0](https://github.com/web3-storage/freeway/compare/v1.2.0...v1.3.0) (2022-10-19)
+
+
+### Features
+
+* add memory budgeting ([979b13b](https://github.com/web3-storage/freeway/commit/979b13b7318ee097a3a358a055847e1c3dacd3c9))
+
+
+### Bug Fixes
+
+* cancel after releaseLock throws INVALID_STATE error ([#10](https://github.com/web3-storage/freeway/issues/10)) ([af62fe6](https://github.com/web3-storage/freeway/commit/af62fe68be5a65d8d743624e109c71fba4114c71))
+* delete ref to block after resolve ([56baf25](https://github.com/web3-storage/freeway/commit/56baf25ff0d4b27acdb324f852ec217930e1e7b7))
+* do not sort offsets in batch ([bbf8df5](https://github.com/web3-storage/freeway/commit/bbf8df56ad2e38d93efffda22e9655a0d80aee84))
+* process one batch at a time ([d4eea8f](https://github.com/web3-storage/freeway/commit/d4eea8f5b068120c9587e06bc466dbcb067d77b5))
+
 ## [1.2.0](https://github.com/web3-storage/freeway/compare/v1.1.3...v1.2.0) (2022-10-18)
 
 
