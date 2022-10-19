@@ -25,8 +25,8 @@ describe('freeway', () => {
       buildCommand: undefined,
       wranglerConfigEnv: 'test',
       modules: true,
-      r2Buckets: bucketNames,
-      r2Persist: true
+      r2Buckets: bucketNames
+      // r2Persist: true
     })
 
     const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))
