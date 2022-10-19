@@ -3,15 +3,18 @@ import { Dagula } from 'dagula'
 import { CarReader } from '@ipld/car'
 import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
 import { BatchingR2Blockstore } from './lib/blockstore.js'
+import { MemoryBudget } from './lib/mem-budget.js'
 
 const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
 const CAR_CODE = 0x0202
+const MAX_MEMORY_BUDGET = 1024 * 1024 * 50
 
 /**
  * @typedef {import('./bindings').Environment} Environment
  * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} IpfsUrlContext
  * @typedef {import('./bindings').CarCidsContext} CarCidsContext
  * @typedef {import('@web3-storage/gateway-lib').DagulaContext} DagulaContext
+ * @typedef {import('./bindings').MemoryBudgetContext} MemoryBudgetContext
  */
 
 /**
@@ -76,14 +79,49 @@ export function withCarCids (handler) {
 }
 
 /**
+ * @type {import('@web3-storage/gateway-lib').Middleware<MemoryBudgetContext>}
+ */
+export function withMemoryBudget (handler) {
+  return async (request, env, ctx) => {
+    const memoryBudget = new MemoryBudget(MAX_MEMORY_BUDGET)
+    return handler(request, env, { ...ctx, memoryBudget })
+  }
+}
+
+/**
+ * @type {import('@web3-storage/gateway-lib').Middleware<MemoryBudgetContext, MemoryBudgetContext>}
+ */
+export function withResponseMemoryRelease (handler) {
+  return async (request, env, ctx) => {
+    const response = await handler(request, env, ctx)
+
+    const body = response.body
+    if (!body) return response
+
+    console.log('adding response memory release transform...')
+
+    return new Response(
+      body.pipeThrough(new TransformStream({
+        transform (chunk, controller) {
+          ctx.memoryBudget.release(chunk.length)
+          controller.enqueue(chunk)
+        }
+      })),
+      response
+    )
+  }
+}
+
+/**
  * Creates a dagula instance backed by the R2 blockstore.
- * @type {import('@web3-storage/gateway-lib').Middleware<DagulaContext & CarCidsContext & IpfsUrlContext, CarCidsContext & IpfsUrlContext, Environment>}
+ * @type {import('@web3-storage/gateway-lib').Middleware<DagulaContext & MemoryBudgetContext & CarCidsContext & IpfsUrlContext, MemoryBudgetContext & CarCidsContext & IpfsUrlContext, Environment>}
  */
 export function withDagula (handler) {
   return async (request, env, ctx) => {
-    const { carCids, searchParams } = ctx
+    const { carCids, searchParams, memoryBudget } = ctx
     if (!carCids) throw new Error('missing CAR CIDs in context')
     if (!searchParams) throw new Error('missing URL search params in context')
+    if (!memoryBudget) throw new Error('missing memory budget instance')
 
     /** @type {import('dagula').Blockstore?} */
     let blockstore = null
@@ -99,7 +137,7 @@ export function withDagula (handler) {
     }
 
     if (!blockstore) {
-      blockstore = new BatchingR2Blockstore(env.CARPARK, env.SATNAV, carCids)
+      blockstore = new BatchingR2Blockstore(env.CARPARK, env.SATNAV, carCids, memoryBudget)
     }
 
     const dagula = new Dagula(blockstore)

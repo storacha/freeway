@@ -1,5 +1,6 @@
 import type { CID } from 'multiformats/cid'
 import type { Context } from '@web3-storage/gateway-lib'
+import type { MemoryBudget } from './lib/mem-budget'
 
 export {}
 
@@ -12,6 +13,10 @@ export interface Environment {
 
 export interface CarCidsContext extends Context {
   carCids: CID[]
+}
+
+export interface MemoryBudgetContext extends Context {
+  memoryBudget: MemoryBudget
 }
 
 export interface R2GetOptions {

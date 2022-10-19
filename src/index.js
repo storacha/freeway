@@ -6,6 +6,7 @@ import {
   withHttpGet,
   withCdnCache,
   withParsedIpfsUrl,
+  withFixedLengthStream,
   composeMiddleware
 } from '@web3-storage/gateway-lib/middleware'
 import {
@@ -13,7 +14,13 @@ import {
   handleBlock,
   handleCar
 } from '@web3-storage/gateway-lib/handlers'
-import { withDagula, withCarCids, withUnsupportedFeaturesHandler } from './middleware.js'
+import {
+  withDagula,
+  withCarCids,
+  withUnsupportedFeaturesHandler,
+  withMemoryBudget,
+  withResponseMemoryRelease
+} from './middleware.js'
 
 /**
  * @typedef {import('./bindings').Environment} Environment
@@ -35,7 +42,10 @@ export default {
       withHttpGet,
       withParsedIpfsUrl,
       withCarCids,
-      withDagula
+      withMemoryBudget,
+      withDagula,
+      withResponseMemoryRelease,
+      withFixedLengthStream
     )
     return middleware(handler)(request, env, ctx)
   }

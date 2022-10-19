@@ -25,9 +25,11 @@ export class R2Blockstore {
    * @param {R2Bucket} dataBucket
    * @param {R2Bucket} indexBucket
    * @param {CID[]} carCids
+   * @param {import('./mem-budget.js').MemoryBudget} memoryBudget
    */
-  constructor (dataBucket, indexBucket, carCids) {
+  constructor (dataBucket, indexBucket, carCids, memoryBudget) {
     this._dataBucket = dataBucket
+    this._memoryBudget = memoryBudget
     this._idx = new MultiCarIndex()
     for (const carCid of carCids) {
       this._idx.addIndex(carCid, new StreamingCarIndex((async function * () {
@@ -54,14 +56,10 @@ export class R2Blockstore {
 
     const reader = res.body.getReader()
     const bytesReader = asyncIterableReader((async function * () {
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) return
-          yield value
-        }
-      } finally {
-        reader.releaseLock()
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) return
+        yield value
       }
     })())
 
@@ -110,6 +108,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
   }
 
   async #processBatch () {
+    console.log('processing batch')
     const batches = this.#batches
     const batchBlocks = this.#batchBlocks
     this.#batches = new Map()
@@ -121,7 +120,9 @@ export class BatchingR2Blockstore extends R2Blockstore {
         if (!batch) break
         const carPath = `${carCid}/${carCid}.car`
         const range = { offset: batch[0], length: batch[batch.length - 1] - batch[0] + MAX_BLOCK_LENGTH }
-        console.log(`requesting ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
+        await this._memoryBudget.request(range.length)
+
+        console.log(`fetching ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
         const res = await this._dataBucket.get(carPath, { range })
         if (!res) {
           for (const blocks of batchBlocks.values()) {
@@ -139,6 +140,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
           }
         })())
 
+        let bytesResolved = 0
         while (true) {
           try {
             const blockHeader = await readBlockHead(bytesReader)
@@ -151,15 +153,19 @@ export class BatchingR2Blockstore extends R2Blockstore {
               // console.log(`got wanted block for ${blockHeader.cid}`)
               blocks.forEach(b => b.resolve({ cid: blockHeader.cid, bytes }))
               batchBlocks.delete(key)
+              bytesResolved += bytes.length
             }
           } catch {
             break
           }
         }
 
+        // release the bytes we didn't send on (they are released later)
+        this._memoryBudget.release(range.length - bytesResolved)
         reader.cancel()
       }
     }
+    console.log('finished processing batch')
   }
 
   /** @param {CID} cid */
