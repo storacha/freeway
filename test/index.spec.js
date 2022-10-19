@@ -2,17 +2,18 @@ import { describe, before, it } from 'node:test'
 import assert from 'node:assert'
 import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
-import { concat, equals } from 'uint8arrays'
-import { pack } from 'ipfs-car/pack'
-import { CID } from 'multiformats/cid'
-import { sha256 } from 'multiformats/hashes/sha2'
-
-const carCode = 0x0202
+import { equals } from 'uint8arrays'
+import { Builder } from './helpers.js'
 
 describe('freeway', () => {
   /** @type {Miniflare} */
   let miniflare
-  before(() => {
+  /** @type {Builder} */
+  let builder
+
+  before(async () => {
+    const bucketNames = ['CARPARK', 'SATNAV', 'DUDEWHERE']
+
     miniflare = new Miniflare({
       bindings: {},
       scriptPath: 'dist/worker.mjs',
@@ -24,54 +25,47 @@ describe('freeway', () => {
       buildCommand: undefined,
       wranglerConfigEnv: 'test',
       modules: true,
-      r2Buckets: ['CARPARK', 'SATNAV', 'DUDEWHERE']
+      r2Buckets: bucketNames,
+      r2Persist: true
     })
+
+    const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))
+    builder = new Builder(...buckets)
   })
 
   it('should get a file', async () => {
     const input = randomBytes(256)
-    const { root: dataCid, out } = await pack({ input, wrapWithDirectory: false })
+    const { dataCid } = await builder.add(input, { wrapWithDirectory: false })
 
-    const carBytes = concat(await collect(out))
-    const carCid = CID.createV1(carCode, await sha256.digest(carBytes))
-
-    const bucket = await miniflare.getR2Bucket('CARPARK')
-    await bucket.put(`${carCid}/${carCid}.car`, carBytes)
-
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}?origin=${carCid}`)
-    if (!res.ok) assert.fail(`unexpected response: ${(await res.json()).error}`)
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}`)
+    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
     const output = new Uint8Array(await res.arrayBuffer())
     assert(equals(input, output))
   })
 
   it('should get a file in a directory', async () => {
-    const input = { path: 'data.txt', content: randomBytes(256) }
-    const { root: dataCid, out } = await pack({
-      input: [input, { path: 'image.png', content: randomBytes(512) }]
-    })
+    const input = [
+      { path: 'data.txt', content: randomBytes(256) },
+      { path: 'image.png', content: randomBytes(512) }
+    ]
+    const { dataCid } = await builder.add(input)
 
-    const carBytes = concat(await collect(out))
-    const carCid = CID.createV1(carCode, await sha256.digest(carBytes))
-
-    const bucket = await miniflare.getR2Bucket('CARPARK')
-    await bucket.put(`${carCid}/${carCid}.car`, carBytes)
-
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input.path}?origin=${carCid}`)
-    if (!res.ok) assert.fail(`unexpected response: ${(await res.json()).error}`)
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
     const output = new Uint8Array(await res.arrayBuffer())
-    assert(equals(input.content, output))
+    assert(equals(input[0].content, output))
+  })
+
+  it('should get a big file', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(609261780) }]
+    const { dataCid } = await builder.add(input)
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
+
+    const output = new Uint8Array(await res.arrayBuffer())
+    assert(equals(input[0].content, output))
   })
 })
-
-/**
- * @template T
- * @param {AsyncIterable<T>} collectable
- */
-async function collect (collectable) {
-  /** @type {T[]} */
-  const items = []
-  for await (const item of collectable) { items.push(item) }
-  return items
-}
