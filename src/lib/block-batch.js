@@ -14,7 +14,7 @@ export class BlockBatch {
   }
 
   next () {
-    const offsets = this.#offsets.sort((a, b) => a - b)
+    const offsets = this.#offsets // .sort((a, b) => a - b)
     if (!offsets.length) return
     const batch = []
     let last = offsets[0]
