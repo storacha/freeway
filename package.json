@@ -1,6 +1,6 @@
 {
   "name": "freeway",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "An IPFS gateway for accessing UnixFS data via CAR CIDs",
   "main": "index.js",
   "type": "module",
