@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/web3-storage/freeway/compare/v1.3.0...v1.4.0) (2022-10-19)
+
+
+### Features
+
+* add version header ([fcbf1ac](https://github.com/web3-storage/freeway/commit/fcbf1ac4ac2d6d4ba4351d28007d97aca11909a1))
+
 ## [1.3.0](https://github.com/web3-storage/freeway/compare/v1.2.0...v1.3.0) (2022-10-19)
 
 
