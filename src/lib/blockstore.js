@@ -115,11 +115,14 @@ export class BatchingR2Blockstore extends R2Blockstore {
     this.#batchBlocks = new Map()
 
     for (const [carCid, batcher] of batches) {
+      console.log(`processing batch for ${carCid}`)
       while (true) {
         const batch = batcher.next()
         if (!batch) break
         const carPath = `${carCid}/${carCid}.car`
         const range = { offset: batch[0], length: batch[batch.length - 1] - batch[0] + MAX_BLOCK_LENGTH }
+
+        console.log(`waiting allocation for ${range.length} bytes...`)
         await this._memoryBudget.request(range.length)
 
         console.log(`fetching ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
@@ -160,10 +163,13 @@ export class BatchingR2Blockstore extends R2Blockstore {
           }
         }
 
+        console.log(`releasing ${range.length - bytesResolved} discarded bytes`)
         // release the bytes we didn't send on (they are released later)
         this._memoryBudget.release(range.length - bytesResolved)
         reader.cancel()
       }
+      console.log(`finished processing batch for ${carCid}`)
+      console.log(`${batchBlocks.size} blocks remain`)
     }
     console.log('finished processing batch')
   }

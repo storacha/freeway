@@ -7,7 +7,7 @@ import { MemoryBudget } from './lib/mem-budget.js'
 
 const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
 const CAR_CODE = 0x0202
-const MAX_MEMORY_BUDGET = 1024 * 1024 * 50
+const MAX_MEMORY_BUDGET = 1024 * 1024 * 25
 
 /**
  * @typedef {import('./bindings').Environment} Environment
@@ -101,8 +101,9 @@ export function withResponseMemoryRelease (handler) {
     return new Response(
       body.pipeThrough(new TransformStream({
         transform (chunk, controller) {
-          ctx.memoryBudget.release(chunk.length)
           controller.enqueue(chunk)
+          // console.log(`releasing ${chunk.length} bytes`)
+          ctx.memoryBudget.release(chunk.length)
         }
       })),
       response
