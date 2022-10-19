@@ -150,6 +150,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
             if (blocks) {
               // console.log(`got wanted block for ${blockHeader.cid}`)
               blocks.forEach(b => b.resolve({ cid: blockHeader.cid, bytes }))
+              batchBlocks.delete(key)
             }
           } catch {
             break
