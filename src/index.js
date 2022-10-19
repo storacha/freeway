@@ -19,7 +19,8 @@ import {
   withCarCids,
   withUnsupportedFeaturesHandler,
   withMemoryBudget,
-  withResponseMemoryRelease
+  withResponseMemoryRelease,
+  withVersionHeader
 } from './middleware.js'
 
 /**
@@ -36,6 +37,7 @@ export default {
     const middleware = composeMiddleware(
       withCdnCache,
       withCorsHeaders,
+      withVersionHeader,
       withContentDispositionHeader,
       withErrorHandler,
       withUnsupportedFeaturesHandler,

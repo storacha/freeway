@@ -98,8 +98,6 @@ export function withResponseMemoryRelease (handler) {
     const body = response.body
     if (!body) return response
 
-    console.log('adding response memory release transform...')
-
     return new Response(
       body.pipeThrough(new TransformStream({
         transform (chunk, controller) {
@@ -142,5 +140,16 @@ export function withDagula (handler) {
 
     const dagula = new Dagula(blockstore)
     return handler(request, env, { ...ctx, dagula })
+  }
+}
+
+/**
+ * @type {import('@web3-storage/gateway-lib').Middleware<import('@web3-storage/gateway-lib').Context>}
+ */
+export function withVersionHeader (handler) {
+  return async (request, env, ctx) => {
+    const response = await handler(request, env, ctx)
+    response.headers.set('x-freeway-version', '1.3.0')
+    return response
   }
 }
