@@ -12,7 +12,7 @@ r2_buckets = [
 ]
 
 [build]
-command = "npm run build"
+command = "npm run build:debug"
 
 # PROD!
 [env.production]
@@ -24,6 +24,9 @@ r2_buckets = [
   { binding = "SATNAV", bucket_name = "satnav-prod-0" }
 ]
 
+[env.production.build]
+command = "npm run build"
+
 # Staging!
 [env.staging]
 account_id = "fffa4b4363a7e5250af8357087263b3a"
@@ -33,6 +36,9 @@ r2_buckets = [
   { binding = "DUDEWHERE", bucket_name = "dudewhere-staging-0" },
   { binding = "SATNAV", bucket_name = "satnav-staging-0" }
 ]
+
+[env.staging.build]
+command = "npm run build"
 
 # Test!
 [env.test]

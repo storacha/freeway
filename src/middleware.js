@@ -102,8 +102,8 @@ export function withResponseMemoryRelease (handler) {
     return new Response(
       body.pipeThrough(new TransformStream({
         transform (chunk, controller) {
+          // console.log(`sending ${chunk.length} bytes`)
           controller.enqueue(chunk)
-          // console.log(`releasing ${chunk.length} bytes`)
           ctx.memoryBudget.release(chunk.length)
         }
       })),
