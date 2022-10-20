@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.0](https://github.com/web3-storage/freeway/compare/v1.4.0...v1.5.0) (2022-10-20)
+
+
+### Features
+
+* use package.json version number ([4567807](https://github.com/web3-storage/freeway/commit/4567807a9ef214725606aa0a53385cd2f9fc517b))
+
+
+### Bug Fixes
+
+* content length header ([9fa30c1](https://github.com/web3-storage/freeway/commit/9fa30c1cb030e93065f3f859df3dfe4757c11fee))
+* fewer log lines ([6afcb27](https://github.com/web3-storage/freeway/commit/6afcb27feab508d58d498f03c51c2918a824ba01))
+* temporarily limit the size of the response until memory leak is resolved ([#15](https://github.com/web3-storage/freeway/issues/15)) ([1b04a19](https://github.com/web3-storage/freeway/commit/1b04a19846c8efa2ffe191cd7806c0775df07b19))
+
 ## [1.4.0](https://github.com/web3-storage/freeway/compare/v1.3.0...v1.4.0) (2022-10-19)
 
 
