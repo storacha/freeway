@@ -169,13 +169,10 @@ export function withMaxContentLength (maxLength, handler) {
    */
   return async (request, env, ctx) => {
     const response = await handler(request, env, ctx)
-    if (!response.headers.has('Content-Length')) return response
-
-    const contentLength = parseInt(response.headers.get('Content-Length') || '0')
+    const contentLength = parseInt(response.headers.get('Content-Length') ?? '0')
     if (contentLength > maxLength) {
       throw new HttpError('Content too big', { status: 403 })
     }
-
     return response
   }
 }
