@@ -59,7 +59,7 @@ describe('freeway', () => {
   })
 
   it('should get a big file', async () => {
-    const input = [{ path: 'sargo.tar.xz', content: randomBytes(609261780) }]
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(1024 * 1024 * 128) }]
     const { dataCid } = await builder.add(input)
 
     const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
@@ -67,5 +67,12 @@ describe('freeway', () => {
 
     const output = new Uint8Array(await res.arrayBuffer())
     assert(equals(input[0].content, output))
+  })
+
+  it('should fail to get a file bigger than 128MB', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(1024 * 1024 * 128 + 1) }]
+    const { dataCid } = await builder.add(input)
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    assert.strictEqual(res.status, 403)
   })
 })
