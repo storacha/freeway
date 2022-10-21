@@ -2,18 +2,19 @@ import { readBlockHead, asyncIterableReader } from '@ipld/car/decoder'
 import { base58btc } from 'multiformats/bases/base58'
 import defer from 'p-defer'
 import { toIterable } from '@web3-storage/gateway-lib/util'
-import { CID } from 'multiformats/cid'
 import { MultiCarIndex, StreamingCarIndex } from './car-index.js'
 import { OrderedCarBlockBatcher } from './block-batch.js'
 
 /**
+ * @typedef {import('multiformats').CID} CID
  * @typedef {import('cardex/mh-index-sorted').IndexEntry} IndexEntry
  * @typedef {string} MultihashString
  * @typedef {import('dagula').Block} Block
  * @typedef {import('../bindings').R2Bucket} R2Bucket
  */
 
-const MAX_BLOCK_LENGTH = 1024 * 1024 * 2
+// 2MB (max safe libp2p block size) + typical block header length + some leeway
+const MAX_ENCODED_BLOCK_LENGTH = (1024 * 1024 * 2) + 39 + 61
 
 /**
  * A blockstore that is backed by an R2 bucket which contains CARv2
@@ -122,7 +123,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
       const carPath = `${carCid}/${carCid}.car`
       const range = {
         offset: batch[0].offset,
-        length: batch[batch.length - 1].offset - batch[0].offset + MAX_BLOCK_LENGTH
+        length: batch[batch.length - 1].offset - batch[0].offset + MAX_ENCODED_BLOCK_LENGTH
       }
 
       console.log(`fetching ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
@@ -153,8 +154,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
           const blocks = pendingBlocks.get(key)
           if (blocks) {
             // console.log(`got wanted block for ${blockHeader.cid}`)
-            const block = { cid: CID.parse(blockHeader.cid.toString()), bytes: bytes.slice() }
-            // const block = { cid: blockHeader.cid, bytes }
+            const block = { cid: blockHeader.cid, bytes }
             blocks.forEach(b => b.resolve(block))
             pendingBlocks.delete(key)
           }
