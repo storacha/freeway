@@ -129,6 +129,8 @@ export class BatchingR2Blockstore extends R2Blockstore {
       console.log(`fetching ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
       const res = await this._dataBucket.get(carPath, { range })
       if (!res) {
+        // should not happen, but if it does, we need to resolve `undefined`
+        // for the blocks in this batch - they are not found.
         for (const blocks of pendingBlocks.values()) {
           blocks.forEach(b => b.resolve())
         }
@@ -162,7 +164,15 @@ export class BatchingR2Blockstore extends R2Blockstore {
           break
         }
       }
+      // we should have read all the bytes from the reader by now but if the
+      // bytesReader throws for bad data _before_ the end then we need to
+      // cancel the reader - we don't need the rest.
       reader.cancel()
+    }
+
+    // resolve `undefined` for any remaining blocks
+    for (const blocks of pendingBlocks.values()) {
+      blocks.forEach(b => b.resolve())
     }
   }
 

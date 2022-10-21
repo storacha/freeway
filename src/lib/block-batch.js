@@ -23,19 +23,19 @@ export class OrderedCarBlockBatcher {
 
   next () {
     const queue = this.#queue
-    if (!queue.length) return []
-    const batch = []
-    let last = queue[0]
+    let prevItem = queue.shift()
+    if (!prevItem) return []
+    const batch = [prevItem]
     while (true) {
-      const item = queue.shift()
+      const item = queue.at(0)
       if (!item) break
-      if (item.carCid.toString() !== last.carCid.toString() || item.offset - last.offset >= MAX_BYTES_BETWEEN) {
-        queue.unshift(item) // not in this batch, return to pile
+      if (item.carCid.toString() !== prevItem.carCid.toString() || item.offset - prevItem.offset >= MAX_BYTES_BETWEEN) {
         break
       }
       batch.push(item)
+      queue.shift() // remove from the queue
       if (batch.length >= MAX_BATCH_SIZE) break
-      last = item
+      prevItem = item
     }
     return batch
   }
