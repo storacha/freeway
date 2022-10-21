@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/web3-storage/freeway/compare/v1.5.0...v1.5.1) (2022-10-21)
+
+
+### Bug Fixes
+
+* remove max Content-Length middleware ([#16](https://github.com/web3-storage/freeway/issues/16)) ([bf11d0c](https://github.com/web3-storage/freeway/commit/bf11d0c99f41efaf11a3869b836287fdeee28b60))
+
 ## [1.5.0](https://github.com/web3-storage/freeway/compare/v1.4.0...v1.5.0) (2022-10-20)
 
 
