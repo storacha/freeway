@@ -18,10 +18,7 @@ import {
   withDagula,
   withCarCids,
   withUnsupportedFeaturesHandler,
-  withMemoryBudget,
-  withResponseMemoryRelease,
-  withVersionHeader,
-  withMaxContentLength
+  withVersionHeader
 } from './middleware.js'
 
 /**
@@ -30,11 +27,6 @@ import {
  * @typedef {import('./bindings').CarCidsContext} CarCidsContext
  * @typedef {import('@web3-storage/gateway-lib').DagulaContext} DagulaContext
  */
-
-/**
- * Temporary limit to the size of the response until memory leak is resolved.
- */
-const MAX_CONTENT_LENGTH = 1024 * 1024 * 128
 
 export default {
   /** @type {import('@web3-storage/gateway-lib').Handler<import('@web3-storage/gateway-lib').Context, import('./bindings').Environment>} */
@@ -50,11 +42,8 @@ export default {
       withHttpGet,
       withParsedIpfsUrl,
       withCarCids,
-      withMemoryBudget,
       withDagula,
-      withFixedLengthStream,
-      withResponseMemoryRelease,
-      withMaxContentLength.bind(null, MAX_CONTENT_LENGTH)
+      withFixedLengthStream
     )
     return middleware(handler)(request, env, ctx)
   }

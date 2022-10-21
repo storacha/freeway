@@ -31,7 +31,7 @@
     "@web3-storage/gateway-lib": "^2.0.0",
     "cardex": "^1.0.0",
     "chardet": "^1.5.0",
-    "dagula": "^4.1.0",
+    "dagula": "^4.1.1",
     "magic-bytes.js": "^1.0.12",
     "mrmime": "^1.0.1",
     "multiformats": "^9.9.0",

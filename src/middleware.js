@@ -3,19 +3,16 @@ import { Dagula } from 'dagula'
 import { CarReader } from '@ipld/car'
 import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
 import { BatchingR2Blockstore } from './lib/blockstore.js'
-import { MemoryBudget } from './lib/mem-budget.js'
 import { version } from '../package.json'
 
 const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
 const CAR_CODE = 0x0202
-const MAX_MEMORY_BUDGET = 1024 * 1024 * 50
 
 /**
  * @typedef {import('./bindings').Environment} Environment
  * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} IpfsUrlContext
  * @typedef {import('./bindings').CarCidsContext} CarCidsContext
  * @typedef {import('@web3-storage/gateway-lib').DagulaContext} DagulaContext
- * @typedef {import('./bindings').MemoryBudgetContext} MemoryBudgetContext
  */
 
 /**
@@ -80,48 +77,14 @@ export function withCarCids (handler) {
 }
 
 /**
- * @type {import('@web3-storage/gateway-lib').Middleware<MemoryBudgetContext>}
- */
-export function withMemoryBudget (handler) {
-  return async (request, env, ctx) => {
-    const memoryBudget = new MemoryBudget(MAX_MEMORY_BUDGET)
-    return handler(request, env, { ...ctx, memoryBudget })
-  }
-}
-
-/**
- * @type {import('@web3-storage/gateway-lib').Middleware<MemoryBudgetContext, MemoryBudgetContext>}
- */
-export function withResponseMemoryRelease (handler) {
-  return async (request, env, ctx) => {
-    const response = await handler(request, env, ctx)
-
-    const body = response.body
-    if (!body) return response
-
-    return new Response(
-      body.pipeThrough(new TransformStream({
-        transform (chunk, controller) {
-          // console.log(`sending ${chunk.length} bytes`)
-          controller.enqueue(chunk)
-          ctx.memoryBudget.release(chunk.length)
-        }
-      })),
-      response
-    )
-  }
-}
-
-/**
  * Creates a dagula instance backed by the R2 blockstore.
- * @type {import('@web3-storage/gateway-lib').Middleware<DagulaContext & MemoryBudgetContext & CarCidsContext & IpfsUrlContext, MemoryBudgetContext & CarCidsContext & IpfsUrlContext, Environment>}
+ * @type {import('@web3-storage/gateway-lib').Middleware<DagulaContext & CarCidsContext & IpfsUrlContext, CarCidsContext & IpfsUrlContext, Environment>}
  */
 export function withDagula (handler) {
   return async (request, env, ctx) => {
-    const { carCids, searchParams, memoryBudget } = ctx
+    const { carCids, searchParams } = ctx
     if (!carCids) throw new Error('missing CAR CIDs in context')
     if (!searchParams) throw new Error('missing URL search params in context')
-    if (!memoryBudget) throw new Error('missing memory budget instance')
 
     /** @type {import('dagula').Blockstore?} */
     let blockstore = null
@@ -137,7 +100,7 @@ export function withDagula (handler) {
     }
 
     if (!blockstore) {
-      blockstore = new BatchingR2Blockstore(env.CARPARK, env.SATNAV, carCids, memoryBudget)
+      blockstore = new BatchingR2Blockstore(env.CARPARK, env.SATNAV, carCids)
     }
 
     const dagula = new Dagula(blockstore)
@@ -152,27 +115,6 @@ export function withVersionHeader (handler) {
   return async (request, env, ctx) => {
     const response = await handler(request, env, ctx)
     response.headers.set('x-freeway-version', version)
-    return response
-  }
-}
-
-/**
- * This middleware throws if the Content-Length header is set and it is greater
- * than the provided max value.
- *
- * @param {number} maxLength
- * @param {import('@web3-storage/gateway-lib').Handler<import('@web3-storage/gateway-lib').Context>} handler
- */
-export function withMaxContentLength (maxLength, handler) {
-  /**
-   * @type {import('@web3-storage/gateway-lib').Handler<import('@web3-storage/gateway-lib').Context>}
-   */
-  return async (request, env, ctx) => {
-    const response = await handler(request, env, ctx)
-    const contentLength = parseInt(response.headers.get('Content-Length') ?? '0')
-    if (contentLength > maxLength) {
-      throw new HttpError('Content too big', { status: 403 })
-    }
     return response
   }
 }

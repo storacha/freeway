@@ -3,7 +3,7 @@ import { base58btc } from 'multiformats/bases/base58'
 import defer from 'p-defer'
 import { toIterable } from '@web3-storage/gateway-lib/util'
 import { MultiCarIndex, StreamingCarIndex } from './car-index.js'
-import { BlockBatch } from './block-batch.js'
+import { OrderedCarBlockBatcher } from './block-batch.js'
 
 /**
  * @typedef {import('multiformats').CID} CID
@@ -13,7 +13,8 @@ import { BlockBatch } from './block-batch.js'
  * @typedef {import('../bindings').R2Bucket} R2Bucket
  */
 
-const MAX_BLOCK_LENGTH = 1024 * 1024 * 4
+// 2MB (max safe libp2p block size) + typical block header length + some leeway
+const MAX_ENCODED_BLOCK_LENGTH = (1024 * 1024 * 2) + 39 + 61
 
 /**
  * A blockstore that is backed by an R2 bucket which contains CARv2
@@ -25,11 +26,9 @@ export class R2Blockstore {
    * @param {R2Bucket} dataBucket
    * @param {R2Bucket} indexBucket
    * @param {CID[]} carCids
-   * @param {import('./mem-budget.js').MemoryBudget} memoryBudget
    */
-  constructor (dataBucket, indexBucket, carCids, memoryBudget) {
+  constructor (dataBucket, indexBucket, carCids) {
     this._dataBucket = dataBucket
-    this._memoryBudget = memoryBudget
     this._idx = new MultiCarIndex()
     for (const carCid of carCids) {
       this._idx.addIndex(carCid, new StreamingCarIndex((async function * () {
@@ -72,10 +71,10 @@ export class R2Blockstore {
 
 export class BatchingR2Blockstore extends R2Blockstore {
   /** @type {Map<string, Array<import('p-defer').DeferredPromise<Block|undefined>>>} */
-  #batchBlocks = new Map()
+  #pendingBlocks = new Map()
 
-  /** @type {Map<CID, BlockBatch>} */
-  #batches = new Map()
+  /** @type {import('./block-batch.js').BlockBatcher} */
+  #batcher = new OrderedCarBlockBatcher()
 
   #scheduled = false
 
@@ -109,69 +108,72 @@ export class BatchingR2Blockstore extends R2Blockstore {
 
   async #processBatch () {
     console.log('processing batch')
-    const batches = this.#batches
-    const batchBlocks = this.#batchBlocks
-    this.#batches = new Map()
-    this.#batchBlocks = new Map()
+    const batcher = this.#batcher
+    this.#batcher = new OrderedCarBlockBatcher()
+    const pendingBlocks = this.#pendingBlocks
+    this.#pendingBlocks = new Map()
 
-    for (const [carCid, batcher] of batches) {
-      console.log(`processing batch for ${carCid}`)
-      while (true) {
-        const batch = batcher.next()
-        if (!batch) break
-        const carPath = `${carCid}/${carCid}.car`
-        const range = { offset: batch[0], length: batch[batch.length - 1] - batch[0] + MAX_BLOCK_LENGTH }
+    while (true) {
+      const batch = batcher.next()
+      if (!batch.length) break
 
-        console.log(`waiting allocation for ${range.length} bytes...`)
-        await this._memoryBudget.request(range.length)
+      batch.sort((a, b) => a.offset - b.offset)
 
-        console.log(`fetching ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
-        const res = await this._dataBucket.get(carPath, { range })
-        if (!res) {
-          for (const blocks of batchBlocks.values()) {
-            blocks.forEach(b => b.resolve())
-          }
-          return
-        }
-
-        const reader = res.body.getReader()
-        const bytesReader = asyncIterableReader((async function * () {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) return
-            yield value
-          }
-        })())
-
-        let bytesResolved = 0
-        while (true) {
-          try {
-            const blockHeader = await readBlockHead(bytesReader)
-            const bytes = await bytesReader.exactly(blockHeader.blockLength)
-            bytesReader.seek(blockHeader.blockLength)
-
-            const key = mhToKey(blockHeader.cid.multihash.bytes)
-            const blocks = batchBlocks.get(key)
-            if (blocks) {
-              // console.log(`got wanted block for ${blockHeader.cid}`)
-              blocks.forEach(b => b.resolve({ cid: blockHeader.cid, bytes }))
-              batchBlocks.delete(key)
-              bytesResolved += bytes.length
-            }
-          } catch {
-            break
-          }
-        }
-
-        console.log(`releasing ${range.length - bytesResolved} discarded bytes`)
-        // release the bytes we didn't send on (they are released later)
-        this._memoryBudget.release(range.length - bytesResolved)
-        reader.cancel()
+      const { carCid } = batch[0]
+      const carPath = `${carCid}/${carCid}.car`
+      const range = {
+        offset: batch[0].offset,
+        length: batch[batch.length - 1].offset - batch[0].offset + MAX_ENCODED_BLOCK_LENGTH
       }
-      console.log(`finished processing batch for ${carCid}`)
-      console.log(`${batchBlocks.size} blocks remain`)
+
+      console.log(`fetching ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
+      const res = await this._dataBucket.get(carPath, { range })
+      if (!res) {
+        // should not happen, but if it does, we need to resolve `undefined`
+        // for the blocks in this batch - they are not found.
+        for (const blocks of pendingBlocks.values()) {
+          blocks.forEach(b => b.resolve())
+        }
+        return
+      }
+
+      const reader = res.body.getReader()
+      const bytesReader = asyncIterableReader((async function * () {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) return
+          yield value
+        }
+      })())
+
+      while (true) {
+        try {
+          const blockHeader = await readBlockHead(bytesReader)
+          const bytes = await bytesReader.exactly(blockHeader.blockLength)
+          bytesReader.seek(blockHeader.blockLength)
+
+          const key = mhToKey(blockHeader.cid.multihash.bytes)
+          const blocks = pendingBlocks.get(key)
+          if (blocks) {
+            // console.log(`got wanted block for ${blockHeader.cid}`)
+            const block = { cid: blockHeader.cid, bytes }
+            blocks.forEach(b => b.resolve(block))
+            pendingBlocks.delete(key)
+          }
+        } catch {
+          break
+        }
+      }
+      // we should have read all the bytes from the reader by now but if the
+      // bytesReader throws for bad data _before_ the end then we need to
+      // cancel the reader - we don't need the rest.
+      reader.cancel()
     }
-    console.log('finished processing batch')
+
+    // resolve `undefined` for any remaining blocks
+    for (const blocks of pendingBlocks.values()) {
+      blocks.forEach(b => b.resolve())
+    }
   }
 
   /** @param {CID} cid */
@@ -181,19 +183,14 @@ export class BatchingR2Blockstore extends R2Blockstore {
     if (!multiIdxEntry) return
 
     const [carCid, entry] = multiIdxEntry
-    let batch = this.#batches.get(carCid)
-    if (!batch) {
-      batch = new BlockBatch()
-      this.#batches.set(carCid, batch)
-    }
-    batch.add(entry.offset)
+    this.#batcher.add({ carCid, blockCid: cid, offset: entry.offset })
 
     if (!entry.multihash) throw new Error('missing entry multihash')
     const key = mhToKey(entry.multihash.bytes)
-    let blocks = this.#batchBlocks.get(key)
+    let blocks = this.#pendingBlocks.get(key)
     if (!blocks) {
       blocks = []
-      this.#batchBlocks.set(key, blocks)
+      this.#pendingBlocks.set(key, blocks)
     }
     const deferred = defer()
     blocks.push(deferred)

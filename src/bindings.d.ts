@@ -15,10 +15,6 @@ export interface CarCidsContext extends Context {
   carCids: CID[]
 }
 
-export interface MemoryBudgetContext extends Context {
-  memoryBudget: MemoryBudget
-}
-
 export interface R2GetOptions {
   range?: {
     offset: number
