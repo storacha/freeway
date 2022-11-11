@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/web3-storage/freeway/compare/v1.5.2...v1.5.3) (2022-11-11)
+
+
+### Bug Fixes
+
+* better svg content type detection ([1e216bf](https://github.com/web3-storage/freeway/commit/1e216bfd6df4cbfec40235309fdcf42ae5d2fda6))
+
 ## [1.5.2](https://github.com/web3-storage/freeway/compare/v1.5.1...v1.5.2) (2022-10-21)
 
 
