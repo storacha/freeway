@@ -9,6 +9,7 @@ export interface Environment {
   CARPARK: R2Bucket
   DUDEWHERE: R2Bucket
   SATNAV: R2Bucket
+  MAX_CAR_CIDS_TO_RESOLVE: string
 }
 
 export interface CarCidsContext extends Context {

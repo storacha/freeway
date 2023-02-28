@@ -72,6 +72,13 @@ export function withCarCids (handler) {
       throw new HttpError('missing origin CAR CID(s)', { status: 400 })
     }
 
+    // Cloudflare currently sets a limit of 1000 sub-requests within the worker context
+    // If we have a given root CID splitted across hundreds of CARs, freeway will hit
+    // the sub-requests limit and not serve content anyway
+    if (carCids.length > Number(env.MAX_CAR_CIDS_TO_RESOLVE)) {
+      throw new HttpError('number CAR CIDs is too large to resolve', { status: 501 })
+    }
+
     return handler(request, env, { ...ctx, carCids })
   }
 }
