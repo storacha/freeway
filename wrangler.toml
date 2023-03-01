@@ -28,7 +28,7 @@ r2_buckets = [
 command = "npm run build"
 
 [env.production.vars]
-MAX_CAR_CIDS_TO_RESOLVE = "250"
+MAX_SHARDS = "250"
 
 # Staging!
 [env.staging]
@@ -44,7 +44,7 @@ r2_buckets = [
 command = "npm run build"
 
 [env.staging.vars]
-MAX_CAR_CIDS_TO_RESOLVE = "250"
+MAX_SHARDS = "250"
 
 # Test!
 [env.test]
@@ -57,7 +57,7 @@ r2_buckets = [
 
 [env.test.vars]
 DEBUG = "true"
-MAX_CAR_CIDS_TO_RESOLVE = "120"
+MAX_SHARDS = "120"
 
 [env.alanshaw]
 workers_dev = true
