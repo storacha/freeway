@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/web3-storage/freeway/compare/v1.5.3...v1.6.0) (2023-03-02)
+
+
+### Features
+
+* set max number of car cids to resolve ([#24](https://github.com/web3-storage/freeway/issues/24)) ([94e65ea](https://github.com/web3-storage/freeway/commit/94e65eac9bc2375802e85ac1f1a807510c07ce7c))
+
 ## [1.5.3](https://github.com/web3-storage/freeway/compare/v1.5.2...v1.5.3) (2022-11-11)
 
 
