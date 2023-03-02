@@ -27,6 +27,9 @@ r2_buckets = [
 [env.production.build]
 command = "npm run build"
 
+[env.production.vars]
+MAX_SHARDS = "250"
+
 # Staging!
 [env.staging]
 account_id = "fffa4b4363a7e5250af8357087263b3a"
@@ -40,6 +43,9 @@ r2_buckets = [
 [env.staging.build]
 command = "npm run build"
 
+[env.staging.vars]
+MAX_SHARDS = "250"
+
 # Test!
 [env.test]
 workers_dev = true
@@ -51,6 +57,7 @@ r2_buckets = [
 
 [env.test.vars]
 DEBUG = "true"
+MAX_SHARDS = "120"
 
 [env.alanshaw]
 workers_dev = true

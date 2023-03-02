@@ -40,6 +40,11 @@ export function withCarCids (handler) {
     if (!ctx.dataCid) throw new Error('missing data CID')
     if (!ctx.searchParams) throw new Error('missing URL search params')
 
+    // Cloudflare currently sets a limit of 1000 sub-requests within the worker context
+    // If we have a given root CID splitted across hundreds of CARs, freeway will hit
+    // the sub-requests limit and not serve content anyway
+    const maxShards = env.MAX_SHARDS ? parseInt(env.MAX_SHARDS) : 250
+
     const carCids = ctx.searchParams.getAll('origin').flatMap(str => {
       return str.split(',')
         .reduce((/** @type {import('multiformats').CID[]} */cids, str) => {
@@ -62,10 +67,19 @@ export function withCarCids (handler) {
         const results = await env.DUDEWHERE.list({ prefix: `${ctx.dataCid}/`, cursor })
         if (!results || !results.objects.length) break
         carCids.push(...results.objects.map(o => parseCid(o.key.split('/')[1])))
+
+        if (carCids.length > maxShards) {
+          throw new HttpError('request exceeds maximum DAG shards', { status: 501 })
+        }
+
         if (!results.truncated) break
         cursor = results.cursor
       }
       console.log(`dude where's my CAR? ${ctx.dataCid} => ${carCids}`)
+    } else {
+      if (carCids.length > maxShards) {
+        throw new HttpError('request exceeds maximum DAG shards', { status: 501 })
+      }
     }
 
     if (!carCids.length) {

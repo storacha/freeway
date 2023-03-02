@@ -68,4 +68,14 @@ describe('freeway', () => {
     const output = new Uint8Array(await res.arrayBuffer())
     assert(equals(input[0].content, output))
   })
+
+  it('should fail when divided into more than 120 CAR files', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(1218523560) }]
+    const { dataCid } = await builder.add(input)
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+
+    assert(!res.ok)
+    assert.equal(res.status, 501)
+  })
 })
