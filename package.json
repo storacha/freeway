@@ -23,29 +23,28 @@
   "author": "Alan Shaw",
   "license": "Apache-2.0 OR MIT",
   "dependencies": {
-    "@ipld/car": "^4.1.5",
-    "@ipld/dag-cbor": "^7.0.3",
-    "@ipld/dag-json": "^8.0.11",
-    "@ipld/dag-pb": "^2.1.18",
-    "@web3-storage/fast-unixfs-exporter": "^0.2.0",
-    "@web3-storage/gateway-lib": "^2.0.2",
-    "cardex": "^1.0.0",
+    "@ipld/car": "^5.1.0",
+    "@ipld/dag-cbor": "^9.0.0",
+    "@ipld/dag-json": "^10.0.1",
+    "@ipld/dag-pb": "^4.0.2",
+    "@web3-storage/gateway-lib": "^2.0.3",
+    "cardex": "^1.0.1",
     "chardet": "^1.5.0",
-    "dagula": "^4.1.1",
+    "dagula": "^5.0.0",
     "magic-bytes.js": "^1.0.12",
     "mrmime": "^1.0.1",
-    "multiformats": "^9.9.0",
+    "multiformats": "^11.0.2",
     "p-defer": "^4.0.0",
     "streaming-iterables": "^7.1.0"
   },
   "devDependencies": {
-    "ava": "^4.3.3",
+    "ava": "^5.2.0",
     "carbites": "^1.0.6",
-    "esbuild": "^0.15.10",
+    "esbuild": "^0.17.11",
     "files-from-path": "^0.2.6",
-    "ipfs-car": "^0.8.1",
+    "ipfs-car": "^0.9.2",
     "miniflare": "^2.9.0",
     "standard": "^17.0.0",
-    "uint8arrays": "^3.1.1"
+    "uint8arrays": "^4.0.3"
   }
 }

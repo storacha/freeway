@@ -30,7 +30,7 @@ describe('freeway', () => {
     })
 
     const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))
-    builder = new Builder(...buckets)
+    builder = new Builder(buckets[0], buckets[1], buckets[2])
   })
 
   it('should get a file', async () => {

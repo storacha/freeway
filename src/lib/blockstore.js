@@ -156,7 +156,37 @@ export class BatchingR2Blockstore extends R2Blockstore {
           const blocks = pendingBlocks.get(key)
           if (blocks) {
             // console.log(`got wanted block for ${blockHeader.cid}`)
-            const block = { cid: blockHeader.cid, bytes }
+            const block = {
+              cid: blockHeader.cid,
+              // FML, this took _so_ long to figure out:
+              //
+              // In Miniflare, the response data is `structuredClone`'d - this
+              // causes the underlying `ArrayBuffer` to become "detached" and
+              // all Uint8Array views are reset to zero! So after the first
+              // chunk is sent, any additional chunks that are views on the
+              // same `ArrayBuffer` become Uint8Array(0), instead of the
+              // content they're supposed to contain.
+              //
+              // My guess is that this is because in Miniflare the worker is
+              // run in a VM and the response data must be copied out (using
+              // `structuredClone`).
+              //
+              // So to mitigate this, in miniflare we explicitly copy bytes
+              // for a block from the slab of blocks we read from R2 so that
+              // when the data for this block is sent, it doesn't matter that
+              // it becomes detached since the backing `ArrayBuffer` is not
+              // servicing any other blocks.
+              //
+              // This didn't used to happen because ipfs-unixfs-exporter _used_
+              // to use `.slice()` which _copies_ a portion of a Uint8Array,
+              // but it now uses `.subarray()` instead, which creates a view
+              // on the same backing `ArrayBuffer`.
+              //
+              // We don't need to do the copy IRL workers runtime.
+              //
+              // @ts-expect-error `MINIFLARE` is not a property of `globalThis`
+              bytes: globalThis.MINIFLARE ? bytes.slice() : bytes
+            }
             blocks.forEach(b => b.resolve(block))
             pendingBlocks.delete(key)
           }
