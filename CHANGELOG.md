@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/web3-storage/freeway/compare/v1.6.0...v1.6.1) (2023-03-16)
+
+
+### Bug Fixes
+
+* allow hash character in directory listings ([#27](https://github.com/web3-storage/freeway/issues/27)) ([64a678f](https://github.com/web3-storage/freeway/commit/64a678f420d9b56c0a67b78748d2915be647145f))
+
 ## [1.6.0](https://github.com/web3-storage/freeway/compare/v1.5.3...v1.6.0) (2023-03-02)
 
 
