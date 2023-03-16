@@ -35,7 +35,7 @@ export class Builder {
   }
 
   /**
-   * @param {CID} cid CAR CID
+   * @param {import('multiformats').Link} cid CAR CID
    * @param {Uint8Array} bytes CAR file bytes
    */
   async #writeIndex (cid, bytes) {
@@ -51,8 +51,8 @@ export class Builder {
   }
 
   /**
-   * @param {CID} dataCid
-   * @param {CID[]} carCids
+   * @param {import('multiformats').UnknownLink} dataCid
+   * @param {import('multiformats').Link[]} carCids
    */
   async #writeLinks (dataCid, carCids) {
     await Promise.all(carCids.map(cid => (
@@ -84,6 +84,7 @@ export class Builder {
       carCids.push(carCid)
     }
 
+    // @ts-ignore old multiformats in ipfs-car
     await this.#writeLinks(dataCid, carCids)
 
     return { dataCid, carCids }

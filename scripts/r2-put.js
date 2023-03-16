@@ -11,7 +11,7 @@ import { Builder } from '../test/helpers.js'
 
 const bucketNames = ['CARPARK', 'SATNAV', 'DUDEWHERE']
 const buckets = bucketNames.map(b => new R2Bucket(new FileStorage(`./.mf/r2/${b}`)))
-const builder = new Builder(...buckets)
+const builder = new Builder(buckets[0], buckets[1], buckets[2])
 
 const paths = process.argv.slice(2).filter(p => p !== '--no-wrap')
 const files = await getFilesFromPath(paths)
