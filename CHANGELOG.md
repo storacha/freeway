@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/web3-storage/freeway/compare/v1.6.1...v1.6.2) (2023-03-29)
+
+
+### Bug Fixes
+
+* update max shards values ([#29](https://github.com/web3-storage/freeway/issues/29)) ([5001b73](https://github.com/web3-storage/freeway/commit/5001b737f4da360629153a308a7b0f96123a8d44))
+
 ## [1.6.1](https://github.com/web3-storage/freeway/compare/v1.6.0...v1.6.1) (2023-03-16)
 
 
