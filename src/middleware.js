@@ -40,10 +40,10 @@ export function withCarCids (handler) {
     if (!ctx.dataCid) throw new Error('missing data CID')
     if (!ctx.searchParams) throw new Error('missing URL search params')
 
-    // Cloudflare currently sets a limit of 1000 sub-requests within the worker context
+    // Cloudflare currently sets a limit of 3300 sub-requests within the worker context
     // If we have a given root CID splitted across hundreds of CARs, freeway will hit
     // the sub-requests limit and not serve content anyway
-    const maxShards = env.MAX_SHARDS ? parseInt(env.MAX_SHARDS) : 250
+    const maxShards = env.MAX_SHARDS ? parseInt(env.MAX_SHARDS) : 825
 
     const carCids = ctx.searchParams.getAll('origin').flatMap(str => {
       return str.split(',')
