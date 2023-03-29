@@ -28,7 +28,7 @@ r2_buckets = [
 command = "npm run build"
 
 [env.production.vars]
-MAX_SHARDS = "250"
+MAX_SHARDS = "825"
 
 # Staging!
 [env.staging]
@@ -44,7 +44,7 @@ r2_buckets = [
 command = "npm run build"
 
 [env.staging.vars]
-MAX_SHARDS = "250"
+MAX_SHARDS = "825"
 
 # Test!
 [env.test]
