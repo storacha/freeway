@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/web3-storage/freeway/compare/v1.6.2...v2.0.0) (2023-05-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* support ?car-scope and verifiable paths for format=car ([#35](https://github.com/web3-storage/freeway/issues/35))
+
+### Features
+
+* support ?car-scope and verifiable paths for format=car ([#35](https://github.com/web3-storage/freeway/issues/35)) ([ccb8843](https://github.com/web3-storage/freeway/commit/ccb88439f531a1986fb764ad765e0f337e57bc2d))
+
 ## [1.6.2](https://github.com/web3-storage/freeway/compare/v1.6.1...v1.6.2) (2023-03-29)
 
 
