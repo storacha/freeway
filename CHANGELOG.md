@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/web3-storage/freeway/compare/v2.0.0...v2.1.0) (2023-05-19)
+
+
+### Features
+
+* support CAR block ordering ([#38](https://github.com/web3-storage/freeway/issues/38)) ([5d5f4d4](https://github.com/web3-storage/freeway/commit/5d5f4d41b81b713920059fda71b031962ac6835f))
+
 ## [2.0.0](https://github.com/web3-storage/freeway/compare/v1.6.2...v2.0.0) (2023-05-02)
 
 
