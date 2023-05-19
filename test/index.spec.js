@@ -85,7 +85,7 @@ describe('freeway', () => {
     const { dataCid } = await builder.add(input, { wrapWithDirectory: false })
 
     const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}`, {
-      headers: { Accept: `application/vnd.ipld.car;order=dfs;` }
+      headers: { Accept: 'application/vnd.ipld.car;order=dfs;' }
     })
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
