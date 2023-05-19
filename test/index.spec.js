@@ -3,6 +3,7 @@ import assert from 'node:assert'
 import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
 import { equals } from 'uint8arrays'
+import { CarReader } from '@ipld/car'
 import { Builder } from './helpers.js'
 
 describe('freeway', () => {
@@ -77,5 +78,23 @@ describe('freeway', () => {
 
     assert(!res.ok)
     assert.equal(res.status, 501)
+  })
+
+  it('should get a CAR via Accept headers', async () => {
+    const input = randomBytes(256)
+    const { dataCid } = await builder.add(input, { wrapWithDirectory: false })
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}`, {
+      headers: { Accept: 'application/vnd.ipld.car;order=dfs;' }
+    })
+    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
+
+    const contentType = res.headers.get('Content-Type')
+    assert(contentType)
+    assert(contentType.includes('application/vnd.ipld.car'))
+    assert(contentType.includes('order=dfs'))
+
+    const output = new Uint8Array(await res.arrayBuffer())
+    assert.doesNotReject(CarReader.fromBytes(output))
   })
 })
