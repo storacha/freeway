@@ -83,7 +83,7 @@ export function withCarCids (handler) {
     }
 
     if (!carCids.length) {
-      throw new HttpError('missing origin CAR CID(s)', { status: 400 })
+      throw new HttpError('missing origin CAR CID(s)', { status: 404 })
     }
 
     return handler(request, env, { ...ctx, carCids })
