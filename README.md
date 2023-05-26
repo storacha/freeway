@@ -29,6 +29,8 @@ The querystring parameter `origin` can optionally provide the hint of which CAR 
 https://freeway.dag.haus/ipfs/bafybeiaaxqlnwlfeirgr5p63ftnfszmerttupnwrim52h4zv2tfpntbjdy/data.txt?origin=bagbaieralsmnkvhi3t3d7lek2ti2vhfglb4bhw7gite2qsz467zjuqvbvyva
 ```
 
+[Read MOAR](READMOAR.md)
+
 ## Contributing
 
 Feel free to join in. All welcome. Please read our [contributing guidelines](https://github.com/web3-storage/freeway/blob/main/CONTRIBUTING.md) and/or [open an issue](https://github.com/web3-storage/freeway/issues)!
