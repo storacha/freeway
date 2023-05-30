@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.1](https://github.com/web3-storage/freeway/compare/v2.1.0...v2.1.1) (2023-05-30)
+
+
+### Bug Fixes
+
+* return HTTP 400 for CID parse error ([6fcea58](https://github.com/web3-storage/freeway/commit/6fcea584cfef5e869bb0c789de7b4ada36c842c4))
+* status code for indexes that were not found ([#40](https://github.com/web3-storage/freeway/issues/40)) ([6d46f8d](https://github.com/web3-storage/freeway/commit/6d46f8d6e134f065af0a59a1238f95388ebcf277))
+
 ## [2.1.0](https://github.com/web3-storage/freeway/compare/v2.0.0...v2.1.0) (2023-05-19)
 
 
