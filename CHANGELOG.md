@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/web3-storage/freeway/compare/v2.1.1...v2.1.2) (2023-06-01)
+
+
+### Bug Fixes
+
+* update dagula to v7 for ordering support ([#43](https://github.com/web3-storage/freeway/issues/43)) ([ecc7237](https://github.com/web3-storage/freeway/commit/ecc7237d3f11b025f6c629308db70a95dc8edfd6))
+
 ## [2.1.1](https://github.com/web3-storage/freeway/compare/v2.1.0...v2.1.1) (2023-05-30)
 
 
