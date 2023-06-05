@@ -2,10 +2,8 @@ import { base58btc } from 'multiformats/bases/base58'
 import { MultihashIndexSortedReader } from 'cardex'
 import defer from 'p-defer'
 
-import { CID } from 'multiformats'
-import * as raw from 'multiformats/codecs/raw'
-
 /**
+ * @typedef {import('multiformats').CID} CID
  * @typedef {import('cardex/multihash-index-sorted/api').MultihashIndexItem} IndexEntry
  * @typedef {string} MultihashString
  * @typedef {{ get: (c: CID) => Promise<IndexEntry|undefined> }} CarIndex

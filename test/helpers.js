@@ -1,3 +1,4 @@
+/* global TransformStream */
 import { pack } from 'ipfs-car/pack'
 import { CID } from 'multiformats/cid'
 import { sha256 } from 'multiformats/hashes/sha2'

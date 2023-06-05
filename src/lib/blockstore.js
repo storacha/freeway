@@ -1,13 +1,12 @@
 import { readBlockHead, asyncIterableReader } from '@ipld/car/decoder'
 import { base58btc } from 'multiformats/bases/base58'
 import defer from 'p-defer'
-import { toIterable } from '@web3-storage/gateway-lib/util'
 import { MultiCarIndex, StreamingCarIndex } from './car-index.js'
 import { OrderedCarBlockBatcher } from './block-batch.js'
 
 /**
  * @typedef {import('multiformats').CID} CID
- * @typedef {import('cardex/mh-index-sorted').IndexEntry} IndexEntry
+ * @typedef {import('cardex/api').IndexItem} IndexEntry
  * @typedef {string} MultihashString
  * @typedef {import('dagula').Block} Block
  * @typedef {import('../bindings').R2Bucket} R2Bucket
