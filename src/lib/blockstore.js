@@ -27,7 +27,7 @@ export class R2Blockstore {
    */
   constructor (dataBucket, indexSources) {
     this._dataBucket = dataBucket
-    this._idx = new MultiCarIndex()
+    this._idx = new MultiCarIndex(
     for (const src of indexSources) {
       this._idx.addIndex(new StreamingCarIndex(src))
     }
