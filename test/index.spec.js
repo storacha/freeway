@@ -97,4 +97,17 @@ describe('freeway', () => {
     const output = new Uint8Array(await res.arrayBuffer())
     assert.doesNotReject(CarReader.fromBytes(output))
   })
+
+  it('should use a rollup index', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(609261780) }]
+    const { dataCid, carCids } = await builder.add(input)
+
+    await builder.rollup(dataCid, carCids)
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
+
+    const output = new Uint8Array(await res.arrayBuffer())
+    assert(equals(input[0].content, output))
+  })
 })

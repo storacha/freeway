@@ -3,40 +3,38 @@ import { UniversalReader } from 'cardex/universal'
 import defer from 'p-defer'
 
 /**
- * @typedef {import('multiformats').CID} CID
- * @typedef {import('cardex/multihash-index-sorted/api').MultihashIndexItem} IndexEntry
+ * @typedef {import('multiformats').UnknownLink} UnknownLink
+ * @typedef {import('cardex/multi-index/api').MultiIndexItem & import('cardex/multihash-index-sorted/api').MultihashIndexItem} IndexEntry
  * @typedef {string} MultihashString
- * @typedef {{ get: (c: CID) => Promise<IndexEntry|undefined> }} CarIndex
+ * @typedef {{ get: (c: UnknownLink) => Promise<IndexEntry|undefined> }} CarIndex
  */
 
 export class MultiCarIndex {
-  /** @type {Map<CID, CarIndex>} */
+  /** @type {CarIndex[]} */
   #idxs
 
   constructor () {
-    this.#idxs = new Map()
+    this.#idxs = []
   }
 
   /**
-   * @param {CID} carCid
    * @param {CarIndex} index
    */
-  addIndex (carCid, index) {
-    this.#idxs.set(carCid, index)
+  addIndex (index) {
+    this.#idxs.push(index)
   }
 
   /**
-   * @param {CID} cid
-   * @returns {Promise<[CID, IndexEntry] | undefined>}
+   * @param {UnknownLink} cid
+   * @returns {Promise<IndexEntry | undefined>}
    */
   async get (cid) {
     const deferred = defer()
-    const idxEntries = Array.from(this.#idxs.entries())
 
     Promise
-      .allSettled(idxEntries.map(async ([carCid, idx]) => {
+      .allSettled(this.#idxs.map(async idx => {
         const entry = await idx.get(cid)
-        if (entry) deferred.resolve([carCid, entry])
+        if (entry) deferred.resolve(entry)
       }))
       .then(results => {
         // if not already resolved, check for rejections and reject
@@ -55,6 +53,9 @@ export class MultiCarIndex {
  * @implements {CarIndex}
  */
 export class StreamingCarIndex {
+  /** @type {import('../bindings').IndexSource} */
+  #source
+
   /** @type {Map<MultihashString, IndexEntry>} */
   #idx = new Map()
 
@@ -67,22 +68,27 @@ export class StreamingCarIndex {
   /** @type {Error?} */
   #buildError = null
 
-  /** @param {() => Promise<ReadableStream<Uint8Array>>} fetchIndex */
-  constructor (fetchIndex) {
-    this.#buildIndex(fetchIndex)
+  /** @param {import('../bindings').IndexSource} source */
+  constructor (source) {
+    this.#source = source
+    this.#buildIndex()
   }
 
-  /** @param {() => Promise<ReadableStream<Uint8Array>>} fetchIndex */
-  async #buildIndex (fetchIndex) {
+  async #buildIndex () {
     this.#building = true
     try {
-      const stream = await fetchIndex()
-      const idxReader = UniversalReader.createReader({ reader: stream.getReader() })
+      const idxObj = await this.#source.bucket.get(this.#source.key)
+      if (!idxObj) {
+        throw Object.assign(new Error(`index not found: ${this.#source.key}`), { code: 'ERR_MISSING_INDEX' })
+      }
+      const idxReader = UniversalReader.createReader({ reader: idxObj.body.getReader() })
       while (true) {
         const { done, value } = await idxReader.read()
         if (done) break
 
         const entry = /** @type {IndexEntry} */(value)
+        entry.origin = entry.origin ?? this.#source.origin
+
         const key = mhToKey(entry.multihash.bytes)
 
         // set this value in the index so any future requests for this key get
@@ -122,7 +128,7 @@ export class StreamingCarIndex {
     }
   }
 
-  /** @param {CID} cid */
+  /** @param {UnknownLink} cid */
   async get (cid) {
     if (this.#buildError) {
       throw new Error('failed to build index', { cause: this.#buildError })

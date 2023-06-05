@@ -2,8 +2,8 @@ const MAX_BYTES_BETWEEN = 1024 * 1024 * 2
 const MAX_BATCH_SIZE = 10
 
 /**
- * @typedef {import('multiformats').CID} CID
- * @typedef {{ carCid: CID, blockCid: CID, offset: number }} BatchItem
+ * @typedef {import('multiformats').UnknownLink} UnknownLink
+ * @typedef {{ carCid: import('cardex/api').CARLink, blockCid: UnknownLink, offset: number }} BatchItem
  * @typedef {{ add: (i: BatchItem) => void, next: () => BatchItem[] }} BlockBatcher
  */
 

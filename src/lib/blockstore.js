@@ -5,7 +5,7 @@ import { MultiCarIndex, StreamingCarIndex } from './car-index.js'
 import { OrderedCarBlockBatcher } from './block-batch.js'
 
 /**
- * @typedef {import('multiformats').CID} CID
+ * @typedef {import('multiformats').UnknownLink} UnknownLink
  * @typedef {import('cardex/api').IndexItem} IndexEntry
  * @typedef {string} MultihashString
  * @typedef {import('dagula').Block} Block
@@ -23,31 +23,22 @@ const MAX_ENCODED_BLOCK_LENGTH = (1024 * 1024 * 2) + 39 + 61
 export class R2Blockstore {
   /**
    * @param {R2Bucket} dataBucket
-   * @param {R2Bucket} indexBucket
-   * @param {CID[]} carCids
+   * @param {import('../bindings').IndexSource[]} indexSources
    */
-  constructor (dataBucket, indexBucket, carCids) {
+  constructor (dataBucket, indexSources) {
     this._dataBucket = dataBucket
     this._idx = new MultiCarIndex()
-    for (const carCid of carCids) {
-      this._idx.addIndex(carCid, new StreamingCarIndex(async () => {
-        const idxPath = `${carCid}/${carCid}.car.idx`
-        const idxObj = await indexBucket.get(idxPath)
-        if (!idxObj) {
-          throw Object.assign(new Error(`index not found: ${carCid}`), { code: 'ERR_MISSING_INDEX' })
-        }
-        return idxObj.body
-      }))
+    for (const src of indexSources) {
+      this._idx.addIndex(new StreamingCarIndex(src))
     }
   }
 
-  /** @param {CID} cid */
+  /** @param {UnknownLink} cid */
   async get (cid) {
     // console.log(`get ${cid}`)
-    const multiIdxEntry = await this._idx.get(cid)
-    if (!multiIdxEntry) return
-    const [carCid, entry] = multiIdxEntry
-    const carPath = `${carCid}/${carCid}.car`
+    const entry = await this._idx.get(cid)
+    if (!entry) return
+    const carPath = `${entry.origin}/${entry.origin}.car`
     const range = { offset: entry.offset }
     const res = await this._dataBucket.get(carPath, { range })
     if (!res) return
@@ -205,14 +196,13 @@ export class BatchingR2Blockstore extends R2Blockstore {
     }
   }
 
-  /** @param {CID} cid */
+  /** @param {UnknownLink} cid */
   async get (cid) {
     // console.log(`get ${cid}`)
-    const multiIdxEntry = await this._idx.get(cid)
-    if (!multiIdxEntry) return
+    const entry = await this._idx.get(cid)
+    if (!entry) return
 
-    const [carCid, entry] = multiIdxEntry
-    this.#batcher.add({ carCid, blockCid: cid, offset: entry.offset })
+    this.#batcher.add({ carCid: entry.origin, blockCid: cid, offset: entry.offset })
 
     if (!entry.multihash) throw new Error('missing entry multihash')
     const key = mhToKey(entry.multihash.bytes)
