@@ -1,5 +1,5 @@
 import { base58btc } from 'multiformats/bases/base58'
-import { MultihashIndexSortedReader } from 'cardex'
+import { UniversalReader } from 'cardex/universal'
 import defer from 'p-defer'
 
 /**
@@ -77,11 +77,12 @@ export class StreamingCarIndex {
     this.#building = true
     try {
       const stream = await fetchIndex()
-      const idxReader = MultihashIndexSortedReader.createReader({ reader: stream.getReader() })
+      const idxReader = UniversalReader.createReader({ reader: stream.getReader() })
       while (true) {
-        const { done, value: entry } = await idxReader.read()
+        const { done, value } = await idxReader.read()
         if (done) break
 
+        const entry = /** @type {IndexEntry} */(value)
         const key = mhToKey(entry.multihash.bytes)
 
         // set this value in the index so any future requests for this key get
