@@ -31,14 +31,14 @@ export class R2Blockstore {
     this._dataBucket = dataBucket
     this._idx = new MultiCarIndex()
     for (const carCid of carCids) {
-      this._idx.addIndex(carCid, new StreamingCarIndex((async function * () {
+      this._idx.addIndex(carCid, new StreamingCarIndex(async () => {
         const idxPath = `${carCid}/${carCid}.car.idx`
         const idxObj = await indexBucket.get(idxPath)
         if (!idxObj) {
           throw Object.assign(new Error(`index not found: ${carCid}`), { code: 'ERR_MISSING_INDEX' })
         }
-        yield * toIterable(idxObj.body)
-      })()))
+        return idxObj.body
+      }))
     }
   }
 

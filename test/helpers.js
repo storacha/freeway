@@ -40,14 +40,15 @@ export class Builder {
    */
   async #writeIndex (cid, bytes) {
     const indexer = await CarIndexer.fromBytes(bytes)
-    const { writer, out: index } = MultihashIndexSortedWriter.create()
+    const { readable, writable } = new TransformStream()
+    const writer = MultihashIndexSortedWriter.createWriter({ writer: writable.getWriter() })
 
     for await (const entry of indexer) {
-      writer.put(entry)
+      writer.add(entry.cid, entry.offset)
     }
     writer.close()
-    const indexBytes = concat(await collect(index))
-    await this.#satnav.put(`${cid}/${cid}.car.idx`, indexBytes)
+    // @ts-expect-error node web stream is not web stream
+    await this.#satnav.put(`${cid}/${cid}.car.idx`, readable)
   }
 
   /**

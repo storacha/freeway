@@ -2,9 +2,11 @@ import { base58btc } from 'multiformats/bases/base58'
 import { MultihashIndexSortedReader } from 'cardex'
 import defer from 'p-defer'
 
+import { CID } from 'multiformats'
+import * as raw from 'multiformats/codecs/raw'
+
 /**
- * @typedef {import('multiformats').CID} CID
- * @typedef {import('cardex/mh-index-sorted').IndexEntry} IndexEntry
+ * @typedef {import('cardex/multihash-index-sorted/api').MultihashIndexItem} IndexEntry
  * @typedef {string} MultihashString
  * @typedef {{ get: (c: CID) => Promise<IndexEntry|undefined> }} CarIndex
  */
@@ -67,19 +69,21 @@ export class StreamingCarIndex {
   /** @type {Error?} */
   #buildError = null
 
-  /** @param {AsyncIterable<Uint8Array>} stream */
-  constructor (stream) {
-    this.#buildIndex(stream)
+  /** @param {() => Promise<ReadableStream<Uint8Array>>} fetchIndex */
+  constructor (fetchIndex) {
+    this.#buildIndex(fetchIndex)
   }
 
-  /** @param {AsyncIterable<Uint8Array>} stream */
-  async #buildIndex (stream) {
-    console.log('building index')
+  /** @param {() => Promise<ReadableStream<Uint8Array>>} fetchIndex */
+  async #buildIndex (fetchIndex) {
     this.#building = true
     try {
-      const idxReader = MultihashIndexSortedReader.fromIterable(stream)
-      for await (const entry of idxReader.entries()) {
-        if (!entry.multihash) throw new Error('missing entry multihash')
+      const stream = await fetchIndex()
+      const idxReader = MultihashIndexSortedReader.createReader({ reader: stream.getReader() })
+      while (true) {
+        const { done, value: entry } = await idxReader.read()
+        if (done) break
+
         const key = mhToKey(entry.multihash.bytes)
 
         // set this value in the index so any future requests for this key get
@@ -100,7 +104,7 @@ export class StreamingCarIndex {
 
       // signal we are done building the index
       this.#building = false
-      console.log('finished building index')
+
       // resolve any keys in the promised index as "not found" - we're done
       // building so they will not get resolved otherwise.
       for (const [key, promises] of this.#promisedIdx.entries()) {
