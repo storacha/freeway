@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/web3-storage/freeway/compare/v2.1.2...v2.2.0) (2023-06-05)
+
+
+### Features
+
+* upgrade cardex ([#45](https://github.com/web3-storage/freeway/issues/45)) ([85fd4cb](https://github.com/web3-storage/freeway/commit/85fd4cb88a71a828bdf8b5e2ceefcdc2cd3cd161))
+
 ## [2.1.2](https://github.com/web3-storage/freeway/compare/v2.1.1...v2.1.2) (2023-06-01)
 
 
