@@ -179,6 +179,8 @@ export class BatchingR2Blockstore extends R2Blockstore {
             }
             blocks.forEach(b => b.resolve(block))
             pendingBlocks.delete(key)
+            // remove from batcher if queued to be read
+            batcher.remove(blockHeader.cid)
           }
         } catch {
           break
