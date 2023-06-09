@@ -102,8 +102,6 @@ describe('freeway', () => {
     const input = [{ path: 'sargo.tar.xz', content: randomBytes(609261780) }]
     const { dataCid, carCids } = await builder.add(input)
 
-    await builder.rollup(dataCid, carCids)
-
     // remove the the CAR CIDs from DUDEWHERE so that only the rollup index can
     // be used to satisfy the request.
     const bucket = await miniflare.getR2Bucket('DUDEWHERE')
@@ -111,10 +109,17 @@ describe('freeway', () => {
       await bucket.delete(`${dataCid}/${cid}`)
     }
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
-    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
+    // should NOT be able to serve this CID now
+    const res0 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    assert.equal(res0.status, 404)
 
-    const output = new Uint8Array(await res.arrayBuffer())
+    // generate the rollup index
+    await builder.rollup(dataCid, carCids)
+
+    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
+
+    const output = new Uint8Array(await res1.arrayBuffer())
     assert(equals(input[0].content, output))
   })
 })
