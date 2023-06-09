@@ -1,11 +1,14 @@
-/* global TransformStream */
+/* global TransformStream, ReadableStream */
 import { pack } from 'ipfs-car/pack'
 import { CID } from 'multiformats/cid'
 import { sha256 } from 'multiformats/hashes/sha2'
+import * as Link from 'multiformats/link'
 import { concat } from 'uint8arrays'
 import { TreewalkCarSplitter } from 'carbites/treewalk'
 import { CarIndexer } from '@ipld/car'
 import { MultihashIndexSortedWriter } from 'cardex'
+import { MultiIndexWriter } from 'cardex/multi-index'
+import { encodeVarint, encodeUint32LE } from 'cardex/encoder'
 
 const carCode = 0x0202
 const targetChunkSize = 1024 * 1024 * 10 // chunk to ~10MB CARs
@@ -67,15 +70,16 @@ export class Builder {
    * @param {Omit<import('ipfs-car/pack').PackProperties, 'input'>} [options]
    */
   async add (input, options = {}) {
-    const { root: dataCid, out } = await pack({
+    const { root, out } = await pack({
       input,
       blockstore: options.blockstore,
       wrapWithDirectory: options.wrapWithDirectory,
       maxChunkSize: options.maxChunkSize ?? 1048576,
       maxChildrenPerNode: options.maxChildrenPerNode ?? 1024
     })
+    const dataCid = Link.decode(root.bytes)
 
-    /** @type {CID[]} */
+    /** @type {import('cardex/api').CARLink[]} */
     const carCids = []
     const splitter = await TreewalkCarSplitter.fromIterable(out, targetChunkSize)
 
@@ -90,6 +94,40 @@ export class Builder {
     await this.#writeLinks(dataCid, carCids)
 
     return { dataCid, carCids }
+  }
+
+  /**
+   * Create an index rollup.
+   * @param {import('multiformats').UnknownLink} dataCid
+   * @param {import('cardex/api').CARLink[]} carCids
+   */
+  async rollup (dataCid, carCids) {
+    const satnav = this.#satnav
+    const rollupGenerator = async function * () {
+      yield encodeVarint(MultiIndexWriter.codec)
+      yield encodeUint32LE(carCids.length)
+      for (const origin of carCids) {
+        yield origin.multihash.bytes
+        const carIdx = await satnav.get(`${origin}/${origin}.car.idx`)
+        if (!carIdx) throw new Error(`missing index: ${origin}`)
+        yield * carIdx.body
+      }
+    }
+
+    const iterator = rollupGenerator()
+    const readable = new ReadableStream({
+      async pull (controller) {
+        const { value, done } = await iterator.next()
+        if (done) {
+          controller.close()
+        } else {
+          controller.enqueue(value)
+        }
+      }
+    })
+
+    // @ts-expect-error
+    await this.#dudewhere.put(`${dataCid}/.rollup.idx`, readable)
   }
 }
 

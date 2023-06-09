@@ -2,7 +2,7 @@
  * Puts data to the local persisted Miniflare R2 buckets.
  *
  * Usage:
- *   node scripts/r2-put.js test.jpg --no-wrap
+ *   node scripts/r2-put.js test.jpg --no-wrap --no-rollup
  */
 import { R2Bucket } from '@miniflare/r2'
 import { FileStorage } from '@miniflare/storage-file'
@@ -19,6 +19,9 @@ const input = files.map(f => ({ path: f.name, content: f.stream() }))
 const wrapWithDirectory = process.argv.every(p => p !== '--no-wrap')
 
 const { dataCid, carCids } = await builder.add(input, { wrapWithDirectory })
+
+const rollup = process.argv.every(p => p !== '--no-rollup')
+if (rollup) await builder.rollup(dataCid, carCids)
 
 console.log(`Data CID:\n${dataCid}`)
 console.log(`CAR CIDs:\n${carCids.join('\n')}`)

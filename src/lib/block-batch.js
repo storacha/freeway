@@ -2,9 +2,9 @@ const MAX_BYTES_BETWEEN = 1024 * 1024 * 2
 const MAX_BATCH_SIZE = 10
 
 /**
- * @typedef {import('multiformats').CID} CID
- * @typedef {{ carCid: CID, blockCid: CID, offset: number }} BatchItem
- * @typedef {{ add: (i: BatchItem) => void, next: () => BatchItem[] }} BlockBatcher
+ * @typedef {import('multiformats').UnknownLink} UnknownLink
+ * @typedef {{ carCid: import('cardex/api').CARLink, blockCid: UnknownLink, offset: number }} BatchItem
+ * @typedef {{ add: (i: BatchItem) => void, remove: (cid: UnknownLink) => void, next: () => BatchItem[] }} BlockBatcher
  */
 
 /**
@@ -19,6 +19,11 @@ export class OrderedCarBlockBatcher {
   /** @param {BatchItem} item */
   add (item) {
     this.#queue.push(item)
+  }
+
+  /** @param {UnknownLink} cid */
+  remove (cid) {
+    this.#queue = this.#queue.filter(item => item.blockCid.toString() !== cid.toString())
   }
 
   next () {
