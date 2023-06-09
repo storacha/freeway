@@ -104,6 +104,13 @@ describe('freeway', () => {
 
     await builder.rollup(dataCid, carCids)
 
+    // remove the the CAR CIDs from DUDEWHERE so that only the rollup index can
+    // be used to satisfy the request.
+    const bucket = await miniflare.getR2Bucket('DUDEWHERE')
+    for (const cid of carCids) {
+      bucket.delete(`${dataCid}/${cid}`)
+    }
+
     const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
