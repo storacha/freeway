@@ -1,11 +1,15 @@
+import * as raw from 'multiformats/codecs/raw'
+import * as Link from 'multiformats/link'
 import { base58btc } from 'multiformats/bases/base58'
 import { UniversalReader } from 'cardex/universal'
+import { MultiIndexReader } from 'cardex/multi-index'
 import defer from 'p-defer'
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
  * @typedef {import('cardex/multi-index/api').MultiIndexItem & import('cardex/multihash-index-sorted/api').MultihashIndexItem} IndexEntry
  * @typedef {string} MultihashString
+ * @typedef {string} RawCIDString
  * @typedef {{ get: (c: UnknownLink) => Promise<IndexEntry|undefined> }} CarIndex
  */
 
@@ -147,3 +151,61 @@ export class StreamingCarIndex {
 }
 
 const mhToKey = (/** @type {Uint8Array} */ mh) => base58btc.encode(mh)
+
+export class BlocklyIndex {
+  /**
+   * @param {import('../bindings').R2Bucket} indexBucket
+   */
+  constructor (indexBucket) {
+    this._indexBucket = indexBucket
+    /** @type {Map<RawCIDString, IndexEntry>} */
+    this._indexCache = new Map()
+  }
+
+  /** @param {UnknownLink} cid */
+  async get (cid) {
+    console.log(`get: ${cid}`)
+    const key = cidToKey(cid)
+    let indexItem = this._indexCache.get(key)
+    if (indexItem) {
+      console.log(`cache HIT ${cid} @ ${indexItem.offset} in ${indexItem.origin}`)
+      if (cid.code !== raw.code) {
+        await this._indexBlock(cid)
+      }
+    } else {
+      await this._indexBlock(cid)
+      indexItem = this._indexCache.get(key)
+      if (!indexItem) return // weird huh!?
+    }
+    return { cid, ...indexItem }
+  }
+
+  /**
+   * @param {import('multiformats').UnknownLink} cid
+   */
+  async _indexBlock (cid) {
+    const key = cidToKey(cid)
+    console.log(`reading block index: ${key}`)
+    const res = await this._indexBucket.get(`${key}/${key}.idx`)
+    if (!res) return
+
+    const reader = MultiIndexReader.createReader({ reader: res.body.getReader() })
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      if (!('multihash' in value)) throw new Error('not MultihashIndexSorted')
+      const entry = /** @type {IndexEntry} */(value)
+      const rawCid = Link.create(raw.code, entry.multihash)
+
+      console.log(`${cid}: ${value.origin}: ${rawCid} @ ${value.offset}`)
+      this._indexCache.set(cidToKey(rawCid), entry)
+    }
+  }
+}
+
+/** @returns {RawCIDString} */
+const cidToKey = (/** @type {import('multiformats').UnknownLink} */ cid) => {
+  if (cid.code === raw.code) return cid.toString()
+  return Link.create(raw.code, cid.multihash).toString()
+}

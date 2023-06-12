@@ -4,6 +4,7 @@ import { CarReader } from '@ipld/car'
 import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
 import { BatchingR2Blockstore } from './lib/blockstore.js'
 import { version } from '../package.json'
+import { BlocklyIndex, MultiCarIndex, StreamingCarIndex } from './lib/car-index.js'
 
 const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
 const CAR_CODE = 0x0202
@@ -92,10 +93,6 @@ export function withIndexSources (handler) {
       console.log(`${ctx.dataCid} => ${indexSources.length} index sources`)
     }
 
-    if (!indexSources.length) {
-      throw new HttpError('missing index', { status: 404 })
-    }
-
     return handler(request, env, { ...ctx, indexSources })
   }
 }
@@ -107,25 +104,32 @@ export function withIndexSources (handler) {
 export function withDagula (handler) {
   return async (request, env, ctx) => {
     const { indexSources, searchParams } = ctx
-    if (!indexSources) throw new Error('missing CAR CIDs in context')
+    if (!indexSources) throw new Error('missing index sources in context')
     if (!searchParams) throw new Error('missing URL search params in context')
 
     /** @type {import('dagula').Blockstore?} */
     let blockstore = null
-    if (indexSources.length === 1 && indexSources[0].origin != null) {
-      const carPath = `${indexSources[0].origin}/${indexSources[0].origin}.car`
-      const headObj = await env.CARPARK.head(carPath)
-      if (!headObj) throw new HttpError('CAR not found', { status: 404 })
-      if (headObj.size < MAX_CAR_BYTES_IN_MEMORY) {
-        const obj = await env.CARPARK.get(carPath)
-        if (!obj) throw new HttpError('CAR not found', { status: 404 })
-        // @ts-expect-error old multiformats in js-car
-        blockstore = await CarReader.fromIterable(toIterable(obj.body))
+    if (indexSources.length) {
+      if (indexSources.length === 1 && indexSources[0].origin != null) {
+        const carPath = `${indexSources[0].origin}/${indexSources[0].origin}.car`
+        const headObj = await env.CARPARK.head(carPath)
+        if (!headObj) throw new HttpError('CAR not found', { status: 404 })
+        if (headObj.size < MAX_CAR_BYTES_IN_MEMORY) {
+          const obj = await env.CARPARK.get(carPath)
+          if (!obj) throw new HttpError('CAR not found', { status: 404 })
+          // @ts-expect-error old multiformats in js-car
+          blockstore = await CarReader.fromIterable(toIterable(obj.body))
+        }
       }
-    }
-
-    if (!blockstore) {
-      blockstore = new BatchingR2Blockstore(env.CARPARK, indexSources)
+      if (!blockstore) {
+        const index = new MultiCarIndex()
+        for (const src of indexSources) {
+          index.addIndex(new StreamingCarIndex(src))
+        }
+        blockstore = new BatchingR2Blockstore(env.CARPARK, index)
+      }
+    } else {
+      blockstore = new BatchingR2Blockstore(env.CARPARK, new BlocklyIndex(env.BLOCKLY))
     }
 
     const dagula = new Dagula(blockstore)
