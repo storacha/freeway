@@ -172,18 +172,16 @@ export class BlocklyIndex {
 
   /** @param {UnknownLink} cid */
   async get (cid) {
-    // console.log(`index get: ${cid}`)
     const key = cidToKey(cid)
     let indexItem = this.#cache.get(key)
     if (indexItem) {
-      // console.log(`index cache HIT: ${indexItem.origin}: ${cid} @ ${indexItem.offset}`)
       if (cid.code !== raw.code) {
         await this.#readIndex(cid)
       }
     } else {
       await this.#readIndex(cid)
       indexItem = this.#cache.get(key)
-      if (!indexItem) return // weird huh!?
+      if (!indexItem) return
     }
     return { cid, ...indexItem }
   }
@@ -195,7 +193,6 @@ export class BlocklyIndex {
     const key = cidToKey(cid)
     if (this.#indexes.has(key)) return
 
-    // console.log(`reading block index: ${key}`)
     const res = await this.#bucket.get(`${key}/${key}.idx`)
     if (!res) return
 
@@ -207,7 +204,6 @@ export class BlocklyIndex {
       if (!('multihash' in value)) throw new Error('not MultihashIndexSorted')
       const entry = /** @type {IndexEntry} */(value)
       const rawCid = Link.create(raw.code, entry.multihash)
-      // console.log(`${cid}: ${value.origin}: ${rawCid} @ ${value.offset}`)
       this.#cache.set(cidToKey(rawCid), entry)
     }
     this.#indexes.add(key)
