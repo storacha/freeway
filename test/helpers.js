@@ -181,7 +181,7 @@ export class Builder {
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        const blockMh = mhToKey(value.multihash)
+        const blockMh = mhToString(value.multihash)
         let offsets = blockIndex.get(blockMh)
         if (!offsets) {
           /** @type {Map<ShardCID, Offset>} */
@@ -200,7 +200,7 @@ export class Builder {
       const shardIndex = new Map([[parentShard, new Map([[blockMh, offset]])]])
       const block = await getBlock(this.#carpark, parentShard, offset)
       for (const [, cid] of block.links()) {
-        const linkMh = mhToKey(cid.multihash)
+        const linkMh = mhToString(cid.multihash)
         const offsets = blockIndex.get(linkMh)
         if (!offsets) throw new Error(`block not indexed: ${cid}`)
         const [shard, offset] = offsets.has(parentShard) ? [parentShard, offsets.get(parentShard) ?? 0] : getAnyMapEntry(offsets)
@@ -310,4 +310,4 @@ async function getBlock (bucket, shardCID, offset) {
  * @param {import('multiformats').MultihashDigest} mh
  * @returns {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>}
  */
-const mhToKey = mh => base58btc.encode(mh.bytes)
+const mhToString = mh => base58btc.encode(mh.bytes)

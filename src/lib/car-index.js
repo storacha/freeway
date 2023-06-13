@@ -91,7 +91,7 @@ export class StreamingCarIndex {
         const entry = /** @type {IndexEntry} */(value)
         entry.origin = entry.origin ?? this.#source.origin
 
-        const key = mhToKey(entry.multihash)
+        const key = mhToString(entry.multihash)
 
         // set this value in the index so any future requests for this key get
         // the value immediately, without joining the promised index, even if we
@@ -135,7 +135,7 @@ export class StreamingCarIndex {
     if (this.#buildError) {
       throw new Error('failed to build index', { cause: this.#buildError })
     }
-    const key = mhToKey(cid.multihash)
+    const key = mhToString(cid.multihash)
     const entry = this.#idx.get(key)
     if (entry != null) return entry
     if (this.#building) {
@@ -149,10 +149,11 @@ export class StreamingCarIndex {
 }
 
 /**
+ * Multibase encode a multihash with base58btc.
  * @param {import('multiformats').MultihashDigest} mh
  * @returns {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>}
  */
-const mhToKey = mh => base58btc.encode(mh.bytes)
+const mhToString = mh => base58btc.encode(mh.bytes)
 
 export class BlocklyIndex {
   /** R2 bucket where indexes live. */
@@ -174,7 +175,7 @@ export class BlocklyIndex {
 
   /** @param {UnknownLink} cid */
   async get (cid) {
-    const key = mhToKey(cid.multihash)
+    const key = mhToString(cid.multihash)
     let indexItem = this.#cache.get(key)
     if (indexItem) {
       if (cid.code !== raw.code) {
@@ -192,7 +193,7 @@ export class BlocklyIndex {
    * @param {import('multiformats').UnknownLink} cid
    */
   async #readIndex (cid) {
-    const key = mhToKey(cid.multihash)
+    const key = mhToString(cid.multihash)
     if (this.#indexes.has(key)) return
 
     const res = await this.#bucket.get(`${key}/${key}.idx`)
@@ -205,7 +206,7 @@ export class BlocklyIndex {
 
       if (!('multihash' in value)) throw new Error('not MultihashIndexSorted')
       const entry = /** @type {IndexEntry} */(value)
-      this.#cache.set(mhToKey(entry.multihash), entry)
+      this.#cache.set(mhToString(entry.multihash), entry)
     }
     this.#indexes.add(key)
   }
