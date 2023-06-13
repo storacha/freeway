@@ -176,20 +176,37 @@ export class BlocklyIndex {
   /** @param {UnknownLink} cid */
   async get (cid) {
     const key = mhToString(cid.multihash)
+
+    // get the index data for this CID (CAR CID & offset)
     let indexItem = this.#cache.get(key)
+
+    // read the index for _this_ CID to get the index data for it's _links_.
+    //
+    // when we get to the bottom of the tree (raw blocks), we want to be able
+    // to send back the index information without having to read an index for
+    // each leaf. We can only do that if we read the index for the parent now.
     if (indexItem) {
+      // we found the index data! ...if this CID is raw, then there's no links
+      // and no more index information to discover so don't read the index.
       if (cid.code !== raw.code) {
         await this.#readIndex(cid)
       }
     } else {
+      // we not found the index data! ...probably the DAG root.
+      // this time we read the index to get the root block index information
+      // _as well as_ the link index information.
       await this.#readIndex(cid)
+      // seeing as we just read the index for this CID we _should_ have some
+      // index information for it now.
       indexItem = this.#cache.get(key)
+      // if not then, well, it's not found!
       if (!indexItem) return
     }
     return { cid, ...indexItem }
   }
 
   /**
+   * Read the index for the passed CID and populate the cache.
    * @param {import('multiformats').UnknownLink} cid
    */
   async #readIndex (cid) {
