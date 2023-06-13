@@ -1,5 +1,4 @@
 import * as raw from 'multiformats/codecs/raw'
-import * as Link from 'multiformats/link'
 import { base58btc } from 'multiformats/bases/base58'
 import { UniversalReader } from 'cardex/universal'
 import { MultiIndexReader } from 'cardex/multi-index'
@@ -8,8 +7,7 @@ import defer from 'p-defer'
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
  * @typedef {import('cardex/multi-index/api').MultiIndexItem & import('cardex/multihash-index-sorted/api').MultihashIndexItem} IndexEntry
- * @typedef {string} MultihashString
- * @typedef {string} RawCIDString
+ * @typedef {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>} MultihashString
  * @typedef {{ get: (c: UnknownLink) => Promise<IndexEntry|undefined> }} CarIndex
  */
 
@@ -93,7 +91,7 @@ export class StreamingCarIndex {
         const entry = /** @type {IndexEntry} */(value)
         entry.origin = entry.origin ?? this.#source.origin
 
-        const key = mhToKey(entry.multihash.bytes)
+        const key = mhToKey(entry.multihash)
 
         // set this value in the index so any future requests for this key get
         // the value immediately, without joining the promised index, even if we
@@ -137,7 +135,7 @@ export class StreamingCarIndex {
     if (this.#buildError) {
       throw new Error('failed to build index', { cause: this.#buildError })
     }
-    const key = mhToKey(cid.multihash.bytes)
+    const key = mhToKey(cid.multihash)
     const entry = this.#idx.get(key)
     if (entry != null) return entry
     if (this.#building) {
@@ -150,7 +148,11 @@ export class StreamingCarIndex {
   }
 }
 
-const mhToKey = (/** @type {Uint8Array} */ mh) => base58btc.encode(mh)
+/**
+ * @param {import('multiformats').MultihashDigest} mh
+ * @returns {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>}
+ */
+const mhToKey = mh => base58btc.encode(mh.bytes)
 
 export class BlocklyIndex {
   /** R2 bucket where indexes live. */
@@ -165,14 +167,14 @@ export class BlocklyIndex {
    */
   constructor (indexBucket) {
     this.#bucket = indexBucket
-    /** @type {Map<RawCIDString, IndexEntry>} */
+    /** @type {Map<MultihashString, IndexEntry>} */
     this.#cache = new Map()
     this.#indexes = new Set()
   }
 
   /** @param {UnknownLink} cid */
   async get (cid) {
-    const key = cidToKey(cid)
+    const key = mhToKey(cid.multihash)
     let indexItem = this.#cache.get(key)
     if (indexItem) {
       if (cid.code !== raw.code) {
@@ -190,7 +192,7 @@ export class BlocklyIndex {
    * @param {import('multiformats').UnknownLink} cid
    */
   async #readIndex (cid) {
-    const key = cidToKey(cid)
+    const key = mhToKey(cid.multihash)
     if (this.#indexes.has(key)) return
 
     const res = await this.#bucket.get(`${key}/${key}.idx`)
@@ -203,15 +205,8 @@ export class BlocklyIndex {
 
       if (!('multihash' in value)) throw new Error('not MultihashIndexSorted')
       const entry = /** @type {IndexEntry} */(value)
-      const rawCid = Link.create(raw.code, entry.multihash)
-      this.#cache.set(cidToKey(rawCid), entry)
+      this.#cache.set(mhToKey(entry.multihash), entry)
     }
     this.#indexes.add(key)
   }
-}
-
-/** @returns {RawCIDString} */
-const cidToKey = (/** @type {import('multiformats').UnknownLink} */ cid) => {
-  if (cid.code === raw.code) return cid.toString()
-  return Link.create(raw.code, cid.multihash).toString()
 }

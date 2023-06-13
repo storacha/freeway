@@ -85,4 +85,4 @@ Advantages:
 
 * There are considerably fewer index read requests to make to serve a given DAG when each block index includes link data also.
 * Grouping indexing data by locality in this way facilitates batching range requests to CAR files to fetch multiple blocks in a single request.
-* If a DAG is built using the default web3.storage (and Filecoin) settings (1MiB chunks, 1,000 max children) we're able to service up to ~1GiB of data by reading just 1 blockly index.
+* If a DAG is built using the default web3.storage (and Filecoin) settings (1MiB chunks, 1,024 max children) we're able to service up to ~1GiB of data by reading just 1 blockly index (which would be roughly 37KiB).
