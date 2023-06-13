@@ -153,28 +153,36 @@ export class StreamingCarIndex {
 const mhToKey = (/** @type {Uint8Array} */ mh) => base58btc.encode(mh)
 
 export class BlocklyIndex {
+  /** R2 bucket where indexes live. */
+  #bucket
+  /** Cached index entries. */
+  #cache
+  /** Indexes that have been read. */
+  #indexes
+
   /**
    * @param {import('../bindings').R2Bucket} indexBucket
    */
   constructor (indexBucket) {
-    this._indexBucket = indexBucket
+    this.#bucket = indexBucket
     /** @type {Map<RawCIDString, IndexEntry>} */
-    this._indexCache = new Map()
+    this.#cache = new Map()
+    this.#indexes = new Set()
   }
 
   /** @param {UnknownLink} cid */
   async get (cid) {
-    console.log(`get: ${cid}`)
+    // console.log(`index get: ${cid}`)
     const key = cidToKey(cid)
-    let indexItem = this._indexCache.get(key)
+    let indexItem = this.#cache.get(key)
     if (indexItem) {
-      console.log(`cache HIT ${cid} @ ${indexItem.offset} in ${indexItem.origin}`)
+      // console.log(`index cache HIT: ${indexItem.origin}: ${cid} @ ${indexItem.offset}`)
       if (cid.code !== raw.code) {
-        await this._indexBlock(cid)
+        await this.#readIndex(cid)
       }
     } else {
-      await this._indexBlock(cid)
-      indexItem = this._indexCache.get(key)
+      await this.#readIndex(cid)
+      indexItem = this.#cache.get(key)
       if (!indexItem) return // weird huh!?
     }
     return { cid, ...indexItem }
@@ -183,10 +191,12 @@ export class BlocklyIndex {
   /**
    * @param {import('multiformats').UnknownLink} cid
    */
-  async _indexBlock (cid) {
+  async #readIndex (cid) {
     const key = cidToKey(cid)
-    console.log(`reading block index: ${key}`)
-    const res = await this._indexBucket.get(`${key}/${key}.idx`)
+    if (this.#indexes.has(key)) return
+
+    // console.log(`reading block index: ${key}`)
+    const res = await this.#bucket.get(`${key}/${key}.idx`)
     if (!res) return
 
     const reader = MultiIndexReader.createReader({ reader: res.body.getReader() })
@@ -197,10 +207,10 @@ export class BlocklyIndex {
       if (!('multihash' in value)) throw new Error('not MultihashIndexSorted')
       const entry = /** @type {IndexEntry} */(value)
       const rawCid = Link.create(raw.code, entry.multihash)
-
-      console.log(`${cid}: ${value.origin}: ${rawCid} @ ${value.offset}`)
-      this._indexCache.set(cidToKey(rawCid), entry)
+      // console.log(`${cid}: ${value.origin}: ${rawCid} @ ${value.offset}`)
+      this.#cache.set(cidToKey(rawCid), entry)
     }
+    this.#indexes.add(key)
   }
 }
 

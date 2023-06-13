@@ -103,7 +103,7 @@ export function withIndexSources (handler) {
  */
 export function withDagula (handler) {
   return async (request, env, ctx) => {
-    const { indexSources, searchParams } = ctx
+    const { indexSources, searchParams, dataCid } = ctx
     if (!indexSources) throw new Error('missing index sources in context')
     if (!searchParams) throw new Error('missing URL search params in context')
 
@@ -129,7 +129,10 @@ export function withDagula (handler) {
         blockstore = new BatchingR2Blockstore(env.CARPARK, index)
       }
     } else {
-      blockstore = new BatchingR2Blockstore(env.CARPARK, new BlocklyIndex(env.BLOCKLY))
+      const index = new BlocklyIndex(env.BLOCKLY)
+      const found = await index.get(dataCid)
+      if (!found) throw new HttpError('missing index', { status: 404 })
+      blockstore = new BatchingR2Blockstore(env.CARPARK, index)
     }
 
     const dagula = new Dagula(blockstore)

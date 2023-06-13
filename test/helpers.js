@@ -1,6 +1,5 @@
 /* global TransformStream, ReadableStream */
 import { pack } from 'ipfs-car/pack'
-import { CID } from 'multiformats/cid'
 import * as Link from 'multiformats/link'
 import * as raw from 'multiformats/codecs/raw'
 import * as Block from 'multiformats/block'
@@ -215,10 +214,10 @@ export class Builder {
       const writer = MultiIndexWriter.createWriter({ writer: writable.getWriter() })
 
       for (const [shardCID, blocks] of shardIndex.entries()) {
-        writer.add(CID.parse(shardCID), async ({ writer }) => {
+        writer.add(Link.parse(shardCID), async ({ writer }) => {
           const index = MultihashIndexSortedWriter.createWriter({ writer })
           for (const [cid, offset] of blocks.entries()) {
-            index.add(CID.parse(cid), offset)
+            index.add(Link.parse(cid), offset)
           }
           await index.close()
         })

@@ -28,7 +28,7 @@
     "@ipld/dag-json": "^10.0.1",
     "@ipld/dag-pb": "^4.0.2",
     "@web3-storage/gateway-lib": "^3.2.2",
-    "cardex": "^2.2.0",
+    "cardex": "^2.2.1",
     "chardet": "^1.5.0",
     "dagula": "^7.0.0",
     "magic-bytes.js": "^1.0.12",
@@ -43,7 +43,7 @@
     "esbuild": "^0.17.11",
     "files-from-path": "^0.2.6",
     "ipfs-car": "^0.9.2",
-    "miniflare": "^2.9.0",
+    "miniflare": "^2.14.0",
     "standard": "^17.0.0",
     "uint8arrays": "^4.0.3"
   },
