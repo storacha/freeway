@@ -13,7 +13,7 @@ describe('freeway', () => {
   let builder
 
   before(async () => {
-    const bucketNames = ['CARPARK', 'SATNAV', 'DUDEWHERE']
+    const bucketNames = ['CARPARK', 'SATNAV', 'DUDEWHERE', 'BLOCKLY']
 
     miniflare = new Miniflare({
       bindings: {},
@@ -31,7 +31,7 @@ describe('freeway', () => {
     })
 
     const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))
-    builder = new Builder(buckets[0], buckets[1], buckets[2])
+    builder = new Builder(buckets[0], buckets[1], buckets[2], buckets[3])
   })
 
   it('should get a file', async () => {
@@ -115,6 +115,27 @@ describe('freeway', () => {
 
     // generate the rollup index
     await builder.rollup(dataCid, carCids)
+
+    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
+
+    const output = new Uint8Array(await res1.arrayBuffer())
+    assert(equals(input[0].content, output))
+  })
+
+  it('should fallback to blockly', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(609261780) }]
+    const { dataCid, carCids } = await builder.add(input)
+
+    // generate blockly blocks
+    await builder.blocks(dataCid)
+
+    // remove the the CAR CIDs from DUDEWHERE so that only blockly can
+    // be used to satisfy the request.
+    const bucket = await miniflare.getR2Bucket('DUDEWHERE')
+    for (const cid of carCids) {
+      await bucket.delete(`${dataCid}/${cid}`)
+    }
 
     const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
     if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)

@@ -1,7 +1,6 @@
 import { readBlockHead, asyncIterableReader } from '@ipld/car/decoder'
 import { base58btc } from 'multiformats/bases/base58'
 import defer from 'p-defer'
-import { MultiCarIndex, StreamingCarIndex } from './car-index.js'
 import { OrderedCarBlockBatcher } from './block-batch.js'
 
 /**
@@ -23,14 +22,11 @@ const MAX_ENCODED_BLOCK_LENGTH = (1024 * 1024 * 2) + 39 + 61
 export class R2Blockstore {
   /**
    * @param {R2Bucket} dataBucket
-   * @param {import('../bindings').IndexSource[]} indexSources
+   * @param {import('./car-index').CarIndex} index
    */
-  constructor (dataBucket, indexSources) {
+  constructor (dataBucket, index) {
     this._dataBucket = dataBucket
-    this._idx = new MultiCarIndex()
-    for (const src of indexSources) {
-      this._idx.addIndex(new StreamingCarIndex(src))
-    }
+    this._idx = index
   }
 
   /** @param {UnknownLink} cid */

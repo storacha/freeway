@@ -10,6 +10,7 @@ export interface Environment {
   CARPARK: R2Bucket
   DUDEWHERE: R2Bucket
   SATNAV: R2Bucket
+  BLOCKLY: R2Bucket
   MAX_SHARDS: string
 }
 

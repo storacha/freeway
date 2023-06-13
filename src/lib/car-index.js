@@ -1,11 +1,13 @@
+import * as raw from 'multiformats/codecs/raw'
 import { base58btc } from 'multiformats/bases/base58'
 import { UniversalReader } from 'cardex/universal'
+import { MultiIndexReader } from 'cardex/multi-index'
 import defer from 'p-defer'
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
  * @typedef {import('cardex/multi-index/api').MultiIndexItem & import('cardex/multihash-index-sorted/api').MultihashIndexItem} IndexEntry
- * @typedef {string} MultihashString
+ * @typedef {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>} MultihashString
  * @typedef {{ get: (c: UnknownLink) => Promise<IndexEntry|undefined> }} CarIndex
  */
 
@@ -89,7 +91,7 @@ export class StreamingCarIndex {
         const entry = /** @type {IndexEntry} */(value)
         entry.origin = entry.origin ?? this.#source.origin
 
-        const key = mhToKey(entry.multihash.bytes)
+        const key = mhToString(entry.multihash)
 
         // set this value in the index so any future requests for this key get
         // the value immediately, without joining the promised index, even if we
@@ -133,7 +135,7 @@ export class StreamingCarIndex {
     if (this.#buildError) {
       throw new Error('failed to build index', { cause: this.#buildError })
     }
-    const key = mhToKey(cid.multihash.bytes)
+    const key = mhToString(cid.multihash)
     const entry = this.#idx.get(key)
     if (entry != null) return entry
     if (this.#building) {
@@ -146,4 +148,83 @@ export class StreamingCarIndex {
   }
 }
 
-const mhToKey = (/** @type {Uint8Array} */ mh) => base58btc.encode(mh)
+/**
+ * Multibase encode a multihash with base58btc.
+ * @param {import('multiformats').MultihashDigest} mh
+ * @returns {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>}
+ */
+const mhToString = mh => base58btc.encode(mh.bytes)
+
+export class BlocklyIndex {
+  /** R2 bucket where indexes live. */
+  #bucket
+  /** Cached index entries. */
+  #cache
+  /** Indexes that have been read. */
+  #indexes
+
+  /**
+   * @param {import('../bindings').R2Bucket} indexBucket
+   */
+  constructor (indexBucket) {
+    this.#bucket = indexBucket
+    /** @type {Map<MultihashString, IndexEntry>} */
+    this.#cache = new Map()
+    this.#indexes = new Set()
+  }
+
+  /** @param {UnknownLink} cid */
+  async get (cid) {
+    const key = mhToString(cid.multihash)
+
+    // get the index data for this CID (CAR CID & offset)
+    let indexItem = this.#cache.get(key)
+
+    // read the index for _this_ CID to get the index data for it's _links_.
+    //
+    // when we get to the bottom of the tree (raw blocks), we want to be able
+    // to send back the index information without having to read an index for
+    // each leaf. We can only do that if we read the index for the parent now.
+    if (indexItem) {
+      // we found the index data! ...if this CID is raw, then there's no links
+      // and no more index information to discover so don't read the index.
+      if (cid.code !== raw.code) {
+        await this.#readIndex(cid)
+      }
+    } else {
+      // we not found the index data! ...probably the DAG root.
+      // this time we read the index to get the root block index information
+      // _as well as_ the link index information.
+      await this.#readIndex(cid)
+      // seeing as we just read the index for this CID we _should_ have some
+      // index information for it now.
+      indexItem = this.#cache.get(key)
+      // if not then, well, it's not found!
+      if (!indexItem) return
+    }
+    return { cid, ...indexItem }
+  }
+
+  /**
+   * Read the index for the passed CID and populate the cache.
+   * @param {import('multiformats').UnknownLink} cid
+   */
+  async #readIndex (cid) {
+    const key = mhToString(cid.multihash)
+    if (this.#indexes.has(key)) return
+
+    const res = await this.#bucket.get(`${key}/${key}.idx`)
+    if (!res) return
+
+    const reader = MultiIndexReader.createReader({ reader: res.body.getReader() })
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      if (!('multihash' in value)) throw new Error('not MultihashIndexSorted')
+      const entry = /** @type {IndexEntry} */(value)
+      this.#cache.set(mhToString(entry.multihash), entry)
+    }
+    this.#indexes.add(key)
+  }
+}
