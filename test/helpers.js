@@ -138,7 +138,7 @@ export class Builder {
     const satnav = this.#satnav
     const rollupGenerator = async function * () {
       yield encodeVarint(MultiIndexWriter.codec)
-      yield encodeUint32LE(carCids.length)
+      yield encodeVarint(carCids.length)
       for (const origin of carCids) {
         yield origin.multihash.bytes
         const carIdx = await satnav.get(`${origin}/${origin}.car.idx`)
