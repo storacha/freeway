@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/web3-storage/freeway/compare/v2.4.0...v2.5.0) (2023-06-13)
+
+
+### Features
+
+* use blockly indexes ([#51](https://github.com/web3-storage/freeway/issues/51)) ([7086932](https://github.com/web3-storage/freeway/commit/70869324741931f1a0bbbb533b53b95f47506d93))
+
 ## [2.4.0](https://github.com/web3-storage/freeway/compare/v2.3.0...v2.4.0) (2023-06-09)
 
 
