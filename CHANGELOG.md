@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1](https://github.com/web3-storage/freeway/compare/v2.5.0...v2.5.1) (2023-06-22)
+
+
+### Bug Fixes
+
+* blockly index key ([#53](https://github.com/web3-storage/freeway/issues/53)) ([2217fe5](https://github.com/web3-storage/freeway/commit/2217fe5af4fb1c14dcde77a2b24974edb04a27f3))
+
 ## [2.5.0](https://github.com/web3-storage/freeway/compare/v2.4.0...v2.5.0) (2023-06-13)
 
 
