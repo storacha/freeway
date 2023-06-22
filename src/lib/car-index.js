@@ -213,7 +213,7 @@ export class BlocklyIndex {
     const key = mhToString(cid.multihash)
     if (this.#indexes.has(key)) return
 
-    const res = await this.#bucket.get(`${key}/${key}.idx`)
+    const res = await this.#bucket.get(`${key}/.idx`)
     if (!res) return
 
     const reader = MultiIndexReader.createReader({ reader: res.body.getReader() })
