@@ -193,7 +193,7 @@ export class Builder {
     }
 
     for (const [blockMh, offsets] of blockIndex) {
-      const key = `${blockMh}/${blockMh}.idx`
+      const key = `${blockMh}/.idx`
 
       const [parentShard, offset] = getAnyMapEntry(offsets)
       /** @type {Map<ShardCID, Map<MultihashString, Offset>>} */
