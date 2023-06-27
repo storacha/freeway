@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/web3-storage/freeway/compare/v2.6.0...v2.7.0) (2023-06-27)
+
+
+### Features
+
+* switch to KV ([#57](https://github.com/web3-storage/freeway/issues/57)) ([c587f83](https://github.com/web3-storage/freeway/commit/c587f83e60c205bb44efafe320bbe47d05f34d7f))
+
 ## [2.6.0](https://github.com/web3-storage/freeway/compare/v2.5.1...v2.6.0) (2023-06-27)
 
 
