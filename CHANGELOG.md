@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/web3-storage/freeway/compare/v2.5.1...v2.6.0) (2023-06-27)
+
+
+### Features
+
+* fallback to blockly when shard limit exceeded ([#55](https://github.com/web3-storage/freeway/issues/55)) ([91c6bf2](https://github.com/web3-storage/freeway/commit/91c6bf2b1d17f0651b954662c96f1b0bf6dc732d))
+
 ## [2.5.1](https://github.com/web3-storage/freeway/compare/v2.5.0...v2.5.1) (2023-06-22)
 
 
