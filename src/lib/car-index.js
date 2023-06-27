@@ -156,18 +156,18 @@ export class StreamingCarIndex {
 const mhToString = mh => base58btc.encode(mh.bytes)
 
 export class BlocklyIndex {
-  /** R2 bucket where indexes live. */
-  #bucket
+  /** Storage where indexes live. */
+  #store
   /** Cached index entries. */
   #cache
   /** Indexes that have been read. */
   #indexes
 
   /**
-   * @param {import('../bindings').R2Bucket} indexBucket
+   * @param {import('@cloudflare/workers-types').KVNamespace} indexStore
    */
-  constructor (indexBucket) {
-    this.#bucket = indexBucket
+  constructor (indexStore) {
+    this.#store = indexStore
     /** @type {Map<MultihashString, IndexEntry>} */
     this.#cache = new Map()
     this.#indexes = new Set()
@@ -213,10 +213,10 @@ export class BlocklyIndex {
     const key = mhToString(cid.multihash)
     if (this.#indexes.has(key)) return
 
-    const res = await this.#bucket.get(`${key}/.idx`)
+    const res = await this.#store.get(`${key}/.idx`, { type: 'stream' })
     if (!res) return
 
-    const reader = MultiIndexReader.createReader({ reader: res.body.getReader() })
+    const reader = MultiIndexReader.createReader({ reader: res.getReader() })
     while (true) {
       const { done, value } = await reader.read()
       if (done) break

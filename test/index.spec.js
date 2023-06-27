@@ -13,7 +13,7 @@ describe('freeway', () => {
   let builder
 
   before(async () => {
-    const bucketNames = ['CARPARK', 'SATNAV', 'DUDEWHERE', 'BLOCKLY']
+    const bucketNames = ['CARPARK', 'SATNAV', 'DUDEWHERE']
 
     miniflare = new Miniflare({
       bindings: {},
@@ -26,12 +26,15 @@ describe('freeway', () => {
       buildCommand: undefined,
       wranglerConfigEnv: 'test',
       modules: true,
-      r2Buckets: bucketNames
+      r2Buckets: bucketNames,
       // r2Persist: true
+      kvNamespaces: ['BLOCKLY']
     })
 
     const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))
-    builder = new Builder(buckets[0], buckets[1], buckets[2], buckets[3])
+    const blockly = await miniflare.getKVNamespace('BLOCKLY')
+    // @ts-expect-error
+    builder = new Builder(buckets[0], buckets[1], buckets[2], blockly)
   })
 
   it('should get a file', async () => {

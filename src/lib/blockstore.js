@@ -8,7 +8,7 @@ import { OrderedCarBlockBatcher } from './block-batch.js'
  * @typedef {import('cardex/api').IndexItem} IndexEntry
  * @typedef {string} MultihashString
  * @typedef {import('dagula').Block} Block
- * @typedef {import('../bindings').R2Bucket} R2Bucket
+ * @typedef {import('@cloudflare/workers-types').R2Bucket} R2Bucket
  */
 
 // 2MB (max safe libp2p block size) + typical block header length + some leeway

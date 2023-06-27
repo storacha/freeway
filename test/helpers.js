@@ -51,10 +51,10 @@ export class Builder {
   #blockly
 
   /**
-   * @param {import('@miniflare/r2').R2Bucket} carpark
-   * @param {import('@miniflare/r2').R2Bucket} satnav
-   * @param {import('@miniflare/r2').R2Bucket} dudewhere
-   * @param {import('@miniflare/r2').R2Bucket} blockly
+   * @param {import('@cloudflare/workers-types').R2Bucket} carpark
+   * @param {import('@cloudflare/workers-types').R2Bucket} satnav
+   * @param {import('@cloudflare/workers-types').R2Bucket} dudewhere
+   * @param {import('@cloudflare/workers-types').KVNamespace} blockly
    */
   constructor (carpark, satnav, dudewhere, blockly) {
     this.#carpark = carpark
@@ -247,7 +247,7 @@ export async function collect (collectable) {
 }
 
 /**
- * @param {import('@miniflare/r2').R2Bucket} bucket
+ * @param {import('@cloudflare/workers-types').R2Bucket} bucket
  * @param {string} prefix
  */
 export async function listAll (bucket, prefix) {
@@ -276,7 +276,7 @@ function getAnyMapEntry (map) {
 }
 
 /**
- * @param {import('@miniflare/r2').R2Bucket} bucket
+ * @param {import('@cloudflare/workers-types').R2Bucket} bucket
  * @param {string} shardCID
  * @param {number} offset
  */
