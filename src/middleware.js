@@ -48,7 +48,7 @@ export function withIndexSources (handler) {
     const maxShards = env.MAX_SHARDS ? parseInt(env.MAX_SHARDS) : 825
 
     /** @type {import('./bindings').IndexSource[]} */
-    const indexSources = ctx.searchParams
+    let indexSources = ctx.searchParams
       .getAll('origin')
       .flatMap(str => {
         return str.split(',')
@@ -84,7 +84,8 @@ export function withIndexSources (handler) {
         }))
 
         if (indexSources.length > maxShards) {
-          throw new HttpError('request exceeds maximum DAG shards', { status: 501 })
+          console.warn('exceeds maximum DAG shards') // fallback to blockly
+          indexSources = []
         }
 
         if (!results.truncated) break

@@ -77,7 +77,7 @@ describe('freeway', () => {
     const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
 
     assert(!res.ok)
-    assert.equal(res.status, 501)
+    assert.equal(res.status, 404)
   })
 
   it('should get a CAR via Accept headers', async () => {
