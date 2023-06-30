@@ -1,5 +1,6 @@
 /* eslint-env worker */
 import {
+  withContext,
   withCorsHeaders,
   withContentDispositionHeader,
   withErrorHandler,
@@ -33,6 +34,7 @@ export default {
     console.log(request.method, request.url)
     const middleware = composeMiddleware(
       withCdnCache,
+      withContext,
       withCorsHeaders,
       withVersionHeader,
       withContentDispositionHeader,
