@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.2](https://github.com/web3-storage/freeway/compare/v2.7.1...v2.7.2) (2023-06-30)
+
+
+### Bug Fixes
+
+* use fresh context object per request ([#60](https://github.com/web3-storage/freeway/issues/60)) ([c343be0](https://github.com/web3-storage/freeway/commit/c343be03777eb1410320dfda72dd705937761212))
+
 ## [2.7.1](https://github.com/web3-storage/freeway/compare/v2.7.0...v2.7.1) (2023-06-27)
 
 
