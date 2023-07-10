@@ -28,7 +28,8 @@ describe('freeway', () => {
       modules: true,
       r2Buckets: bucketNames,
       // r2Persist: true
-      kvNamespaces: ['BLOCKLY']
+      kvNamespaces: ['BLOCKLY'],
+      usageModel: 'unbound'
     })
 
     const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))

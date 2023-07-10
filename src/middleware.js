@@ -5,6 +5,7 @@ import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
 import { BatchingR2Blockstore } from './lib/blockstore.js'
 import { version } from '../package.json'
 import { BlocklyIndex, MultiCarIndex, StreamingCarIndex } from './lib/car-index.js'
+import { CachingBucket, asSimpleBucket } from './lib/bucket.js'
 
 const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
 const CAR_CODE = 0x0202
@@ -46,6 +47,8 @@ export function withIndexSources (handler) {
     // context. If we have a given root CID split across hundreds of CARs,
     // freeway will hit the sub-requests limit and not serve the content.
     const maxShards = env.MAX_SHARDS ? parseInt(env.MAX_SHARDS) : 825
+    // open a cache explicitly for storing index data
+    const cache = await caches.open('index-source')
 
     /** @type {import('./bindings').IndexSource[]} */
     let indexSources = ctx.searchParams
@@ -61,7 +64,11 @@ export function withIndexSources (handler) {
             return cids
           }, /** @type {import('cardex/api').CARLink[]} */([]))
       })
-      .map(cid => ({ origin: cid, bucket: env.SATNAV, key: `${cid}/${cid}.car.idx` }))
+      .map(cid => ({
+        origin: cid,
+        bucket: new CachingBucket(asSimpleBucket(env.SATNAV), cache, ctx),
+        key: `${cid}/${cid}.car.idx`
+      }))
 
     // if origins were not specified or invalid
     if (!indexSources.length) {
@@ -73,14 +80,21 @@ export function withIndexSources (handler) {
 
         // if the first encountered item is a index rollup, use it
         if (!cursor && results.objects[0].key.endsWith('rollup.idx')) {
-          indexSources.push({ bucket: env.DUDEWHERE, key: results.objects[0].key })
+          indexSources.push({
+            bucket: new CachingBucket(asSimpleBucket(env.DUDEWHERE), cache, ctx),
+            key: results.objects[0].key
+          })
           break
         }
 
         indexSources.push(...results.objects.map(o => {
           const cid = /** @type {import('cardex/api').CARLink} */(parseCid(o.key.split('/')[1]))
           const key = `${cid}/${cid}.car.idx`
-          return { origin: cid, bucket: env.SATNAV, key }
+          return {
+            origin: cid,
+            bucket: new CachingBucket(asSimpleBucket(env.SATNAV), cache, ctx),
+            key
+          }
         }))
 
         if (indexSources.length > maxShards) {
