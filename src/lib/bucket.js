@@ -1,7 +1,6 @@
 /* eslint-env worker */
 
-// cache for a day?
-const MAX_AGE = 86400
+const MAX_AGE = 86400 // 1 day
 
 /**
  * @typedef {import('../bindings').SimpleBucket} SimpleBucket
