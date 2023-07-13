@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/web3-storage/freeway/compare/v2.7.2...v2.8.0) (2023-07-13)
+
+
+### Features
+
+* cache index data ([#62](https://github.com/web3-storage/freeway/issues/62)) ([759d117](https://github.com/web3-storage/freeway/commit/759d11717c9d9045b11099b7daecbc3d34be2bae))
+
 ## [2.7.2](https://github.com/web3-storage/freeway/compare/v2.7.1...v2.7.2) (2023-06-30)
 
 
