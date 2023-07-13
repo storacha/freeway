@@ -38,7 +38,7 @@
     "streaming-iterables": "^7.1.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20230518.0",
+    "@cloudflare/workers-types": "^4.20230628.0",
     "ava": "^5.2.0",
     "carbites": "^1.0.6",
     "esbuild": "^0.17.11",

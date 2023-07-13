@@ -15,9 +15,22 @@ export interface Environment {
   MAX_SHARDS: string
 }
 
+/**
+ * Simple bucket does not allow range requests or support metadata on returned
+ * objects.
+ */
+export interface SimpleBucket {
+  get (key: string): Promise<SimpleBucketObject | null>
+}
+
+export interface SimpleBucketObject {
+  readonly key: string
+  readonly body: ReadableStream
+}
+
 export interface IndexSource {
   /** Bucket this index can be found in */
-  bucket: R2Bucket
+  bucket: SimpleBucket
   /** Bucket key for the source */
   key: string
   /**
