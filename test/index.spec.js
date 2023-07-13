@@ -106,7 +106,7 @@ describe('freeway', () => {
     const input = [{ path: 'sargo.tar.xz', content: randomBytes(609261780) }]
     const { dataCid, carCids } = await builder.add(input)
 
-    // remove the the CAR CIDs from DUDEWHERE so that only the rollup index can
+    // remove the CAR CIDs from DUDEWHERE so that only the rollup index can
     // be used to satisfy the request.
     const bucket = await miniflare.getR2Bucket('DUDEWHERE')
     for (const cid of carCids) {
@@ -134,7 +134,7 @@ describe('freeway', () => {
     // generate blockly blocks
     await builder.blocks(dataCid)
 
-    // remove the the CAR CIDs from DUDEWHERE so that only blockly can
+    // remove the CAR CIDs from DUDEWHERE so that only blockly can
     // be used to satisfy the request.
     const bucket = await miniflare.getR2Bucket('DUDEWHERE')
     for (const cid of carCids) {
@@ -143,6 +143,43 @@ describe('freeway', () => {
 
     const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
     if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
+
+    const output = new Uint8Array(await res1.arrayBuffer())
+    assert(equals(input[0].content, output))
+  })
+
+  it('should cache index files', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(138) }]
+    const { dataCid, carCids } = await builder.add(input)
+
+    const url = `http://localhost:8787/ipfs/${dataCid}/${input[0].path}`
+    const res0 = await miniflare.dispatchFetch(url)
+    assert.equal(res0.status, 200)
+
+    // wait for response to be put in cache
+    await res0.waitUntil()
+
+    const caches = await miniflare.getCaches()
+    const indexCache = await caches.open('index-source')
+
+    // remove the indexes from SATNAV
+    const bucket = await miniflare.getR2Bucket('SATNAV')
+    for (const cid of carCids) {
+      const key = `${cid}/${cid}.car.idx`
+      assert.ok(indexCache.match(`http://localhost/${key}`))
+      assert.ok(await bucket.head(key))
+      await bucket.delete(key) // would be great if this returned a boolean 🙄
+      assert.ok(!(await bucket.head(key)))
+    }
+
+    // delete response from cache, so a second request has to construct the
+    // response again by reading from cached index
+    const delRes = await caches.default.delete(url)
+    assert.ok(delRes)
+
+    // should still be able serve this CID now - SATNAV index was found in cache
+    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    assert.equal(res1.status, 200)
 
     const output = new Uint8Array(await res1.arrayBuffer())
     assert(equals(input[0].content, output))
