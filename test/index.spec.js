@@ -5,6 +5,7 @@ import { Miniflare } from 'miniflare'
 import { equals } from 'uint8arrays'
 import { CarReader } from '@ipld/car'
 import { Builder } from './helpers.js'
+import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
 
 describe('freeway', () => {
   /** @type {Miniflare} */
@@ -148,8 +149,8 @@ describe('freeway', () => {
     assert(equals(input[0].content, output))
   })
 
-  it('should cache index files', async () => {
-    const input = [{ path: 'sargo.tar.xz', content: randomBytes(138) }]
+  it('should cache index files', { only: true }, async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
     const { dataCid, carCids } = await builder.add(input)
 
     const url = `http://localhost:8787/ipfs/${dataCid}/${input[0].path}`
@@ -166,7 +167,7 @@ describe('freeway', () => {
     const bucket = await miniflare.getR2Bucket('SATNAV')
     for (const cid of carCids) {
       const key = `${cid}/${cid}.car.idx`
-      assert.ok(indexCache.match(`http://localhost/${key}`))
+      assert.ok(await indexCache.match(`http://localhost/${key}`))
       assert.ok(await bucket.head(key))
       await bucket.delete(key) // would be great if this returned a boolean 🙄
       assert.ok(!(await bucket.head(key)))

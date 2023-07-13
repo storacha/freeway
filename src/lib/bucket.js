@@ -24,13 +24,13 @@ export class CachingBucket {
 
   /** @type {import('../bindings').SimpleBucket['get']} */
   async get (key) {
-    const req = new Request(new URL(key, 'http://localhost'))
-    const res = await this.#cache.match(req)
+    const cacheKey = new URL(key, 'http://localhost')
+    const res = await this.#cache.match(cacheKey)
     if (res && res.body) return { key, body: res.body }
     const obj = await this.#source.get(key)
     if (!obj) return null
     const [body0, body1] = obj.body.tee()
-    this.#ctx.waitUntil(this.#cache.put(req, new Response(body1, {
+    this.#ctx.waitUntil(this.#cache.put(cacheKey, new Response(body1, {
       headers: { 'Cache-Control': `max-age=${MAX_AGE}` }
     })))
     return { key, body: body0 }

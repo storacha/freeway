@@ -6,9 +6,7 @@ import { BatchingR2Blockstore } from './lib/blockstore.js'
 import { version } from '../package.json'
 import { BlocklyIndex, MultiCarIndex, StreamingCarIndex } from './lib/car-index.js'
 import { CachingBucket, asSimpleBucket } from './lib/bucket.js'
-
-const MAX_CAR_BYTES_IN_MEMORY = 1024 * 1024 * 5
-const CAR_CODE = 0x0202
+import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE } from './constants.js'
 
 /**
  * @typedef {import('./bindings').Environment} Environment
