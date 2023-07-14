@@ -10,9 +10,9 @@ r2_buckets = [
   { binding = "DUDEWHERE", bucket_name = "dudewhere-dev-0" },
   { binding = "SATNAV", bucket_name = "satnav-dev-0" }
 ]
-kv_namespaces = [
-  { binding = "BLOCKLY", id = "208d5ac0899e4d3b82968349e5480194" }
-]
+
+[vars]
+CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
 
 [build]
 command = "npm run build:debug"
@@ -26,15 +26,13 @@ r2_buckets = [
   { binding = "DUDEWHERE", bucket_name = "dudewhere-prod-0" },
   { binding = "SATNAV", bucket_name = "satnav-prod-0" }
 ]
-kv_namespaces = [
-  { binding = "BLOCKLY", id = "4703c8565f224444bf02b46dab2a84c1" }
-]
 
 [env.production.build]
 command = "npm run build"
 
 [env.production.vars]
 MAX_SHARDS = "825"
+CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
 
 # Staging!
 [env.staging]
@@ -45,15 +43,13 @@ r2_buckets = [
   { binding = "DUDEWHERE", bucket_name = "dudewhere-staging-0" },
   { binding = "SATNAV", bucket_name = "satnav-staging-0" }
 ]
-kv_namespaces = [
-  { binding = "BLOCKLY", id = "bcabfeacc274478ebe25f7bfb21ddbaa" }
-]
 
 [env.staging.build]
 command = "npm run build"
 
 [env.staging.vars]
 MAX_SHARDS = "825"
+CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
 
 # Test!
 [env.test]
@@ -67,6 +63,7 @@ r2_buckets = [
 [env.test.vars]
 DEBUG = "true"
 MAX_SHARDS = "120"
+CONTENT_CLAIMS_SERVICE_URL = "https://test.claims.web3.storage"
 
 [env.alanshaw]
 workers_dev = true
@@ -79,3 +76,4 @@ r2_buckets = [
 
 [env.alanshaw.vars]
 DEBUG = "true"
+CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"

@@ -25,10 +25,18 @@ export class ContentClaimsIndex {
    * @type {Set<UnknownLink>}
    */
   #seen
+  /**
+   * @type {URL|undefined}
+   */
+  #serviceURL
 
-  constructor () {
+  /**
+   * @param {{ serviceURL?: URL }} [options]
+   */
+  constructor (options) {
     this.#cache = new LinkMap()
     this.#seen = new LinkSet()
+    this.#serviceURL = options?.serviceURL
   }
 
   /**
@@ -69,7 +77,7 @@ export class ContentClaimsIndex {
   async #readClaims (cid) {
     if (this.#seen.has(cid)) return
 
-    const claims = await Claims.read(cid)
+    const claims = await Claims.read(cid, { serviceURL: this.#serviceURL })
     for (const claim of claims) {
       if (claim.type !== 'assert/relation') continue
 
@@ -82,7 +90,7 @@ export class ContentClaimsIndex {
         if (!block) continue
         if (!isCARLink(content)) continue
 
-        const entries = await readCARv2Index(content, block.bytes)
+        const entries = await decodeIndex(content, block.bytes)
         for (const entry of entries) {
           this.#cache.set(Link.create(raw.code, entry.multihash), entry)
         }
@@ -104,7 +112,7 @@ const isCARLink = cid => cid.code === CAR_CODE
  * @param {import('cardex/api').CARLink} origin
  * @param {Uint8Array} bytes
  */
-const readCARv2Index = async (origin, bytes) => {
+const decodeIndex = async (origin, bytes) => {
   const entries = []
   const readable = new ReadableStream({
     pull (controller) {
@@ -116,7 +124,6 @@ const readCARv2Index = async (origin, bytes) => {
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-    if (!('multihash' in value)) throw new Error('not MultihashIndexSorted')
     entries.push(/** @type {IndexEntry} */({ origin, ...value }))
   }
   return entries

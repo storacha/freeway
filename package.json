@@ -42,8 +42,10 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230628.0",
+    "@ucanto/principal": "^8.0.0",
     "ava": "^5.2.0",
     "carbites": "^1.0.6",
+    "carstream": "^1.0.2",
     "esbuild": "^0.17.11",
     "files-from-path": "^0.2.6",
     "ipfs-car": "^0.9.2",

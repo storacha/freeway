@@ -12,6 +12,7 @@ export interface Environment {
   DUDEWHERE: R2Bucket
   SATNAV: R2Bucket
   MAX_SHARDS: string
+  CONTENT_CLAIMS_SERVICE_URL?: string
 }
 
 /**

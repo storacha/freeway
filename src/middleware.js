@@ -97,7 +97,7 @@ export function withIndexSources (handler) {
         }))
 
         if (indexSources.length > maxShards) {
-          console.warn('exceeds maximum DAG shards') // fallback to blockly
+          console.warn('exceeds maximum DAG shards') // fallback to content claims
           indexSources = []
         }
 
@@ -143,7 +143,9 @@ export function withDagula (handler) {
         blockstore = new BatchingR2Blockstore(env.CARPARK, index)
       }
     } else {
-      const index = new ContentClaimsIndex()
+      const index = new ContentClaimsIndex({
+        serviceURL: env.CONTENT_CLAIMS_SERVICE_URL ? new URL(env.CONTENT_CLAIMS_SERVICE_URL) : undefined
+      })
       const found = await index.get(dataCid)
       if (!found) throw new HttpError('missing index', { status: 404 })
       blockstore = new BatchingR2Blockstore(env.CARPARK, index)

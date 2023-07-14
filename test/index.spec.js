@@ -1,23 +1,30 @@
-import { describe, before, it } from 'node:test'
+import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
 import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
 import { equals } from 'uint8arrays'
 import { CarReader } from '@ipld/car'
-import { Builder } from './helpers.js'
+import { Builder } from './helpers/builder.js'
 import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
+import { generateRelationClaims, mockClaimsService } from './helpers/content-claims.js'
 
 describe('freeway', () => {
   /** @type {Miniflare} */
   let miniflare
   /** @type {Builder} */
   let builder
+  /** @type {import('./helpers/content-claims.js').MockClaimsService} */
+  let claimsService
 
   before(async () => {
     const bucketNames = ['CARPARK', 'SATNAV', 'DUDEWHERE']
 
+    claimsService = await mockClaimsService()
+
     miniflare = new Miniflare({
-      bindings: {},
+      bindings: {
+        CONTENT_CLAIMS_SERVICE_URL: `http://127.0.0.1:${claimsService.port}`
+      },
       scriptPath: 'dist/worker.mjs',
       packagePath: true,
       wranglerConfigPath: true,
@@ -29,15 +36,15 @@ describe('freeway', () => {
       modules: true,
       r2Buckets: bucketNames,
       // r2Persist: true
-      kvNamespaces: ['BLOCKLY'],
       usageModel: 'unbound'
     })
 
     const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))
-    const blockly = await miniflare.getKVNamespace('BLOCKLY')
     // @ts-expect-error
-    builder = new Builder(buckets[0], buckets[1], buckets[2], blockly)
+    builder = new Builder(buckets[0], buckets[1], buckets[2])
   })
+
+  after(() => claimsService.close())
 
   it('should get a file', async () => {
     const input = randomBytes(256)
@@ -128,27 +135,6 @@ describe('freeway', () => {
     assert(equals(input[0].content, output))
   })
 
-  it('should fallback to blockly', async () => {
-    const input = [{ path: 'sargo.tar.xz', content: randomBytes(609261780) }]
-    const { dataCid, carCids } = await builder.add(input)
-
-    // generate blockly blocks
-    await builder.blocks(dataCid)
-
-    // remove the CAR CIDs from DUDEWHERE so that only blockly can
-    // be used to satisfy the request.
-    const bucket = await miniflare.getR2Bucket('DUDEWHERE')
-    for (const cid of carCids) {
-      await bucket.delete(`${dataCid}/${cid}`)
-    }
-
-    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
-    if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
-
-    const output = new Uint8Array(await res1.arrayBuffer())
-    assert(equals(input[0].content, output))
-  })
-
   it('should cache index files', { only: true }, async () => {
     const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
     const { dataCid, carCids } = await builder.add(input)
@@ -181,6 +167,32 @@ describe('freeway', () => {
     // should still be able serve this CID now - SATNAV index was found in cache
     const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
     assert.equal(res1.status, 200)
+
+    const output = new Uint8Array(await res1.arrayBuffer())
+    assert(equals(input[0].content, output))
+  })
+
+  it('should use content claims', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
+    const { dataCid, carCids } = await builder.add(input)
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const res = await carpark.get(`${carCids[0]}/${carCids[0]}.car`)
+    assert(res)
+
+    // @ts-expect-error
+    const claims = await generateRelationClaims(claimsService.signer, carCids[0], res.body)
+    claimsService.setClaims(claims)
+
+    // remove the CAR CIDs from DUDEWHERE so that only content claims can
+    // be used to satisfy the request.
+    const dudewhere = await miniflare.getR2Bucket('DUDEWHERE')
+    for (const cid of carCids) {
+      await dudewhere.delete(`${dataCid}/${cid}`)
+    }
+
+    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
 
     const output = new Uint8Array(await res1.arrayBuffer())
     assert(equals(input[0].content, output))
