@@ -5,8 +5,6 @@ import { OrderedCarBlockBatcher } from './block-batch.js'
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
- * @typedef {import('cardex/api').IndexItem} IndexEntry
- * @typedef {string} MultihashString
  * @typedef {import('dagula').Block} Block
  * @typedef {import('@cloudflare/workers-types').R2Bucket} R2Bucket
  */
@@ -22,7 +20,7 @@ const MAX_ENCODED_BLOCK_LENGTH = (1024 * 1024 * 2) + 39 + 61
 export class R2Blockstore {
   /**
    * @param {R2Bucket} dataBucket
-   * @param {import('./car-index').CarIndex} index
+   * @param {import('./index/api').Index} index
    */
   constructor (dataBucket, index) {
     this._dataBucket = dataBucket

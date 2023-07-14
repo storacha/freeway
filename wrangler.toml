@@ -63,9 +63,6 @@ r2_buckets = [
   { binding = "DUDEWHERE", bucket_name = "dudewhere-test-0" },
   { binding = "SATNAV", bucket_name = "satnav-test-0" }
 ]
-kv_namespaces = [
-  { binding = "BLOCKLY" }
-]
 
 [env.test.vars]
 DEBUG = "true"
@@ -78,9 +75,6 @@ r2_buckets = [
   { binding = "CARPARK", bucket_name = "carpark-alanshaw-0", preview_bucket_name = "carpark-alanshaw-preview-0" },
   { binding = "DUDEWHERE", bucket_name = "dudewhere-alanshaw-0", preview_bucket_name = "dudewhere-alanshaw-preview-0" },
   { binding = "SATNAV", bucket_name = "satnav-alanshaw-0", preview_bucket_name = "satnav-alanshaw-preview-0" }
-]
-kv_namespaces = [
-  { binding = "BLOCKLY" }
 ]
 
 [env.alanshaw.vars]
