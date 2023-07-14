@@ -1,7 +1,7 @@
 /* global ReadableStream */
 import * as Link from 'multiformats/link'
 import * as raw from 'multiformats/codecs/raw'
-import * as Client from '@web3-storage/content-claims/client'
+import * as Claims from '@web3-storage/content-claims/client'
 import { MultihashIndexSortedReader } from 'cardex/multihash-index-sorted'
 import { Map as LinkMap } from 'lnmap'
 import { Set as LinkSet } from 'lnset'
@@ -69,7 +69,7 @@ export class ContentClaimsIndex {
   async #readClaims (cid) {
     if (this.#seen.has(cid)) return
 
-    const claims = await Client.read(cid)
+    const claims = await Claims.read(cid)
     for (const claim of claims) {
       if (claim.type !== 'assert/relation') continue
 
