@@ -4,7 +4,6 @@ import * as raw from 'multiformats/codecs/raw'
 import * as Claims from '@web3-storage/content-claims/client'
 import { MultihashIndexSortedReader } from 'cardex/multihash-index-sorted'
 import { Map as LinkMap } from 'lnmap'
-import { Set as LinkSet } from 'lnset'
 import { CAR_CODE } from '../../constants'
 
 /**
@@ -21,10 +20,19 @@ export class ContentClaimsIndex {
    */
   #cache
   /**
-   * CIDs for which we have already read claims.
-   * @type {Set<UnknownLink>}
+   * CIDs for which we have already fetched claims.
+   *
+   * Note: _only_ the CIDs which have been explicitly queried, for which we
+   * have made a content claim request. Not using `this.#cache` because reading
+   * a claim may cause us to add other CIDs to the cache that we haven't read
+   * claims for.
+   *
+   * Note: implemented as a Map not a Set so that we take advantage of the
+   * key cache that `lnmap` provides, so we don't duplicate base58 encoded
+   * multihash keys.
+   * @type {Map<UnknownLink, true>}
    */
-  #seen
+  #claimFetched
   /**
    * @type {URL|undefined}
    */
@@ -35,7 +43,7 @@ export class ContentClaimsIndex {
    */
   constructor (options) {
     this.#cache = new LinkMap()
-    this.#seen = new LinkSet()
+    this.#claimFetched = new LinkMap()
     this.#serviceURL = options?.serviceURL
   }
 
@@ -75,7 +83,7 @@ export class ContentClaimsIndex {
    * @param {import('multiformats').UnknownLink} cid
    */
   async #readClaims (cid) {
-    if (this.#seen.has(cid)) return
+    if (this.#claimFetched.has(cid)) return
 
     const claims = await Claims.read(cid, { serviceURL: this.#serviceURL })
     for (const claim of claims) {
@@ -100,7 +108,7 @@ export class ContentClaimsIndex {
         }
       }
     }
-    this.#seen.add(cid)
+    this.#claimFetched.set(cid, true)
   }
 }
 
