@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/web3-storage/freeway/compare/v2.8.0...v2.9.0) (2023-07-17)
+
+
+### Features
+
+* consume content claims ([#65](https://github.com/web3-storage/freeway/issues/65)) ([28ca299](https://github.com/web3-storage/freeway/commit/28ca299d73c907a0a4a22d1436e3157e18252189))
+
 ## [2.8.0](https://github.com/web3-storage/freeway/compare/v2.7.2...v2.8.0) (2023-07-13)
 
 
