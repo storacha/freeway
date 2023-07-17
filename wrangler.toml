@@ -1,10 +1,6 @@
 name = "freeway"
 main = "./dist/worker.mjs"
-compatibility_date = "2022-10-03"
-compatibility_flags = [
-  "streams_enable_constructors",
-  "transformstream_enable_standard_constructor"
-]
+compatibility_date = "2023-06-17"
 r2_buckets = [
   { binding = "CARPARK", bucket_name = "carpark-dev-0" },
   { binding = "DUDEWHERE", bucket_name = "dudewhere-dev-0" },
