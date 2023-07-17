@@ -15,7 +15,6 @@ The freeway currently works with the following R2 buckets:
 * `CARPARK` - CAR file storage area. Key format `<CAR_CID>/<CAR_CID>.car`
 * `SATNAV` - Indexes of block offsets within CARs. Key format `<CAR_CID>/<CAR_CID>.car.idx`, index format [`MultihashIndexSorted`](https://ipld.io/specs/transport/car/carv2/#format-0x0401-multihashindexsorted).
 * `DUDEWHERE` - Mapping of root data CIDs to CAR CID(s). Key format `<DATA_CID>/<CAR_CID>`.
-* `BLOCKLY` - Block+link [multi-indexes](https://github.com/web3-storage/specs/blob/73c386b999cf30fb648987ff9dce0516c1d91137/CARv2%20MultiIndex.md). Key format `<base58(BLOCK_MULTIHASH)>/.idx`.
 
 How it works:
 

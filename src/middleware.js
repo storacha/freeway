@@ -4,7 +4,8 @@ import { CarReader } from '@ipld/car'
 import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
 import { BatchingR2Blockstore } from './lib/blockstore.js'
 import { version } from '../package.json'
-import { BlocklyIndex, MultiCarIndex, StreamingCarIndex } from './lib/car-index.js'
+import { ContentClaimsIndex } from './lib/dag-index/content-claims.js'
+import { MultiCarIndex, StreamingCarIndex } from './lib/dag-index/car.js'
 import { CachingBucket, asSimpleBucket } from './lib/bucket.js'
 import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE } from './constants.js'
 
@@ -96,7 +97,7 @@ export function withIndexSources (handler) {
         }))
 
         if (indexSources.length > maxShards) {
-          console.warn('exceeds maximum DAG shards') // fallback to blockly
+          console.warn('exceeds maximum DAG shards') // fallback to content claims
           indexSources = []
         }
 
@@ -142,7 +143,9 @@ export function withDagula (handler) {
         blockstore = new BatchingR2Blockstore(env.CARPARK, index)
       }
     } else {
-      const index = new BlocklyIndex(env.BLOCKLY)
+      const index = new ContentClaimsIndex({
+        serviceURL: env.CONTENT_CLAIMS_SERVICE_URL ? new URL(env.CONTENT_CLAIMS_SERVICE_URL) : undefined
+      })
       const found = await index.get(dataCid)
       if (!found) throw new HttpError('missing index', { status: 404 })
       blockstore = new BatchingR2Blockstore(env.CARPARK, index)

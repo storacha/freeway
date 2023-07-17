@@ -1,6 +1,6 @@
 
 {
-  "include": ["src/**/*.js"],
+  "include": ["src"],
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,

@@ -11,8 +11,8 @@ export interface Environment {
   CARPARK: R2Bucket
   DUDEWHERE: R2Bucket
   SATNAV: R2Bucket
-  BLOCKLY: KVNamespace
   MAX_SHARDS: string
+  CONTENT_CLAIMS_SERVICE_URL?: string
 }
 
 /**
