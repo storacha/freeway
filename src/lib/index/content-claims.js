@@ -89,9 +89,10 @@ export class ContentClaimsIndex {
 
       // each part is a tuple of CAR CID (content) & CARv2 index CID (includes)
       for (const { content, includes } of claim.parts) {
+        if (!isCARLink(content)) continue
+
         const block = blocks.find(b => b.cid.toString() === includes.toString())
         if (!block) continue
-        if (!isCARLink(content)) continue
 
         const entries = await decodeIndex(content, block.bytes)
         for (const entry of entries) {
