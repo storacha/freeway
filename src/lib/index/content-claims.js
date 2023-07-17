@@ -79,6 +79,9 @@ export class ContentClaimsIndex {
 
     const claims = await Claims.read(cid, { serviceURL: this.#serviceURL })
     for (const claim of claims) {
+      // skip anything that is not a relation claim, since we know by
+      // our naming convention that our CAR files are named after their hash
+      // and we don't serve anything that we don't have in our own bucket.
       if (claim.type !== 'assert/relation') continue
 
       // export the blocks from the claim - should include the CARv2 indexes
