@@ -73,7 +73,10 @@ export class Builder {
 
   /**
    * @param {import('ipfs-car/pack').PackProperties['input']} input
-   * @param {Omit<import('ipfs-car/pack').PackProperties, 'input'>} [options]
+   * @param {Omit<import('ipfs-car/pack').PackProperties, 'input'> & {
+   *   dudewhere?: boolean
+   *   satnav?: boolean
+   * }} [options]
    */
   async add (input, options = {}) {
     const { root, out } = await pack({
@@ -92,12 +95,16 @@ export class Builder {
     for await (const car of splitter.cars()) {
       const carBytes = concat(await collect(car))
       const carCid = await this.#writeCar(carBytes)
-      await this.#writeIndex(carCid, carBytes)
+      if (options.satnav ?? true) {
+        await this.#writeIndex(carCid, carBytes)
+      }
       carCids.push(carCid)
     }
 
-    // @ts-ignore old multiformats in ipfs-car
-    await this.#writeLinks(dataCid, carCids)
+    if (options.dudewhere ?? true) {
+      // @ts-ignore old multiformats in ipfs-car
+      await this.#writeLinks(dataCid, carCids)
+    }
 
     return { dataCid, carCids }
   }

@@ -112,14 +112,9 @@ describe('freeway', () => {
 
   it('should use a rollup index', async () => {
     const input = [{ path: 'sargo.tar.xz', content: randomBytes(609261780) }]
-    const { dataCid, carCids } = await builder.add(input)
 
-    // remove the CAR CIDs from DUDEWHERE so that only the rollup index can
-    // be used to satisfy the request.
-    const bucket = await miniflare.getR2Bucket('DUDEWHERE')
-    for (const cid of carCids) {
-      await bucket.delete(`${dataCid}/${cid}`)
-    }
+    // no dudewhere so only rollup index can satisfy the request
+    const { dataCid, carCids } = await builder.add(input, { dudewhere: false })
 
     // should NOT be able to serve this CID now
     const res0 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
@@ -174,22 +169,19 @@ describe('freeway', () => {
 
   it('should use content claims', async () => {
     const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
-    const { dataCid, carCids } = await builder.add(input)
+    // no dudewhere or satnav so only content claims can satisfy the request
+    const { dataCid, carCids } = await builder.add(input, {
+      dudewhere: false,
+      satnav: false
+    })
 
     const carpark = await miniflare.getR2Bucket('CARPARK')
     const res = await carpark.get(`${carCids[0]}/${carCids[0]}.car`)
     assert(res)
 
-    // @ts-expect-error
+    // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly
     const claims = await generateRelationClaims(claimsService.signer, carCids[0], res.body)
     claimsService.setClaims(claims)
-
-    // remove the CAR CIDs from DUDEWHERE so that only content claims can
-    // be used to satisfy the request.
-    const dudewhere = await miniflare.getR2Bucket('DUDEWHERE')
-    for (const cid of carCids) {
-      await dudewhere.delete(`${dataCid}/${cid}`)
-    }
 
     const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
     if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
