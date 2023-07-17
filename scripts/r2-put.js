@@ -11,7 +11,7 @@ import { Builder } from '../test/helpers/builder.js'
 
 const bucketNames = ['CARPARK', 'SATNAV', 'DUDEWHERE']
 const buckets = bucketNames.map(b => new R2Bucket(new FileStorage(`./.mf/r2/${b}`)))
-// @ts-expect-error
+// @ts-expect-error import('@miniflare/r2').R2Bucket does not satisfy import('@cloudflare/workers-types').R2Bucket interface 🙈
 const builder = new Builder(buckets[0], buckets[1], buckets[2])
 
 const paths = process.argv.slice(2).filter(p => p !== '--no-wrap')
