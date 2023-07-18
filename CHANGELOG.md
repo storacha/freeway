@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.1](https://github.com/web3-storage/freeway/compare/v2.9.0...v2.9.1) (2023-07-18)
+
+
+### Bug Fixes
+
+* cache key requires a TLD to be present in the URL ([b5f0f4c](https://github.com/web3-storage/freeway/commit/b5f0f4c39a545c44e6f39d6bd25ea7943797a7d1))
+
 ## [2.9.0](https://github.com/web3-storage/freeway/compare/v2.8.0...v2.9.0) (2023-07-17)
 
 
