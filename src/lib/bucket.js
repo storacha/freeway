@@ -24,7 +24,8 @@ export class CachingBucket {
 
   /** @type {import('../bindings').SimpleBucket['get']} */
   async get (key) {
-    const cacheKey = new URL(key, 'http://localhost')
+    // > the cache key requires a TLD to be present in the URL
+    const cacheKey = new URL(key, 'http://cache.freeway.dag.haus')
     const res = await this.#cache.match(cacheKey)
     if (res && res.body) return { key, body: res.body }
     const obj = await this.#source.get(key)
