@@ -148,7 +148,7 @@ describe('freeway', () => {
     const bucket = await miniflare.getR2Bucket('SATNAV')
     for (const cid of carCids) {
       const key = `${cid}/${cid}.car.idx`
-      assert.ok(await indexCache.match(`http://localhost/${key}`))
+      assert.ok(await indexCache.match(`http://cache.freeway.dag.haus/${key}`))
       assert.ok(await bucket.head(key))
       await bucket.delete(key) // would be great if this returned a boolean 🙄
       assert.ok(!(await bucket.head(key)))
