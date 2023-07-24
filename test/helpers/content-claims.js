@@ -85,15 +85,43 @@ export const generateRelationClaims = async (signer, carCID, readable) => {
     // attach the index to the claim
     invocation.attach(index)
 
-    const view = await invocation.buildIPLDView()
-    const bytes = await view.archive()
-    if (bytes.error) throw new Error('failed to archive')
     const blocks = claims.get(cid) ?? []
-    blocks.push({ cid: Link.create(CAR_CODE, await sha256.digest(bytes.ok)), bytes: bytes.ok })
+    blocks.push(await encode(invocation))
     claims.set(cid, blocks)
   }
 
   return claims
+}
+
+/**
+ * Encode a location claim to a block.
+ * @param {import('@ucanto/interface').Signer} signer
+ * @param {import('multiformats').Link} content
+ * @param {URL} location
+ */
+export const encodeLocationClaim = async (signer, content, location) => {
+  const invocation = Assert.location.invoke({
+    issuer: signer,
+    audience: signer,
+    with: signer.did(),
+    nb: {
+      content,
+      // @ts-expect-error string is not `${string}:${string}`
+      location: [location.toString()]
+    }
+  })
+  return encode(invocation)
+}
+
+/**
+ * Encode a claim to a block.
+ * @param {import('@ucanto/interface').IssuedInvocationView} invocation
+ */
+const encode = async invocation => {
+  const view = await invocation.buildIPLDView()
+  const bytes = await view.archive()
+  if (bytes.error) throw new Error('failed to archive')
+  return { cid: Link.create(CAR_CODE, await sha256.digest(bytes.ok)), bytes: bytes.ok }
 }
 
 /**
@@ -136,7 +164,10 @@ export const mockClaimsService = async () => {
       .pipeTo(Writable.toWeb(res))
   })
   await new Promise(resolve => server.listen(resolve))
-  const close = () => server.close()
+  const close = () => {
+    server.closeAllConnections()
+    server.close()
+  }
   // @ts-expect-error
   const { port } = server.address()
   return { setClaims, close, port, signer: await ed25519.generate() }

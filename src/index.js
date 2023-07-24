@@ -18,8 +18,10 @@ import {
 import {
   withDagula,
   withIndexSources,
-  withUnsupportedFeaturesHandler,
-  withVersionHeader
+  withHttpRangeUnsupported,
+  withVersionHeader,
+  withCarHandler,
+  withMultihashSortedIndexHandler
 } from './middleware.js'
 
 /**
@@ -39,9 +41,11 @@ export default {
       withVersionHeader,
       withContentDispositionHeader,
       withErrorHandler,
-      withUnsupportedFeaturesHandler,
-      withHttpGet,
       withParsedIpfsUrl,
+      withCarHandler,
+      withHttpRangeUnsupported,
+      withMultihashSortedIndexHandler,
+      withHttpGet,
       withIndexSources,
       withDagula,
       withFixedLengthStream

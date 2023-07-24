@@ -7,7 +7,9 @@ import { version } from '../package.json'
 import { ContentClaimsIndex } from './lib/dag-index/content-claims.js'
 import { MultiCarIndex, StreamingCarIndex } from './lib/dag-index/car.js'
 import { CachingBucket, asSimpleBucket } from './lib/bucket.js'
-import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE } from './constants.js'
+import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE, MULTIHASH_INDEX_SORTED_CODE } from './constants.js'
+import { handleCarBlock } from './handlers/car-block.js'
+import { handleMultihashSortedIndexBlock } from './handlers/multihash-sorted-index-block.js'
 
 /**
  * @typedef {import('./bindings').Environment} Environment
@@ -17,11 +19,11 @@ import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE } from './constants.js'
  */
 
 /**
- * Validates the request does not contain unsupported features.
+ * Validates the request does not contain a HTTP `Range` header.
  * Returns 501 Not Implemented in case it has.
  * @type {import('@web3-storage/gateway-lib').Middleware<import('@web3-storage/gateway-lib').Context>}
  */
-export function withUnsupportedFeaturesHandler (handler) {
+export function withHttpRangeUnsupported (handler) {
   return (request, env, ctx) => {
     // Range request https://github.com/web3-storage/gateway-lib/issues/12
     if (request.headers.get('range')) {
@@ -29,6 +31,41 @@ export function withUnsupportedFeaturesHandler (handler) {
     }
 
     return handler(request, env, ctx)
+  }
+}
+
+/**
+ * Middleware that will serve CAR files if a CAR codec is found in the path
+ * CID. If the CID is not a CAR CID it delegates to the next middleware.
+ *
+ * @type {import('@web3-storage/gateway-lib').Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
+ */
+export function withCarHandler (handler) {
+  return async (request, env, ctx) => {
+    const { dataCid } = ctx
+    if (!dataCid) throw new Error('missing data CID')
+    if (dataCid.code !== CAR_CODE) {
+      return handler(request, env, ctx) // pass to other handlers
+    }
+    return handleCarBlock(request, env, ctx)
+  }
+}
+
+/**
+ * Middleware that will serve CARv2 indexes if a CARv2 index codec is found in
+ * the path CID. If the CID is not a CARv2 index CID it delegates to the next
+ * middleware.
+ *
+ * @type {import('@web3-storage/gateway-lib').Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
+ */
+export function withMultihashSortedIndexHandler (handler) {
+  return async (request, env, ctx) => {
+    const { dataCid } = ctx
+    if (!dataCid) throw new Error('missing data CID')
+    if (dataCid.code !== MULTIHASH_INDEX_SORTED_CODE) {
+      return handler(request, env, ctx)
+    }
+    return handleMultihashSortedIndexBlock(request, env, ctx)
   }
 }
 
