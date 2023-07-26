@@ -27,7 +27,7 @@
     "@ipld/dag-cbor": "^9.0.0",
     "@ipld/dag-json": "^10.0.1",
     "@ipld/dag-pb": "^4.0.2",
-    "@web3-storage/content-claims": "^2.1.1",
+    "@web3-storage/content-claims": "^3.0.1",
     "@web3-storage/gateway-lib": "^3.3.2",
     "cardex": "^2.3.1",
     "chardet": "^1.5.0",

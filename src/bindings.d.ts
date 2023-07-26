@@ -26,6 +26,7 @@ export interface SimpleBucket {
 export interface SimpleBucketObject {
   readonly key: string
   readonly body: ReadableStream
+  arrayBuffer(): Promise<ArrayBuffer>
 }
 
 export interface IndexSource {

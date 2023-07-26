@@ -20,8 +20,7 @@ import {
   withIndexSources,
   withHttpRangeUnsupported,
   withVersionHeader,
-  withCarHandler,
-  withMultihashSortedIndexHandler
+  withCarHandler
 } from './middleware.js'
 
 /**
@@ -44,7 +43,6 @@ export default {
       withParsedIpfsUrl,
       withCarHandler,
       withHttpRangeUnsupported,
-      withMultihashSortedIndexHandler,
       withHttpGet,
       withIndexSources,
       withDagula,

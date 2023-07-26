@@ -26,15 +26,23 @@ export class CachingBucket {
   async get (key) {
     // > the cache key requires a TLD to be present in the URL
     const cacheKey = new URL(key, 'http://cache.freeway.dag.haus')
-    const res = await this.#cache.match(cacheKey)
-    if (res && res.body) return { key, body: res.body }
+    const cacheRes = await this.#cache.match(cacheKey)
+    if (cacheRes && cacheRes.body) return { key, body: cacheRes.body, arrayBuffer: () => cacheRes.arrayBuffer() }
     const obj = await this.#source.get(key)
     if (!obj) return null
     const [body0, body1] = obj.body.tee()
     this.#ctx.waitUntil(this.#cache.put(cacheKey, new Response(body1, {
       headers: { 'Cache-Control': `max-age=${MAX_AGE}` }
     })))
-    return { key, body: body0 }
+    const res = new Response(body0)
+    return {
+      key,
+      get body () {
+        if (!res.body) throw new Error('missing body')
+        return res.body
+      },
+      arrayBuffer: () => res.arrayBuffer()
+    }
   }
 }
 

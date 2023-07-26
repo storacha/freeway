@@ -8,7 +8,7 @@ import { TreewalkCarSplitter } from 'carbites/treewalk'
 import { MultihashIndexSortedWriter } from 'cardex'
 import { MultiIndexWriter } from 'cardex/multi-index'
 import { encodeVarint } from 'cardex/encoder'
-import { CAR_CODE, MULTIHASH_INDEX_SORTED_CODE } from '../../src/constants.js'
+import * as CAR from './car.js'
 
 /**
  * @typedef {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>} MultihashString
@@ -16,6 +16,7 @@ import { CAR_CODE, MULTIHASH_INDEX_SORTED_CODE } from '../../src/constants.js'
  * @typedef {number} Offset
  */
 
+const MULTIHASH_INDEX_SORTED_CODE = 0x0401
 const TARGET_SHARD_SIZE = 1024 * 1024 * 10 // chunk to ~10MB CARs
 
 export class Builder {
@@ -39,7 +40,7 @@ export class Builder {
    */
   async #writeCar (bytes) {
     /** @type {import('cardex/api.js').CARLink} */
-    const cid = Link.create(CAR_CODE, await sha256.digest(bytes))
+    const cid = Link.create(CAR.code, await sha256.digest(bytes))
     await this.#carpark.put(`${cid}/${cid}.car`, bytes)
     return cid
   }
@@ -60,9 +61,31 @@ export class Builder {
 
     // @ts-expect-error
     const indexBytes = concat(await collect(readable))
-    const indexCid = Link.create(MULTIHASH_INDEX_SORTED_CODE, await sha256.digest(indexBytes))
     await this.#satnav.put(`${cid}/${cid}.car.idx`, indexBytes)
-    return indexCid
+  }
+
+  /**
+   * @param {Uint8Array} bytes CAR file bytes
+   * @returns {Promise<{ cid: import('multiformats').Link, carCid: import('cardex/api').CARLink }>}
+   */
+  async #writeIndexCar (bytes) {
+    const indexer = await CarIndexer.fromBytes(bytes)
+    const { readable, writable } = new TransformStream()
+    const writer = MultihashIndexSortedWriter.createWriter({ writer: writable.getWriter() })
+
+    for await (const entry of indexer) {
+      writer.add(entry.cid, entry.offset)
+    }
+    writer.close()
+
+    // @ts-expect-error
+    const indexBytes = concat(await collect(readable))
+    const indexCid = Link.create(MULTIHASH_INDEX_SORTED_CODE, await sha256.digest(indexBytes))
+
+    const indexCar = await CAR.encode(indexCid, [{ cid: indexCid, bytes: indexBytes }])
+    await this.#carpark.put(`${indexCar.cid}/${indexCar.cid}.car`, indexCar.bytes)
+
+    return { cid: indexCid, carCid: indexCar.cid }
   }
 
   /**
@@ -94,17 +117,17 @@ export class Builder {
 
     /** @type {import('cardex/api').CARLink[]} */
     const carCids = []
-    /** @type {import('multiformats').Link[]} */
-    const indexCids = []
+    /** @type {Array<{ cid: import('multiformats').Link, carCid: import('cardex/api').CARLink }>} */
+    const indexes = []
     const splitter = await TreewalkCarSplitter.fromIterable(out, TARGET_SHARD_SIZE)
 
     for await (const car of splitter.cars()) {
       const carBytes = concat(await collect(car))
       const carCid = await this.#writeCar(carBytes)
       if (options.satnav ?? true) {
-        const indexCid = await this.#writeIndex(carCid, carBytes)
-        indexCids.push(indexCid)
+        await this.#writeIndex(carCid, carBytes)
       }
+      indexes.push(await this.#writeIndexCar(carBytes))
       carCids.push(carCid)
     }
 
@@ -113,7 +136,7 @@ export class Builder {
       await this.#writeLinks(dataCid, carCids)
     }
 
-    return { dataCid, carCids, indexCids }
+    return { dataCid, carCids, indexes }
   }
 
   /**

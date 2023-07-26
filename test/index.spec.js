@@ -4,11 +4,9 @@ import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
 import { equals } from 'uint8arrays'
 import { CarIndexer, CarReader } from '@ipld/car'
-import { MultihashIndexSortedReader } from 'cardex/multihash-index-sorted'
-import { Map as LinkMap } from 'lnmap'
 import { Builder } from './helpers/builder.js'
 import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
-import { encodeLocationClaim, generateRelationClaims, mockClaimsService } from './helpers/content-claims.js'
+import { generateClaims, mockClaimsService } from './helpers/content-claims.js'
 
 describe('freeway', () => {
   /** @type {Miniflare} */
@@ -172,7 +170,7 @@ describe('freeway', () => {
   it('should use content claims', async () => {
     const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
     // no dudewhere or satnav so only content claims can satisfy the request
-    const { dataCid, carCids } = await builder.add(input, {
+    const { dataCid, carCids, indexes } = await builder.add(input, {
       dudewhere: false,
       satnav: false
     })
@@ -182,7 +180,7 @@ describe('freeway', () => {
     assert(res)
 
     // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly
-    const claims = await generateRelationClaims(claimsService.signer, carCids[0], res.body)
+    const claims = await generateClaims(claimsService.signer, dataCid, carCids[0], res.body, indexes[0].cid, indexes[0].carCid)
     claimsService.setClaims(claims)
 
     const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
@@ -291,66 +289,5 @@ describe('freeway', () => {
     assert.equal(res.headers.get('Content-Range'), `bytes ${dataCidEntry.blockOffset}-${dataCidEntry.blockOffset + dataCidEntry.blockLength}/${obj.size}`)
     assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.car; version=1;')
     assert.equal(res.headers.get('Etag'), `"${carCids[0]}"`)
-  })
-
-  it('should GET a Multihash Sorted Index by index CID', async () => {
-    const input = [{ path: 'sargo.tar.xz', content: randomBytes(10) }]
-    const { dataCid, carCids, indexCids } = await builder.add(input, { wrapWithDirectory: false })
-    assert.equal(carCids.length, 1)
-    assert.equal(indexCids.length, 1)
-
-    const location = new URL(`http://satnav.r2.dev/${carCids[0]}/${carCids[0]}.car.idx`)
-    const locationClaim = await encodeLocationClaim(claimsService.signer, indexCids[0], location)
-    claimsService.setClaims(new LinkMap([[indexCids[0], [locationClaim]]]))
-
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${indexCids[0]}`)
-    assert(res.ok)
-    assert(res.body)
-
-    const reader = MultihashIndexSortedReader.createReader({ reader: res.body.getReader() })
-    const entries = []
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      entries.push(value)
-    }
-    assert.equal(entries.length, 1)
-    assert(equals(entries[0].multihash.bytes, dataCid.multihash.bytes))
-
-    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
-    assert(contentLength)
-
-    const satnav = await miniflare.getR2Bucket('SATNAV')
-    const obj = await satnav.head(`${carCids[0]}/${carCids[0]}.car.idx`)
-    assert(obj)
-
-    assert.equal(contentLength, obj.size)
-    assert.equal(res.headers.get('Etag'), `"${indexCids[0]}"`)
-  })
-
-  it('should HEAD a Multihash Sorted Index by index CID', async () => {
-    const input = [{ path: 'sargo.tar.xz', content: randomBytes(10) }]
-    const { carCids, indexCids } = await builder.add(input, { wrapWithDirectory: false })
-    assert.equal(carCids.length, 1)
-    assert.equal(indexCids.length, 1)
-
-    const location = new URL(`http://satnav.r2.dev/${carCids[0]}/${carCids[0]}.car.idx`)
-    const locationClaim = await encodeLocationClaim(claimsService.signer, indexCids[0], location)
-    claimsService.setClaims(new LinkMap([[indexCids[0], [locationClaim]]]))
-
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${indexCids[0]}`, {
-      method: 'HEAD'
-    })
-    assert(res.ok)
-
-    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
-    assert(contentLength)
-
-    const satnav = await miniflare.getR2Bucket('SATNAV')
-    const obj = await satnav.head(`${carCids[0]}/${carCids[0]}.car.idx`)
-    assert(obj)
-
-    assert.equal(contentLength, obj.size)
-    assert.equal(res.headers.get('Etag'), `"${indexCids[0]}"`)
   })
 })
