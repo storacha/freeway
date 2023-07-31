@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.2](https://github.com/web3-storage/freeway/compare/v2.9.1...v2.9.2) (2023-07-31)
+
+
+### Bug Fixes
+
+* dudewhere key for V0 CID in path ([#69](https://github.com/web3-storage/freeway/issues/69)) ([85d812c](https://github.com/web3-storage/freeway/commit/85d812c0239114e89360caf943f5bf0a0f79b7e9))
+
 ## [2.9.1](https://github.com/web3-storage/freeway/compare/v2.9.0...v2.9.1) (2023-07-18)
 
 
