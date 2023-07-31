@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.0](https://github.com/web3-storage/freeway/compare/v2.9.2...v2.10.0) (2023-07-31)
+
+
+### Features
+
+* serve CAR blocks ([#68](https://github.com/web3-storage/freeway/issues/68)) ([0b95438](https://github.com/web3-storage/freeway/commit/0b95438c19710488952f7ccdb23295447201a2d1))
+
 ## [2.9.2](https://github.com/web3-storage/freeway/compare/v2.9.1...v2.9.2) (2023-07-31)
 
 
