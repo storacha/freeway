@@ -59,9 +59,8 @@ export class Builder {
     }
     writer.close()
 
-    // @ts-expect-error
-    const indexBytes = concat(await collect(readable))
-    await this.#satnav.put(`${cid}/${cid}.car.idx`, indexBytes)
+    // @ts-expect-error ReadableStream type mismatch
+    await this.#satnav.put(`${cid}/${cid}.car.idx`, readable)
   }
 
   /**
