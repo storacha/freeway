@@ -2,6 +2,7 @@
 import { Dagula } from 'dagula'
 import { CarReader } from '@ipld/car'
 import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
+import { base32 } from 'multiformats/bases/base32'
 import { BatchingR2Blockstore } from './lib/blockstore.js'
 import { version } from '../package.json'
 import { ContentClaimsIndex } from './lib/dag-index/content-claims.js'
@@ -74,7 +75,7 @@ export function withIndexSources (handler) {
       /** @type {string|undefined} */
       let cursor
       while (true) {
-        const results = await env.DUDEWHERE.list({ prefix: `${ctx.dataCid}/`, cursor })
+        const results = await env.DUDEWHERE.list({ prefix: `${ctx.dataCid.toV1().toString(base32)}/`, cursor })
         if (!results || !results.objects.length) break
 
         // if the first encountered item is a index rollup, use it
