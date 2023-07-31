@@ -1,4 +1,4 @@
-/* global ReadableStream, WritableStream, TransformStream */
+/* global ReadableStream, WritableStream */
 import http from 'node:http'
 import { Writable } from 'node:stream'
 import { CARReaderStream, CARWriterStream } from 'carstream'
@@ -13,12 +13,11 @@ import * as cbor from '@ipld/dag-cbor'
 import * as json from '@ipld/dag-json'
 import { Map as LinkMap } from 'lnmap'
 import { Assert } from '@web3-storage/content-claims/capability'
-import { MultihashIndexSortedWriter } from 'cardex/multihash-index-sorted'
 import * as ed25519 from '@ucanto/principal/ed25519'
 import { CAR_CODE } from '../../src/constants.js'
 
 /**
- * @typedef {import('carstream/api').Block & import('carstream/api').Position & { children: import('multiformats').UnknownLink[] }} RelationIndexData
+ * @typedef {import('carstream/api').Block & { children: import('multiformats').UnknownLink[] }} RelationIndexData
  * @typedef {Map<import('multiformats').UnknownLink, import('carstream/api').Block[]>} Claims
  * @typedef {{ setClaims: (c: Claims) => void, close: () => void, port: number, signer: import('@ucanto/interface').Signer }} MockClaimsService
  */
@@ -38,17 +37,36 @@ const Hashers = {
 
 /**
  * @param {import('@ucanto/interface').Signer} signer
- * @param {import('multiformats').Link} carCID
- * @param {ReadableStream<Uint8Array>} readable CAR file data
+ * @param {import('multiformats').UnknownLink} dataCid
+ * @param {import('cardex/api').CARLink} carCid
+ * @param {ReadableStream<Uint8Array>} carStream CAR file data
+ * @param {import('multiformats').Link} indexCid
+ * @param {import('cardex/api').CARLink} indexCarCid
  */
-export const generateRelationClaims = async (signer, carCID, readable) => {
+export const generateClaims = async (signer, dataCid, carCid, carStream, indexCid, indexCarCid) => {
+  /** @type {Claims} */
+  const claims = new LinkMap()
+
+  // partition claim for the data CID
+  claims.set(dataCid, [
+    await encode(Assert.partition.invoke({
+      issuer: signer,
+      audience: signer,
+      with: signer.did(),
+      nb: {
+        content: dataCid,
+        parts: [carCid]
+      }
+    }))
+  ])
+
   /** @type {Map<import('multiformats').UnknownLink, RelationIndexData>} */
   const indexData = new LinkMap()
 
-  await readable
+  await carStream
     .pipeThrough(new CARReaderStream())
     .pipeTo(new WritableStream({
-      async write ({ cid, bytes, offset, length }) {
+      async write ({ cid, bytes }) {
         const decoder = Decoders[cid.code]
         if (!decoder) throw Object.assign(new Error(`missing decoder: ${cid.code}`), { code: 'ERR_MISSING_DECODER' })
 
@@ -56,19 +74,11 @@ export const generateRelationClaims = async (signer, carCID, readable) => {
         if (!hasher) throw Object.assign(new Error(`missing hasher: ${cid.multihash.code}`), { code: 'ERR_MISSING_HASHER' })
 
         const block = await Block.decode({ bytes, codec: decoder, hasher })
-        indexData.set(cid, { cid, bytes, offset, length, children: [...block.links()].map(([, cid]) => cid) })
+        indexData.set(cid, { cid, bytes, children: [...block.links()].map(([, cid]) => cid) })
       }
     }))
 
-  /** @type {Claims} */
-  const claims = new LinkMap()
-  for (const [cid, { offset, children }] of indexData) {
-    const index = await encodeIndex(children.map(c => {
-      const data = indexData.get(c)
-      if (!data) throw new Error(`missing CID in CAR: ${c}`)
-      return { cid: c, offset: data.offset }
-    }).concat({ cid, offset }))
-
+  for (const [cid, { children }] of indexData) {
     const invocation = Assert.relation.invoke({
       issuer: signer,
       audience: signer,
@@ -77,43 +87,45 @@ export const generateRelationClaims = async (signer, carCID, readable) => {
         content: cid,
         children,
         parts: [{
-          content: carCID,
-          includes: index.cid
+          content: carCid,
+          includes: {
+            content: indexCid,
+            parts: [indexCarCid]
+          }
         }]
       }
     })
-    // attach the index to the claim
-    invocation.attach(index)
 
-    const view = await invocation.buildIPLDView()
-    const bytes = await view.archive()
-    if (bytes.error) throw new Error('failed to archive')
     const blocks = claims.get(cid) ?? []
-    blocks.push({ cid: Link.create(CAR_CODE, await sha256.digest(bytes.ok)), bytes: bytes.ok })
+    blocks.push(await encode(invocation))
     claims.set(cid, blocks)
   }
+
+  // partition claim for the index
+  claims.set(indexCid, [
+    await encode(Assert.partition.invoke({
+      issuer: signer,
+      audience: signer,
+      with: signer.did(),
+      nb: {
+        content: indexCid,
+        parts: [indexCarCid]
+      }
+    }))
+  ])
 
   return claims
 }
 
 /**
- * @param {Array<{ cid: import('multiformats').UnknownLink, offset: number }>} items
+ * Encode a claim to a block.
+ * @param {import('@ucanto/interface').IssuedInvocationView} invocation
  */
-const encodeIndex = async items => {
-  const { writable, readable } = new TransformStream()
-  const writer = MultihashIndexSortedWriter.createWriter({ writer: writable.getWriter() })
-  for (const { cid, offset } of items) {
-    writer.add(cid, offset)
-  }
-  writer.close()
-
-  /** @type {Uint8Array[]} */
-  const chunks = []
-  await readable.pipeTo(new WritableStream({ write: chunk => { chunks.push(chunk) } }))
-
-  const bytes = Buffer.concat(chunks)
-  const digest = await sha256.digest(bytes)
-  return { cid: Link.create(MultihashIndexSortedWriter.codec, digest), bytes }
+const encode = async invocation => {
+  const view = await invocation.buildIPLDView()
+  const bytes = await view.archive()
+  if (bytes.error) throw new Error('failed to archive')
+  return { cid: Link.create(CAR_CODE, await sha256.digest(bytes.ok)), bytes: bytes.ok }
 }
 
 export const mockClaimsService = async () => {
@@ -136,7 +148,10 @@ export const mockClaimsService = async () => {
       .pipeTo(Writable.toWeb(res))
   })
   await new Promise(resolve => server.listen(resolve))
-  const close = () => server.close()
+  const close = () => {
+    server.closeAllConnections()
+    server.close()
+  }
   // @ts-expect-error
   const { port } = server.address()
   return { setClaims, close, port, signer: await ed25519.generate() }

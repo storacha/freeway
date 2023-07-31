@@ -3,10 +3,10 @@ import assert from 'node:assert'
 import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
 import { equals } from 'uint8arrays'
-import { CarReader } from '@ipld/car'
+import { CarIndexer, CarReader } from '@ipld/car'
 import { Builder } from './helpers/builder.js'
 import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
-import { generateRelationClaims, mockClaimsService } from './helpers/content-claims.js'
+import { generateClaims, mockClaimsService } from './helpers/content-claims.js'
 
 describe('freeway', () => {
   /** @type {Miniflare} */
@@ -170,7 +170,7 @@ describe('freeway', () => {
   it('should use content claims', async () => {
     const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
     // no dudewhere or satnav so only content claims can satisfy the request
-    const { dataCid, carCids } = await builder.add(input, {
+    const { dataCid, carCids, indexes } = await builder.add(input, {
       dudewhere: false,
       satnav: false
     })
@@ -180,7 +180,7 @@ describe('freeway', () => {
     assert(res)
 
     // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly
-    const claims = await generateRelationClaims(claimsService.signer, carCids[0], res.body)
+    const claims = await generateClaims(claimsService.signer, dataCid, carCids[0], res.body, indexes[0].cid, indexes[0].carCid)
     claimsService.setClaims(claims)
 
     const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
@@ -188,5 +188,106 @@ describe('freeway', () => {
 
     const output = new Uint8Array(await res1.arrayBuffer())
     assert(equals(input[0].content, output))
+  })
+
+  it('should GET a CAR by CAR CID', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(10) }]
+    const { dataCid, carCids } = await builder.add(input, { wrapWithDirectory: false })
+    assert.equal(carCids.length, 1)
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${carCids[0]}`)
+    assert(res.ok)
+
+    const output = new Uint8Array(await res.arrayBuffer())
+    const reader = await CarReader.fromBytes(output)
+
+    const roots = await reader.getRoots()
+    assert.equal(roots.length, 1)
+    assert.equal(roots[0].toString(), dataCid.toString())
+
+    const blocks = []
+    for await (const block of reader.blocks()) {
+      blocks.push(block)
+    }
+    assert.equal(blocks.length, 1)
+    assert.equal(blocks[0].cid.toString(), dataCid.toString())
+
+    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+    assert(contentLength)
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const obj = await carpark.head(`${carCids[0]}/${carCids[0]}.car`)
+    assert(obj)
+
+    assert.equal(contentLength, obj.size)
+    assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.car; version=1;')
+    assert.equal(res.headers.get('Etag'), `"${carCids[0]}"`)
+  })
+
+  it('should HEAD a CAR by CAR CID', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(10) }]
+    const { carCids } = await builder.add(input, { wrapWithDirectory: false })
+    assert.equal(carCids.length, 1)
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${carCids[0]}`, {
+      method: 'HEAD'
+    })
+    assert(res.ok)
+
+    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+    assert(contentLength)
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const obj = await carpark.head(`${carCids[0]}/${carCids[0]}.car`)
+    assert(obj)
+
+    assert.equal(contentLength, obj.size)
+    assert.equal(res.headers.get('Accept-Ranges'), 'bytes')
+    assert.equal(res.headers.get('Etag'), `"${carCids[0]}"`)
+  })
+
+  it('should GET a byte range by CAR CID', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(10) }]
+    const { dataCid, carCids } = await builder.add(input, { wrapWithDirectory: false })
+    assert.equal(carCids.length, 1)
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const obj = await carpark.get(`${carCids[0]}/${carCids[0]}.car`)
+    assert(obj)
+
+    const output = new Uint8Array(await obj.arrayBuffer())
+
+    const reader = await CarReader.fromBytes(output)
+    const blocks = []
+    for await (const block of reader.blocks()) {
+      blocks.push(block)
+    }
+    const dataCidBlock = blocks.find(b => b.cid.toString() === dataCid.toString())
+    assert(dataCidBlock)
+
+    const indexer = await CarIndexer.fromBytes(output)
+    const entries = []
+    for await (const entry of indexer) {
+      entries.push(entry)
+    }
+    const dataCidEntry = entries.find(e => e.cid.toString() === dataCid.toString())
+    assert(dataCidEntry)
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${carCids[0]}`, {
+      headers: {
+        Range: `bytes=${dataCidEntry.blockOffset}-${dataCidEntry.blockOffset + dataCidEntry.blockLength}`
+      }
+    })
+    assert(res.ok)
+
+    const bytes = new Uint8Array(await res.arrayBuffer())
+    assert(equals(bytes, dataCidBlock.bytes))
+
+    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+    assert(contentLength)
+    assert.equal(contentLength, dataCidBlock.bytes.length)
+    assert.equal(res.headers.get('Content-Range'), `bytes ${dataCidEntry.blockOffset}-${dataCidEntry.blockOffset + dataCidEntry.blockLength}/${obj.size}`)
+    assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.car; version=1;')
+    assert.equal(res.headers.get('Etag'), `"${carCids[0]}"`)
   })
 })

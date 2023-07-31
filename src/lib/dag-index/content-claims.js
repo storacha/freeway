@@ -4,7 +4,7 @@ import * as raw from 'multiformats/codecs/raw'
 import * as Claims from '@web3-storage/content-claims/client'
 import { MultihashIndexSortedReader } from 'cardex/multihash-index-sorted'
 import { Map as LinkMap } from 'lnmap'
-import { CAR_CODE } from '../../constants'
+import * as CAR from '../car.js'
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
@@ -14,6 +14,11 @@ import { CAR_CODE } from '../../constants'
 
 /** @implements {Index} */
 export class ContentClaimsIndex {
+  /**
+   * Index store.
+   * @type {import('../../bindings').SimpleBucket}
+   */
+  #bucket
   /**
    * Cached index entries.
    * @type {Map<UnknownLink, IndexEntry>}
@@ -39,9 +44,11 @@ export class ContentClaimsIndex {
   #serviceURL
 
   /**
+   * @param {import('../../bindings').SimpleBucket} bucket Bucket that stores CARs.
    * @param {{ serviceURL?: URL }} [options]
    */
-  constructor (options) {
+  constructor (bucket, options) {
+    this.#bucket = bucket
     this.#cache = new LinkMap()
     this.#claimFetched = new LinkMap()
     this.#serviceURL = options?.serviceURL
@@ -92,14 +99,24 @@ export class ContentClaimsIndex {
       // and we don't serve anything that we don't have in our own bucket.
       if (claim.type !== 'assert/relation') continue
 
-      // export the blocks from the claim - should include the CARv2 indexes
+      // export the blocks from the claim - may include the CARv2 indexes
       const blocks = [...claim.export()]
 
       // each part is a tuple of CAR CID (content) & CARv2 index CID (includes)
       for (const { content, includes } of claim.parts) {
         if (!isCARLink(content)) continue
+        if (!includes) continue
 
-        const block = blocks.find(b => b.cid.toString() === includes.toString())
+        /** @type {{ cid: import('multiformats').UnknownLink, bytes: Uint8Array }|undefined} */
+        let block = blocks.find(b => b.cid.toString() === includes.content.toString())
+
+        // if the index is not included in the claim, it should be in CARPARK
+        if (!block && includes.parts?.length) {
+          const obj = await this.#bucket.get(`${includes.parts[0]}/${includes.parts[0]}.car`)
+          if (!obj) continue
+          const blocks = await CAR.decode(new Uint8Array(await obj.arrayBuffer()))
+          block = blocks.find(b => b.cid.toString() === includes.content.toString())
+        }
         if (!block) continue
 
         const entries = await decodeIndex(content, block.bytes)
@@ -107,6 +124,7 @@ export class ContentClaimsIndex {
           this.#cache.set(Link.create(raw.code, entry.multihash), entry)
         }
       }
+      break
     }
     this.#claimFetched.set(cid, true)
   }
@@ -116,7 +134,7 @@ export class ContentClaimsIndex {
  * @param {import('multiformats').Link} cid
  * @returns {cid is import('cardex/api').CARLink}
  */
-const isCARLink = cid => cid.code === CAR_CODE
+const isCARLink = cid => cid.code === CAR.code
 
 /**
  * Read a MultihashIndexSorted index for the passed origin CAR and return a
