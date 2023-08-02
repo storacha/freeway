@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.1](https://github.com/web3-storage/freeway/compare/v2.10.0...v2.10.1) (2023-08-02)
+
+
+### Bug Fixes
+
+* do not yield block unless hasher and decoder exist ([71fcdfe](https://github.com/web3-storage/freeway/commit/71fcdfe4f084399ce098fe149b02fbae809fe55a))
+
 ## [2.10.0](https://github.com/web3-storage/freeway/compare/v2.9.2...v2.10.0) (2023-07-31)
 
 
