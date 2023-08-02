@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.0](https://github.com/web3-storage/freeway/compare/v2.10.1...v2.11.0) (2023-08-02)
+
+
+### Features
+
+* support blake2b-256 hashes ([4cf9c90](https://github.com/web3-storage/freeway/commit/4cf9c900b198a3fd3cd18f56256b3a85ae9238c6))
+
 ## [2.10.1](https://github.com/web3-storage/freeway/compare/v2.10.0...v2.10.1) (2023-08-02)
 
 
