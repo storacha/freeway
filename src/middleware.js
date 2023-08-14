@@ -118,6 +118,7 @@ export function withIndexSources (handler) {
         if (indexSources.length > maxShards) {
           console.warn('exceeds maximum DAG shards') // fallback to content claims
           indexSources = []
+          break
         }
 
         if (!results.truncated) break
