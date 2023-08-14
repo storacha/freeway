@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.2](https://github.com/web3-storage/freeway/compare/v2.11.1...v2.11.2) (2023-08-14)
+
+
+### Bug Fixes
+
+* do not continue listing indexes before fallback to content claims ([580523a](https://github.com/web3-storage/freeway/commit/580523ad303a6a67ef8052af50e668cd10f447a9))
+
 ## [2.11.1](https://github.com/web3-storage/freeway/compare/v2.11.0...v2.11.1) (2023-08-14)
 
 
