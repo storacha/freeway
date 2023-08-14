@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.1](https://github.com/web3-storage/freeway/compare/v2.11.0...v2.11.1) (2023-08-14)
+
+
+### Bug Fixes
+
+* dfs block get ordering ([c970c2a](https://github.com/web3-storage/freeway/commit/c970c2a182a4bd8280f1d85269bf41373f14c778))
+
 ## [2.11.0](https://github.com/web3-storage/freeway/compare/v2.10.1...v2.11.0) (2023-08-02)
 
 
