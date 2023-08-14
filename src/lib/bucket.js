@@ -30,11 +30,11 @@ export class CachingBucket {
     if (cacheRes && cacheRes.body) return { key, body: cacheRes.body, arrayBuffer: () => cacheRes.arrayBuffer() }
     const obj = await this.#source.get(key)
     if (!obj) return null
-    const [body0, body1] = obj.body.tee()
-    this.#ctx.waitUntil(this.#cache.put(cacheKey, new Response(body1, {
+    const bytes = new Uint8Array(await obj.arrayBuffer())
+    this.#ctx.waitUntil(this.#cache.put(cacheKey, new Response(bytes, {
       headers: { 'Cache-Control': `max-age=${MAX_AGE}` }
     })))
-    const res = new Response(body0)
+    const res = new Response(bytes)
     return {
       key,
       get body () {
