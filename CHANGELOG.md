@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.12.0](https://github.com/web3-storage/freeway/compare/v2.11.2...v2.12.0) (2023-08-14)
+
+
+### Features
+
+* if no blocks pending then finish early ([4563e4d](https://github.com/web3-storage/freeway/commit/4563e4d6042df324bf53835f2460bbf5f5727304))
+
+
+### Bug Fixes
+
+* do not use tee() in caching bucket ([a771b3f](https://github.com/web3-storage/freeway/commit/a771b3fa8f4c02ba6b3df27fb58ddce96575bcf8))
+
 ## [2.11.2](https://github.com/web3-storage/freeway/compare/v2.11.1...v2.11.2) (2023-08-14)
 
 
