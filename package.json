@@ -1,6 +1,6 @@
 {
   "name": "freeway",
-  "version": "2.12.0",
+  "version": "2.12.1",
   "description": "An IPFS gateway for accessing UnixFS data via CAR CIDs",
   "main": "index.js",
   "type": "module",
@@ -41,11 +41,13 @@
     "streaming-iterables": "^7.1.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.388.0",
     "@cloudflare/workers-types": "^4.20230628.0",
     "@ucanto/principal": "^8.0.0",
     "ava": "^5.2.0",
     "carbites": "^1.0.6",
     "carstream": "^1.0.2",
+    "dotenv": "^16.3.1",
     "esbuild": "^0.18.13",
     "files-from-path": "^0.2.6",
     "ipfs-car": "^0.9.2",
