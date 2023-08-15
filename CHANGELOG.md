@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.1](https://github.com/web3-storage/freeway/compare/v2.12.0...v2.12.1) (2023-08-15)
+
+
+### Bug Fixes
+
+* allow GC to run ([132d946](https://github.com/web3-storage/freeway/commit/132d9460c3dc2218f04d309027cd6bc4f5131656))
+
 ## [2.12.0](https://github.com/web3-storage/freeway/compare/v2.11.2...v2.12.0) (2023-08-14)
 
 
