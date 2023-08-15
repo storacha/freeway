@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.2](https://github.com/web3-storage/freeway/compare/v2.12.1...v2.12.2) (2023-08-15)
+
+
+### Bug Fixes
+
+* remove unnecessary logging ([82467b4](https://github.com/web3-storage/freeway/commit/82467b4bffeb0bd85efd1bb42b1b129459cf699a))
+
 ## [2.12.1](https://github.com/web3-storage/freeway/compare/v2.12.0...v2.12.1) (2023-08-15)
 
 
