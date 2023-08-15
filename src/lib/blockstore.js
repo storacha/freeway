@@ -130,7 +130,6 @@ export class BatchingR2Blockstore extends R2Blockstore {
         }
       })())
 
-      // let resolvedBlocks = 0
       while (true) {
         try {
           const blockHeader = await readBlockHead(bytesReader)
@@ -140,7 +139,6 @@ export class BatchingR2Blockstore extends R2Blockstore {
           const key = mhToKey(blockHeader.cid.multihash.bytes)
           const blocks = pendingBlocks.get(key)
           if (blocks) {
-            // resolvedBlocks++
             // console.log(`got wanted block for ${blockHeader.cid}`)
             const block = {
               cid: blockHeader.cid,
@@ -187,11 +185,6 @@ export class BatchingR2Blockstore extends R2Blockstore {
       // bytesReader throws for bad data _before_ the end then we need to
       // cancel the reader - we don't need the rest.
       reader.cancel()
-
-      // Yield to allow GC to run - DO NOT REMOVE!
-      await new Promise(resolve => setTimeout(resolve))
-
-      // console.log(`batcher efficiency ${resolvedBlocks}:1`)
     }
 
     // resolve `undefined` for any remaining blocks

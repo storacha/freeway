@@ -1,5 +1,5 @@
-const MAX_BYTES_BETWEEN = 1024 * 1024 * 2
-const MAX_BATCH_SIZE = 10
+const MAX_BYTES_BETWEEN = 1024 * 1024 * 1
+const MAX_BATCH_SIZE = 5
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
