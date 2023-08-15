@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.4](https://github.com/web3-storage/freeway/compare/v2.12.3...v2.12.4) (2023-08-15)
+
+
+### Bug Fixes
+
+* do not cache content without content length ([b630e7e](https://github.com/web3-storage/freeway/commit/b630e7e9162065f24fed50e24bba785ef9c23666))
+
 ## [2.12.3](https://github.com/web3-storage/freeway/compare/v2.12.2...v2.12.3) (2023-08-15)
 
 
