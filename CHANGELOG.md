@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.3](https://github.com/web3-storage/freeway/compare/v2.12.2...v2.12.3) (2023-08-15)
+
+
+### Bug Fixes
+
+* smaller batch size to prevent OOM ([ae5a08e](https://github.com/web3-storage/freeway/commit/ae5a08ec897ab883d8b62328517b9c47f6a46745))
+
 ## [2.12.2](https://github.com/web3-storage/freeway/compare/v2.12.1...v2.12.2) (2023-08-15)
 
 
