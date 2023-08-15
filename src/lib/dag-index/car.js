@@ -101,7 +101,7 @@ export class StreamingCarIndex {
         // promised index because the real index is checked _first_.
         const promises = this.#promisedIdx.get(key) || []
         promises.forEach(({ resolve }) => {
-          console.log(`found requested entry before index finished building: ${key} => ${entry.offset}`)
+          // console.log(`found requested entry before index finished building: ${key} => ${entry.offset}`)
           resolve(entry)
         })
         this.#promisedIdx.delete(key)

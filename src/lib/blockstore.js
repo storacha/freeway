@@ -91,7 +91,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
   }
 
   async #processBatch () {
-    console.log('processing batch')
+    // console.log('processing batch')
     const batcher = this.#batcher
     this.#batcher = new OrderedCarBlockBatcher()
     const pendingBlocks = this.#pendingBlocks
@@ -110,7 +110,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
         length: batch[batch.length - 1].offset - batch[0].offset + MAX_ENCODED_BLOCK_LENGTH
       }
 
-      console.log(`fetching ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
+      // console.log(`fetching ${batch.length} blocks from ${carCid} (${range.length} bytes @ ${range.offset})`)
       const res = await this._dataBucket.get(carPath, { range })
       if (!res) {
         // should not happen, but if it does, we need to resolve `undefined`
@@ -130,7 +130,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
         }
       })())
 
-      let resolvedBlocks = 0
+      // let resolvedBlocks = 0
       while (true) {
         try {
           const blockHeader = await readBlockHead(bytesReader)
@@ -140,7 +140,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
           const key = mhToKey(blockHeader.cid.multihash.bytes)
           const blocks = pendingBlocks.get(key)
           if (blocks) {
-            resolvedBlocks++
+            // resolvedBlocks++
             // console.log(`got wanted block for ${blockHeader.cid}`)
             const block = {
               cid: blockHeader.cid,
@@ -191,7 +191,7 @@ export class BatchingR2Blockstore extends R2Blockstore {
       // Yield to allow GC to run - DO NOT REMOVE!
       await new Promise(resolve => setTimeout(resolve))
 
-      console.log(`batcher efficiency ${resolvedBlocks}:1`)
+      // console.log(`batcher efficiency ${resolvedBlocks}:1`)
     }
 
     // resolve `undefined` for any remaining blocks
