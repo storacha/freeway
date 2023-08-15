@@ -28,7 +28,7 @@
     "@ipld/dag-json": "^10.0.1",
     "@ipld/dag-pb": "^4.0.2",
     "@web3-storage/content-claims": "^3.0.1",
-    "@web3-storage/gateway-lib": "^3.4.1",
+    "@web3-storage/gateway-lib": "^3.4.2",
     "cardex": "^2.3.1",
     "chardet": "^1.5.0",
     "dagula": "^7.1.1",
