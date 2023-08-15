@@ -130,7 +130,7 @@ describe('freeway', () => {
     assert(equals(input[0].content, output))
   })
 
-  it('should cache index files', { only: true }, async () => {
+  it('should cache index files', async () => {
     const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
     const { dataCid, carCids } = await builder.add(input)
 
