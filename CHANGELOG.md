@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.5](https://github.com/web3-storage/freeway/compare/v2.12.4...v2.12.5) (2023-08-22)
+
+
+### Bug Fixes
+
+* yield intermediate blocks when path not found ([cf2d5b0](https://github.com/web3-storage/freeway/commit/cf2d5b0d2a291c1791ae01ba4a4e7779203d741c))
+
 ## [2.12.4](https://github.com/web3-storage/freeway/compare/v2.12.3...v2.12.4) (2023-08-15)
 
 
