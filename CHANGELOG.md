@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.0](https://github.com/web3-storage/freeway/compare/v2.12.5...v2.13.0) (2023-08-25)
+
+
+### Features
+
+* support entity-bytes for CAR requests ([564c3ec](https://github.com/web3-storage/freeway/commit/564c3ece08fe2c6b3e5b2721a10ad2f946885c55))
+
 ## [2.12.5](https://github.com/web3-storage/freeway/compare/v2.12.4...v2.12.5) (2023-08-22)
 
 
