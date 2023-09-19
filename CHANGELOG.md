@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.1](https://github.com/web3-storage/freeway/compare/v2.13.0...v2.13.1) (2023-09-19)
+
+
+### Bug Fixes
+
+* dfs ordering ([0b8fa95](https://github.com/web3-storage/freeway/commit/0b8fa95f2308ba72ef4b7a2ddccdc693e87d673e))
+
 ## [2.13.0](https://github.com/web3-storage/freeway/compare/v2.12.5...v2.13.0) (2023-08-25)
 
 
