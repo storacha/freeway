@@ -53,6 +53,11 @@ async function main () {
     }
   }
 
+  if (!shards.length) {
+    console.error(`❌ missing shard links: ${root}`)
+    process.exit(1)
+  }
+
   console.log(`ℹ️ DAG found in ${shards.length} shards`)
 
   // Ensure shards exist in CARPARK
