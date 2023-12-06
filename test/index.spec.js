@@ -1,4 +1,4 @@
-import { describe, before, after, it } from 'node:test'
+import { describe, before, beforeEach, after, it } from 'node:test'
 import assert from 'node:assert'
 import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
@@ -42,6 +42,10 @@ describe('freeway', () => {
     const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))
     // @ts-expect-error
     builder = new Builder(buckets[0], buckets[1], buckets[2])
+  })
+
+  beforeEach(() => {
+    claimsService.resetCallCount()
   })
 
   after(() => claimsService.close())
@@ -211,7 +215,7 @@ describe('freeway', () => {
 
     const output = new Uint8Array(await res1.arrayBuffer())
     assert(equals(input[0].content, output))
-    assert.notEqual(claimsService.getCallCount(), 0)
+    assert.equal(claimsService.getCallCount(), 2)
   })
 
   it('should GET a CAR by CAR CID', async () => {
