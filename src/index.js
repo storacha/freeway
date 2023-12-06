@@ -16,8 +16,7 @@ import {
   handleCar
 } from '@web3-storage/gateway-lib/handlers'
 import {
-  withDagula,
-  withIndexSources,
+  withContentClaimsDagula,
   withHttpRangeUnsupported,
   withVersionHeader,
   withCarHandler
@@ -44,8 +43,7 @@ export default {
       withCarHandler,
       withHttpRangeUnsupported,
       withHttpGet,
-      withIndexSources,
-      withDagula,
+      withContentClaimsDagula,
       withFixedLengthStream
     )
     return middleware(handler)(request, env, ctx)
