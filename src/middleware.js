@@ -64,7 +64,6 @@ export function withContentClaimsDagula (handler) {
       serviceURL: env.CONTENT_CLAIMS_SERVICE_URL ? new URL(env.CONTENT_CLAIMS_SERVICE_URL) : undefined
     })
     const found = await index.get(dataCid)
-    console.log('found', found)
     if (!found) {
       // fallback to old index sources and dagula fallback
       return composeMiddleware(

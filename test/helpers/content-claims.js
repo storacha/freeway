@@ -19,7 +19,7 @@ import { CAR_CODE } from '../../src/constants.js'
 /**
  * @typedef {import('carstream/api').Block & { children: import('multiformats').UnknownLink[] }} RelationIndexData
  * @typedef {Map<import('multiformats').UnknownLink, import('carstream/api').Block[]>} Claims
- * @typedef {{ setClaims: (c: Claims) => void, close: () => void, port: number, signer: import('@ucanto/interface').Signer }} MockClaimsService
+ * @typedef {{ setClaims: (c: Claims) => void, close: () => void, port: number, signer: import('@ucanto/interface').Signer, getCallCount: () => number }} MockClaimsService
  */
 
 const Decoders = {
@@ -129,11 +129,14 @@ const encode = async invocation => {
 }
 
 export const mockClaimsService = async () => {
+  let callCount = 0
   /** @type {Claims} */
   let claims = new LinkMap()
   /** @param {Claims} s */
   const setClaims = s => { claims = s }
+  const getCallCount = () => callCount
   const server = http.createServer(async (req, res) => {
+    callCount++
     const content = Link.parse(String(req.url?.split('/')[2]))
     const blocks = claims.get(content) ?? []
     const readable = new ReadableStream({
@@ -154,5 +157,5 @@ export const mockClaimsService = async () => {
   }
   // @ts-expect-error
   const { port } = server.address()
-  return { setClaims, close, port, signer: await ed25519.generate() }
+  return { setClaims, close, port, signer: await ed25519.generate(), getCallCount }
 }
