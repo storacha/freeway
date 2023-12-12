@@ -3,7 +3,7 @@
 const MAX_AGE = 86400 // 1 day
 
 /**
- * @typedef {import('../bindings').SimpleBucket} SimpleBucket
+ * @typedef {import('../bindings.js').SimpleBucket} SimpleBucket
  * @implements {SimpleBucket}
  */
 export class CachingBucket {
@@ -22,7 +22,7 @@ export class CachingBucket {
     this.#ctx = ctx
   }
 
-  /** @type {import('../bindings').SimpleBucket['get']} */
+  /** @type {import('../bindings.js').SimpleBucket['get']} */
   async get (key) {
     // > the cache key requires a TLD to be present in the URL
     const cacheKey = new URL(key, 'http://cache.freeway.dag.haus')

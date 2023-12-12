@@ -24,13 +24,13 @@ import {
 } from './middleware.js'
 
 /**
- * @typedef {import('./bindings').Environment} Environment
+ * @typedef {import('./bindings.js').Environment} Environment
  * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} IpfsUrlContext
  * @typedef {import('@web3-storage/gateway-lib').DagulaContext} DagulaContext
  */
 
 export default {
-  /** @type {import('@web3-storage/gateway-lib').Handler<import('@web3-storage/gateway-lib').Context, import('./bindings').Environment>} */
+  /** @type {import('@web3-storage/gateway-lib').Handler<import('@web3-storage/gateway-lib').Context, import('./bindings.js').Environment>} */
   fetch (request, env, ctx) {
     console.log(request.method, request.url)
     const middleware = composeMiddleware(

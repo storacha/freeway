@@ -12,9 +12,9 @@ import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE } from './constants.js'
 import { handleCarBlock } from './handlers/car-block.js'
 
 /**
- * @typedef {import('./bindings').Environment} Environment
+ * @typedef {import('./bindings.js').Environment} Environment
  * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} IpfsUrlContext
- * @typedef {import('./bindings').IndexSourcesContext} IndexSourcesContext
+ * @typedef {import('./bindings.js').IndexSourcesContext} IndexSourcesContext
  * @typedef {import('@web3-storage/gateway-lib').DagulaContext} DagulaContext
  */
 
@@ -68,7 +68,7 @@ export function withIndexSources (handler) {
     // open a cache explicitly for storing index data
     const cache = await caches.open('index-source')
 
-    /** @type {import('./bindings').IndexSource[]} */
+    /** @type {import('./bindings.js').IndexSource[]} */
     let indexSources = ctx.searchParams
       .getAll('origin')
       .flatMap(str => {

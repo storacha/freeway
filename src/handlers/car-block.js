@@ -9,7 +9,7 @@ import * as Http from '../lib/http.js'
 /**
  * Handler that serves CAR files directly from R2.
  *
- * @type {import('@web3-storage/gateway-lib').Handler<CarBlockHandlerContext, import('../bindings').Environment>}
+ * @type {import('@web3-storage/gateway-lib').Handler<CarBlockHandlerContext, import('../bindings.js').Environment>}
  */
 export async function handleCarBlock (request, env, ctx) {
   const { searchParams, dataCid } = ctx
@@ -40,7 +40,7 @@ export async function handleCarBlock (request, env, ctx) {
     })
   }
 
-  /** @type {import('../lib/http').Range|undefined} */
+  /** @type {import('../lib/http.js').Range|undefined} */
   let range
   if (request.headers.has('range')) {
     try {

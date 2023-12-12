@@ -8,15 +8,15 @@ import * as CAR from '../car.js'
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
- * @typedef {import('./api').IndexEntry} IndexEntry
- * @typedef {import('./api').Index} Index
+ * @typedef {import('./api.js').IndexEntry} IndexEntry
+ * @typedef {import('./api.js').Index} Index
  */
 
 /** @implements {Index} */
 export class ContentClaimsIndex {
   /**
    * Index store.
-   * @type {import('../../bindings').SimpleBucket}
+   * @type {import('../../bindings.js').SimpleBucket}
    */
   #bucket
   /**
@@ -44,7 +44,7 @@ export class ContentClaimsIndex {
   #serviceURL
 
   /**
-   * @param {import('../../bindings').SimpleBucket} bucket Bucket that stores CARs.
+   * @param {import('../../bindings.js').SimpleBucket} bucket Bucket that stores CARs.
    * @param {{ serviceURL?: URL }} [options]
    */
   constructor (bucket, options) {
