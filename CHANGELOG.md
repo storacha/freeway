@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.14.0](https://github.com/web3-storage/freeway/compare/v2.13.1...v2.14.0) (2023-12-12)
+
+
+### Features
+
+* content claims reads by default with fallback for old index sources ([#93](https://github.com/web3-storage/freeway/issues/93)) ([46dc509](https://github.com/web3-storage/freeway/commit/46dc509abf843a5c10cff29870a12d8a6d47080b))
+
+
+### Bug Fixes
+
+* add guard for missing dudewhere index links ([b3f7188](https://github.com/web3-storage/freeway/commit/b3f718852b83f20818fcedce14bd43eb1879fff9))
+
 ## [2.13.1](https://github.com/web3-storage/freeway/compare/v2.13.0...v2.13.1) (2023-09-19)
 
 

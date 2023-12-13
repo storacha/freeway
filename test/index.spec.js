@@ -1,4 +1,4 @@
-import { describe, before, after, it } from 'node:test'
+import { describe, before, beforeEach, after, it } from 'node:test'
 import assert from 'node:assert'
 import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
@@ -42,6 +42,10 @@ describe('freeway', () => {
     const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))
     // @ts-expect-error
     builder = new Builder(buckets[0], buckets[1], buckets[2])
+  })
+
+  beforeEach(() => {
+    claimsService.resetCallCount()
   })
 
   after(() => claimsService.close())
@@ -188,6 +192,30 @@ describe('freeway', () => {
 
     const output = new Uint8Array(await res1.arrayBuffer())
     assert(equals(input[0].content, output))
+  })
+
+  it('should use content claims by default', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
+    // no dudewhere or satnav so only content claims can satisfy the request
+    const { dataCid, carCids, indexes } = await builder.add(input, {
+      dudewhere: true,
+      satnav: true
+    })
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const res = await carpark.get(`${carCids[0]}/${carCids[0]}.car`)
+    assert(res)
+
+    // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly
+    const claims = await generateClaims(claimsService.signer, dataCid, carCids[0], res.body, indexes[0].cid, indexes[0].carCid)
+    claimsService.setClaims(claims)
+
+    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
+
+    const output = new Uint8Array(await res1.arrayBuffer())
+    assert(equals(input[0].content, output))
+    assert.equal(claimsService.getCallCount(), 2)
   })
 
   it('should GET a CAR by CAR CID', async () => {

@@ -1,5 +1,6 @@
 /* eslint-env browser */
 import { Dagula } from 'dagula'
+import { composeMiddleware } from '@web3-storage/gateway-lib/middleware'
 import { CarReader } from '@ipld/car'
 import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
 import { base32 } from 'multiformats/bases/base32'
@@ -48,6 +49,32 @@ export function withCarHandler (handler) {
       return handler(request, env, ctx) // pass to other handlers
     }
     return handleCarBlock(request, env, ctx)
+  }
+}
+
+/**
+ * Creates a dagula instance backed by the R2 blockstore backed by content claims.
+ *
+ * @type {import('@web3-storage/gateway-lib').Middleware<DagulaContext & IndexSourcesContext & IpfsUrlContext, IndexSourcesContext & IpfsUrlContext, Environment>}
+ */
+export function withContentClaimsDagula (handler) {
+  return async (request, env, ctx) => {
+    const { dataCid } = ctx
+    const index = new ContentClaimsIndex(asSimpleBucket(env.CARPARK), {
+      serviceURL: env.CONTENT_CLAIMS_SERVICE_URL ? new URL(env.CONTENT_CLAIMS_SERVICE_URL) : undefined
+    })
+    const found = await index.get(dataCid)
+    if (!found) {
+      // fallback to old index sources and dagula fallback
+      return composeMiddleware(
+        withIndexSources,
+        withDagulaFallback
+      )(handler)(request, env, ctx)
+    }
+    const blockstore = new BatchingR2Blockstore(env.CARPARK, index)
+
+    const dagula = new Dagula(blockstore)
+    return handler(request, env, { ...ctx, dagula })
   }
 }
 
@@ -132,12 +159,12 @@ export function withIndexSources (handler) {
 }
 
 /**
- * Creates a dagula instance backed by the R2 blockstore.
+ * Creates a dagula instance backed by the R2 blockstore fallback with index sources.
  * @type {import('@web3-storage/gateway-lib').Middleware<DagulaContext & IndexSourcesContext & IpfsUrlContext, IndexSourcesContext & IpfsUrlContext, Environment>}
  */
-export function withDagula (handler) {
+export function withDagulaFallback (handler) {
   return async (request, env, ctx) => {
-    const { indexSources, searchParams, dataCid } = ctx
+    const { indexSources, searchParams } = ctx
     if (!indexSources) throw new Error('missing index sources in context')
     if (!searchParams) throw new Error('missing URL search params in context')
 
@@ -163,12 +190,7 @@ export function withDagula (handler) {
         blockstore = new BatchingR2Blockstore(env.CARPARK, index)
       }
     } else {
-      const index = new ContentClaimsIndex(asSimpleBucket(env.CARPARK), {
-        serviceURL: env.CONTENT_CLAIMS_SERVICE_URL ? new URL(env.CONTENT_CLAIMS_SERVICE_URL) : undefined
-      })
-      const found = await index.get(dataCid)
-      if (!found) throw new HttpError('missing index', { status: 404 })
-      blockstore = new BatchingR2Blockstore(env.CARPARK, index)
+      throw new HttpError('missing index', { status: 404 })
     }
 
     const dagula = new Dagula(blockstore)
