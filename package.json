@@ -18,7 +18,7 @@
   "scripts": {
     "start": "npm run dev",
     "postinstall": "npm run build-content-claims",
-    "build-content-claims": "cd node_modules/@web3-storage/content-claims/packages/core && pnpm i && cd ../../ && ln -sF packages/core/{src,types,tsconfig.json,package.json} ./ ",
+    "build-content-claims": "cd node_modules/@web3-storage/content-claims/packages/core && pnpm i && cd ../../ && ln -sF packages/core/{src,types,tsconfig.json,package.json} ./ && cat package.json && ls ",
     "dev": "npm run build:debug && miniflare dist/worker.mjs --watch --debug -m --r2-persist --global-async-io --global-timers",
     "build": "esbuild --bundle src/index.js --format=esm --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
     "build:debug": "esbuild --bundle src/index.js --format=esm --outfile=dist/worker.mjs",
