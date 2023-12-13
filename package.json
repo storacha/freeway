@@ -2,13 +2,26 @@
   "name": "freeway",
   "version": "2.14.0",
   "description": "An IPFS gateway for accessing UnixFS data via CAR CIDs",
-  "main": "index.js",
+  "main": "src/index.js",
+  "types": "dist/src/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "types": "./dist/src/index.d.ts"
+    },
+    "./blockstore": {
+      "import": "./src/lib/blockstore.js",
+      "types": "./dist/src/lib/blockstore.d.ts"
+    }
+  },
   "scripts": {
+    "prepare": "npm run build",
     "start": "npm run dev",
     "dev": "npm run build:debug && miniflare dist/worker.mjs --watch --debug -m --r2-persist --global-async-io --global-timers",
-    "build": "esbuild --bundle src/index.js --format=esm --sourcemap --minify --outfile=dist/worker.mjs",
+    "build": "esbuild --bundle src/index.js --format=esm --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
     "build:debug": "esbuild --bundle src/index.js --format=esm --outfile=dist/worker.mjs",
+    "build:tsc": "tsc --build",
     "test": "npm run build:debug && node --test --experimental-vm-modules",
     "lint": "standard"
   },
@@ -27,9 +40,9 @@
     "@ipld/dag-cbor": "^9.0.0",
     "@ipld/dag-json": "^10.0.1",
     "@ipld/dag-pb": "^4.0.2",
-    "@web3-storage/content-claims": "^3.1.0",
-    "@web3-storage/gateway-lib": "^3.5.1",
-    "cardex": "^2.3.1",
+    "@web3-storage/content-claims": "^4.0.0",
+    "@web3-storage/gateway-lib": "^4.1.0",
+    "cardex": "^2.3.3",
     "chardet": "^1.5.0",
     "dagula": "^7.2.2",
     "http-range-parse": "^1.0.0",

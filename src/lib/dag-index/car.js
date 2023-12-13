@@ -4,9 +4,9 @@ import defer from 'p-defer'
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
- * @typedef {import('./api').IndexEntry} IndexEntry
+ * @typedef {import('./api.js').IndexEntry} IndexEntry
  * @typedef {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>} MultihashString
- * @typedef {import('./api').Index} Index
+ * @typedef {import('./api.js').Index} Index
  */
 
 export class MultiCarIndex {
@@ -53,7 +53,7 @@ export class MultiCarIndex {
  * @implements {Index}
  */
 export class StreamingCarIndex {
-  /** @type {import('../../bindings').IndexSource} */
+  /** @type {import('../../bindings.js').IndexSource} */
   #source
 
   /** @type {Map<MultihashString, IndexEntry>} */
@@ -68,7 +68,7 @@ export class StreamingCarIndex {
   /** @type {Error?} */
   #buildError = null
 
-  /** @param {import('../../bindings').IndexSource} source */
+  /** @param {import('../../bindings.js').IndexSource} source */
   constructor (source) {
     this.#source = source
     this.#buildIndex()
