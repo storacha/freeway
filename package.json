@@ -16,6 +16,7 @@
     }
   },
   "scripts": {
+    "prepare": "npm run build",
     "start": "npm run dev",
     "dev": "npm run build:debug && miniflare dist/worker.mjs --watch --debug -m --r2-persist --global-async-io --global-timers",
     "build": "esbuild --bundle src/index.js --format=esm --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
