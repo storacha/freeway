@@ -8,7 +8,7 @@
   "exports": {
     ".": {
       "import": "./src/index.js",
-      "types": "./src/index.d.ts"
+      "types": "./dist/src/index.d.ts"
     },
     "./blockstore": {
       "import": "./src/lib/blockstore.js",
