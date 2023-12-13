@@ -103,7 +103,6 @@ export class ContentClaimsIndex {
       const blocks = [...claim.export()]
 
       // each part is a tuple of CAR CID (content) & CARv2 index CID (includes)
-      // @ts-ignore
       for (const { content, includes } of claim.parts) {
         if (!isCARLink(content)) continue
         if (!includes) continue
