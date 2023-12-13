@@ -56,7 +56,6 @@
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.388.0",
     "@cloudflare/workers-types": "^4.20230628.0",
-    "@types/bytes": "^3.1.4",
     "@ucanto/principal": "^8.0.0",
     "ava": "^5.2.0",
     "carbites": "^1.0.6",
