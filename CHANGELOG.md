@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.15.0](https://github.com/web3-storage/freeway/compare/v2.14.0...v2.15.0) (2024-01-17)
+
+
+### Features
+
+* tsconfig.json uses module=NodeNext, and package.json supports being imported ([#95](https://github.com/web3-storage/freeway/issues/95)) ([0ba2dec](https://github.com/web3-storage/freeway/commit/0ba2dec7b34ccaeef4a328a2af4da55742395beb))
+
+
+### Bug Fixes
+
+* allow dag-json traversal ([7660cf1](https://github.com/web3-storage/freeway/commit/7660cf136508dcf9c49c0f9ac47e5b1782cb4fc4))
+
 ## [2.14.0](https://github.com/web3-storage/freeway/compare/v2.13.1...v2.14.0) (2023-12-12)
 
 
