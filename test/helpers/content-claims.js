@@ -118,6 +118,43 @@ export const generateClaims = async (signer, dataCid, carCid, carStream, indexCi
 }
 
 /**
+ * @param {import('@ucanto/interface').Signer} signer
+ * @param {import('cardex/api').CARLink} carCid
+ * @param {ReadableStream<Uint8Array>} carStream CAR file data
+ */
+export const generateLocationClaims = async (signer, carCid, carStream) => {
+  /** @type {Claims} */
+  const claims = new LinkMap()
+
+  await carStream
+    .pipeThrough(new CARReaderStream())
+    .pipeTo(new WritableStream({
+      async write ({ cid, blockOffset, blockLength }) {
+        const invocation = Assert.location.invoke({
+          issuer: signer,
+          audience: signer,
+          with: signer.did(),
+          nb: {
+            content: cid,
+            location: [
+              /** @type {import('@ucanto/interface').URI<'http:'>} */
+              (`http://localhost/${carCid}/${carCid}.car`)
+            ],
+            range: { offset: blockOffset, length: blockLength }
+          }
+        })
+
+        const blocks = claims.get(cid) ?? []
+        // @ts-expect-error
+        blocks.push(await encode(invocation))
+        claims.set(cid, blocks)
+      }
+    }))
+
+  return claims
+}
+
+/**
  * Encode a claim to a block.
  * @param {import('@ucanto/interface').IssuedInvocationView} invocation
  */

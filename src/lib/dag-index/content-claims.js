@@ -1,6 +1,9 @@
 /* global ReadableStream */
 import * as Link from 'multiformats/link'
 import * as raw from 'multiformats/codecs/raw'
+import { base32 } from 'multiformats/bases/base32'
+import * as Digest from 'multiformats/hashes/digest'
+import { varint } from 'multiformats'
 import * as Claims from '@web3-storage/content-claims/client'
 import { MultihashIndexSortedReader } from 'cardex/multihash-index-sorted'
 import { Map as LinkMap } from 'lnmap'
@@ -94,6 +97,18 @@ export class ContentClaimsIndex {
 
     const claims = await Claims.read(cid, { serviceURL: this.#serviceURL })
     for (const claim of claims) {
+      if (claim.type === 'assert/location' && claim.range?.length != null) {
+        const origin = locationToShardCID(claim.location[0])
+        if (!origin) continue
+
+        const { multihash } = cid
+        // convert offset to CARv2 index offset (start of block header)
+        const offset = claim.range.offset - (varint.encodingLength(cid.bytes.length + claim.range.length) + cid.bytes.length)
+
+        this.#cache.set(cid, { origin, multihash, digest: multihash.bytes, offset })
+        continue
+      }
+
       // skip anything that is not a relation claim, since we know by
       // our naming convention that our CAR files are named after their hash
       // and we don't serve anything that we don't have in our own bucket.
@@ -157,4 +172,27 @@ const decodeIndex = async (origin, bytes) => {
     entries.push(/** @type {IndexEntry} */({ origin, ...value }))
   }
   return entries
+}
+
+/**
+ * Attempts to extract a CAR CID from a bucket location URL.
+ *
+ * @param {string} key
+ */
+const locationToShardCID = key => {
+  const filename = String(key.split('/').at(-1))
+  const [hash] = filename.split('.')
+  try {
+    // recent buckets encode CAR CID in filename
+    const cid = Link.parse(hash).toV1()
+    if (isCARLink(cid)) return cid
+    throw new Error('not a CAR CID')
+  } catch (err) {
+    // older buckets base32 encode a CAR multihash <base32(car-multihash)>.car
+    try {
+      const digestBytes = base32.baseDecode(hash)
+      const digest = Digest.decode(digestBytes)
+      return Link.create(CAR.code, digest)
+    } catch {}
+  }
 }

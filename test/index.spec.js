@@ -6,7 +6,7 @@ import { equals } from 'uint8arrays'
 import { CarIndexer, CarReader } from '@ipld/car'
 import { Builder } from './helpers/builder.js'
 import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
-import { generateClaims, mockClaimsService } from './helpers/content-claims.js'
+import { generateClaims, generateLocationClaims, mockClaimsService } from './helpers/content-claims.js'
 
 describe('freeway', () => {
   /** @type {Miniflare} */
@@ -216,6 +216,30 @@ describe('freeway', () => {
     const output = new Uint8Array(await res1.arrayBuffer())
     assert(equals(input[0].content, output))
     assert.equal(claimsService.getCallCount(), 2)
+  })
+
+  it('should use location content claim', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
+    // no dudewhere or satnav so only content claims can satisfy the request
+    const { dataCid, carCids } = await builder.add(input, {
+      dudewhere: true,
+      satnav: true
+    })
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const res = await carpark.get(`${carCids[0]}/${carCids[0]}.car`)
+    assert(res)
+
+    // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly
+    const claims = await generateLocationClaims(claimsService.signer, carCids[0], res.body)
+    claimsService.setClaims(claims)
+
+    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
+    if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
+
+    const output = new Uint8Array(await res1.arrayBuffer())
+    assert(equals(input[0].content, output))
+    assert.equal(claimsService.getCallCount(), 8)
   })
 
   it('should GET a CAR by CAR CID', async () => {
