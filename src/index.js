@@ -19,7 +19,8 @@ import {
   withContentClaimsDagula,
   withHttpRangeUnsupported,
   withVersionHeader,
-  withCarHandler
+  withCarHandler,
+  withBlobHandler
 } from './middleware.js'
 
 /**
@@ -39,6 +40,7 @@ export default {
       withVersionHeader,
       withContentDispositionHeader,
       withErrorHandler,
+      withBlobHandler,
       withParsedIpfsUrl,
       withCarHandler,
       withHttpRangeUnsupported,

@@ -4,6 +4,8 @@ import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
 import { equals } from 'uint8arrays'
 import { CarIndexer, CarReader } from '@ipld/car'
+import { sha256 } from 'multiformats/hashes/sha2'
+import { base58btc } from 'multiformats/bases/base58'
 import { Builder } from './helpers/builder.js'
 import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
 import { generateClaims, generateLocationClaims, mockClaimsService } from './helpers/content-claims.js'
@@ -341,5 +343,79 @@ describe('freeway', () => {
     assert.equal(res.headers.get('Content-Range'), `bytes ${dataCidEntry.blockOffset}-${dataCidEntry.blockOffset + dataCidEntry.blockLength}/${obj.size}`)
     assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.car; version=1;')
     assert.equal(res.headers.get('Etag'), `"${carCids[0]}"`)
+  })
+
+  it('should GET a blob by multihash digest', async () => {
+    const input = randomBytes(138)
+    const digest = await sha256.digest(input)
+    const digestString = base58btc.encode(digest.bytes)
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const blobKey = `${digestString}/${digestString}.blob`
+    await carpark.put(blobKey, input)
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/blob/${digestString}`)
+    assert(res.ok)
+
+    const output = new Uint8Array(await res.arrayBuffer())
+    assert.equal(output.length, input.length)
+
+    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+    assert(contentLength)
+    assert.equal(contentLength, input.length)
+    assert.equal(res.headers.get('Content-Type'), 'application/octet-stream')
+    assert.equal(res.headers.get('Etag'), `"${digestString}"`)
+  })
+
+  it('should HEAD a blob by multihash digest', async () => {
+    const input = randomBytes(138)
+    const digest = await sha256.digest(input)
+    const digestString = base58btc.encode(digest.bytes)
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const blobKey = `${digestString}/${digestString}.blob`
+    await carpark.put(blobKey, input)
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/blob/${digestString}`, {
+      method: 'HEAD'
+    })
+    assert(res.ok)
+
+    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+    assert(contentLength)
+
+    assert.equal(contentLength, input.length)
+    assert.equal(res.headers.get('Accept-Ranges'), 'bytes')
+    assert.equal(res.headers.get('Etag'), `"${digestString}"`)
+  })
+
+  it('should GET a byte range by blob multihash', async () => {
+    const input = randomBytes(1138)
+    const digest = await sha256.digest(input)
+    const digestString = base58btc.encode(digest.bytes)
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const blobKey = `${digestString}/${digestString}.blob`
+    await carpark.put(blobKey, input)
+
+    const offset = 1000
+    const length = 130
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/blob/${digestString}`, {
+      headers: {
+        Range: `bytes=${offset}-${offset + length - 1}`
+      }
+    })
+    assert(res.ok)
+
+    const bytes = new Uint8Array(await res.arrayBuffer())
+    assert(equals(bytes, input.subarray(offset, offset + length)))
+
+    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+    assert(contentLength)
+    assert.equal(contentLength, length)
+    assert.equal(res.headers.get('Content-Range'), `bytes ${offset}-${offset + length - 1}/${input.length}`)
+    assert.equal(res.headers.get('Content-Type'), 'application/octet-stream')
+    assert.equal(res.headers.get('Etag'), `"${digestString}"`)
   })
 })

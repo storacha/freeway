@@ -11,6 +11,7 @@ import { MultiCarIndex, StreamingCarIndex } from './lib/dag-index/car.js'
 import { CachingBucket, asSimpleBucket } from './lib/bucket.js'
 import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE } from './constants.js'
 import { handleCarBlock } from './handlers/car-block.js'
+import { handleBlob } from './handlers/blob.js'
 
 /**
  * @typedef {import('./bindings.js').Environment} Environment
@@ -49,6 +50,22 @@ export function withCarHandler (handler) {
       return handler(request, env, ctx) // pass to other handlers
     }
     return handleCarBlock(request, env, ctx)
+  }
+}
+
+/**
+ * Middleware that will serve blobs if `/blob/:multihash` is found in the path.
+ * If path does not start with `/blob/` it delegates to the next middleware.
+ *
+ * @type {import('@web3-storage/gateway-lib').Middleware<import('@web3-storage/gateway-lib').Context, import('@web3-storage/gateway-lib').Context, Environment>}
+ */
+export function withBlobHandler (handler) {
+  return async (request, env, ctx) => {
+    const url = new URL(request.url)
+    if (!url.pathname.startsWith('/blob/')) {
+      return handler(request, env, ctx) // pass to other handlers
+    }
+    return handleBlob(request, env, ctx)
   }
 }
 
