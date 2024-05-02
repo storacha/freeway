@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.16.0](https://github.com/web3-storage/freeway/compare/v2.15.0...v2.16.0) (2024-05-02)
+
+
+### Features
+
+* use location claims ([#98](https://github.com/web3-storage/freeway/issues/98)) ([8e6b7d2](https://github.com/web3-storage/freeway/commit/8e6b7d202a5967ce9050d96d75ac23301ca01025))
+
 ## [2.15.0](https://github.com/web3-storage/freeway/compare/v2.14.0...v2.15.0) (2024-01-17)
 
 
