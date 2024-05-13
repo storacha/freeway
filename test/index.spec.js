@@ -1,12 +1,19 @@
 import { describe, before, beforeEach, after, it } from 'node:test'
 import assert from 'node:assert'
+import { Buffer } from 'node:buffer'
 import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
 import { equals } from 'uint8arrays'
 import { CarIndexer, CarReader } from '@ipld/car'
+import * as Link from 'multiformats/link'
+import { sha256 } from 'multiformats/hashes/sha2'
+import * as raw from 'multiformats/codecs/raw'
+import { Map as LinkMap } from 'lnmap'
+import { CARReaderStream } from 'carstream'
+import * as ByteRanges from 'byteranges'
 import { Builder, toBlobKey } from './helpers/builder.js'
 import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
-import { generateClaims, generateLocationClaims, mockClaimsService } from './helpers/content-claims.js'
+import { generateClaims, generateBlockLocationClaims, mockClaimsService, generateLocationClaim } from './helpers/content-claims.js'
 
 describe('freeway', () => {
   /** @type {Miniflare} */
@@ -228,7 +235,7 @@ describe('freeway', () => {
     assert(res)
 
     // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly
-    const claims = await generateLocationClaims(claimsService.signer, carCids[0], res.body)
+    const claims = await generateBlockLocationClaims(claimsService.signer, carCids[0], res.body)
     claimsService.setClaims(claims)
 
     const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
@@ -338,5 +345,134 @@ describe('freeway', () => {
     assert.equal(res.headers.get('Content-Range'), `bytes ${dataCidEntry.blockOffset}-${dataCidEntry.blockOffset + dataCidEntry.blockLength}/${obj.size}`)
     assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.car; version=1;')
     assert.equal(res.headers.get('Etag'), `"${carCids[0]}"`)
+  })
+
+  it('should GET a raw block', async () => {
+    const input = randomBytes(138)
+    const cid = Link.create(raw.code, await sha256.digest(input))
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const blobKey = toBlobKey(cid.multihash)
+    await carpark.put(blobKey, input)
+
+    const url = new URL(`https://w3s.link/ipfs/${cid}?format=raw`)
+    const claim = await generateLocationClaim(claimsService.signer, cid, url, 0, input.length)
+    claimsService.setClaims(new LinkMap([[cid, [claim]]]))
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${cid}?format=raw`)
+    assert(res.ok)
+
+    const output = new Uint8Array(await res.arrayBuffer())
+    assert.equal(output.length, input.length)
+
+    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+    assert(contentLength)
+    assert.equal(contentLength, input.length)
+    assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.raw')
+    assert.equal(res.headers.get('Etag'), `"${cid}.raw"`)
+  })
+
+  it('should HEAD a raw block', async () => {
+    const input = randomBytes(138)
+    const cid = Link.create(raw.code, await sha256.digest(input))
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const blobKey = toBlobKey(cid.multihash)
+    await carpark.put(blobKey, input)
+
+    const url = new URL(`https://w3s.link/ipfs/${cid}?format=raw`)
+    const claim = await generateLocationClaim(claimsService.signer, cid, url, 0, input.length)
+    claimsService.setClaims(new LinkMap([[cid, [claim]]]))
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${cid}?format=raw`, {
+      method: 'HEAD'
+    })
+    assert(res.ok)
+
+    const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+    assert(contentLength)
+
+    assert.equal(contentLength, input.length)
+    assert.equal(res.headers.get('Accept-Ranges'), 'bytes')
+    assert.equal(res.headers.get('Etag'), `"${cid}.raw"`)
+  })
+
+  it('should GET a byte range of raw block', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
+    // no dudewhere or satnav so only content claims can satisfy the request
+    const { carCids } = await builder.add(input, { asBlob: true })
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const res0 = await carpark.get(toBlobKey(carCids[0].multihash))
+    assert(res0)
+
+    const url = new URL(`https://w3s.link/ipfs/${carCids[0]}?format=raw`)
+    const claim = await generateLocationClaim(claimsService.signer, carCids[0], url, 0, input[0].content.length)
+    claimsService.setClaims(new LinkMap([[carCids[0], [claim]]]))
+
+    const res1 = await carpark.get(toBlobKey(carCids[0].multihash))
+    assert(res1)
+
+    await /** @type {ReadableStream} */ (res1.body)
+      .pipeThrough(new CARReaderStream())
+      .pipeTo(new WritableStream({
+        async write ({ bytes, blockOffset, blockLength }) {
+          const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${carCids[0]}?format=raw`, {
+            headers: {
+              Range: `bytes=${blockOffset}-${blockOffset + blockLength - 1}`
+            }
+          })
+          assert(res.ok)
+          assert(equals(new Uint8Array(await res.arrayBuffer()), bytes))
+
+          const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+          assert(contentLength)
+          assert.equal(contentLength, bytes.length)
+          assert.equal(res.headers.get('Content-Range'), `bytes ${blockOffset}-${blockOffset + blockLength - 1}/${input[0].content.length}`)
+          assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.raw')
+          assert.equal(res.headers.get('Etag'), `"${carCids[0]}.raw"`)
+        }
+      }))
+  })
+
+  it('should GET a multipart byte range of raw block', async () => {
+    const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
+    // no dudewhere or satnav so only content claims can satisfy the request
+    const { carCids } = await builder.add(input, { asBlob: true })
+
+    const url = new URL(`https://w3s.link/ipfs/${carCids[0]}?format=raw`)
+    const claim = await generateLocationClaim(claimsService.signer, carCids[0], url, 0, input[0].content.length)
+    claimsService.setClaims(new LinkMap([[carCids[0], [claim]]]))
+
+    const carpark = await miniflare.getR2Bucket('CARPARK')
+    const res0 = await carpark.get(toBlobKey(carCids[0].multihash))
+    assert(res0)
+
+    /** @type {Array<import('carstream/api').Block & import('carstream/api').Position>} */
+    const blocks = []
+    await /** @type {ReadableStream} */ (res0.body)
+      .pipeThrough(new CARReaderStream())
+      .pipeTo(new WritableStream({ write (block) { blocks.push(block) } }))
+
+    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${carCids[0]}?format=raw`, {
+      headers: {
+        Range: `bytes=${blocks.map(b => `${b.blockOffset}-${b.blockOffset + b.blockLength - 1}`).join(',')}`
+      }
+    })
+    assert(res1.ok)
+
+    const contentType = res1.headers.get('Content-Type')
+    assert(contentType)
+
+    const boundary = contentType.replace('multipart/byteranges; boundary=', '')
+    const body = Buffer.from(await res1.arrayBuffer())
+
+    const parts = ByteRanges.parse(body, boundary)
+    assert.equal(parts.length, blocks.length)
+
+    for (let i = 0; i < parts.length; i++) {
+      assert.equal(parts[i].type, 'application/vnd.ipld.raw')
+      assert(equals(parts[i].octets, blocks[i]?.bytes))
+    }
   })
 })

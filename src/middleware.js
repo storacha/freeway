@@ -45,9 +45,10 @@ export function withHttpRangeUnsupported (handler) {
  */
 export function withCarBlockHandler (handler) {
   return async (request, env, ctx) => {
-    const { dataCid } = ctx
+    const { dataCid, searchParams } = ctx
     if (!dataCid) throw new Error('missing data CID')
-    if (dataCid.code !== CAR_CODE) {
+    // if not CAR codec, or if a different format has been requested...
+    if (dataCid.code !== CAR_CODE || searchParams.get('format') || request.headers.get('Accept')) {
       return handler(request, env, ctx) // pass to other handlers
     }
     return handleCarBlock(request, env, ctx)

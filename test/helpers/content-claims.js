@@ -122,36 +122,46 @@ export const generateClaims = async (signer, dataCid, carCid, carStream, indexCi
  * @param {import('cardex/api').CARLink} carCid
  * @param {ReadableStream<Uint8Array>} carStream CAR file data
  */
-export const generateLocationClaims = async (signer, carCid, carStream) => {
+export const generateBlockLocationClaims = async (signer, carCid, carStream) => {
   /** @type {Claims} */
   const claims = new LinkMap()
-  const rawCid = Link.create(raw.code, carCid.multihash)
 
   await carStream
     .pipeThrough(new CARReaderStream())
     .pipeTo(new WritableStream({
       async write ({ cid, blockOffset, blockLength }) {
-        const invocation = Assert.location.invoke({
-          issuer: signer,
-          audience: signer,
-          with: signer.did(),
-          nb: {
-            content: cid,
-            location: [
-              /** @type {import('@ucanto/interface').URI<'https:'>} */
-              (`https://w3s.link/ipfs/${rawCid}?format=raw`)
-            ],
-            range: { offset: blockOffset, length: blockLength }
-          }
-        })
-
         const blocks = claims.get(cid) ?? []
-        blocks.push(await encode(invocation))
+        const location = new URL(`https://w3s.link/ipfs/${carCid}?format=raw`)
+        blocks.push(await generateLocationClaim(signer, carCid, location, blockOffset, blockLength))
         claims.set(cid, blocks)
       }
     }))
 
   return claims
+}
+
+/**
+ * @param {import('@ucanto/interface').Signer} signer
+ * @param {import('multiformats').UnknownLink} content
+ * @param {URL} location
+ * @param {number} offset
+ * @param {number} length
+ */
+export const generateLocationClaim = async (signer, content, location, offset, length) => {
+  const invocation = Assert.location.invoke({
+    issuer: signer,
+    audience: signer,
+    with: signer.did(),
+    nb: {
+      content,
+      location: [
+        // @ts-expect-error string is not ${string}:$string
+        location.toString()
+      ],
+      range: { offset, length }
+    }
+  })
+  return await encode(invocation)
 }
 
 /**
@@ -179,7 +189,7 @@ export const mockClaimsService = async () => {
   const server = http.createServer(async (req, res) => {
     callCount++
     const content = Link.parse(String(req.url?.split('/')[2]))
-    const blocks = claims.get(content) ?? []
+    const blocks = [...claims.get(content) ?? []]
     const readable = new ReadableStream({
       pull (controller) {
         const block = blocks.shift()

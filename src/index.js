@@ -44,9 +44,9 @@ export default {
       createWithHttpMethod('GET', 'HEAD'),
       withCarBlockHandler,
       withContentClaimsDagula,
-      withRawBlockHandler,
+      withFormatRawHandler,
       withHttpRangeUnsupported,
-      withCarHandler,
+      withFormatCarHandler,
       withContentDispositionHeader,
       withFixedLengthStream
     )
@@ -57,7 +57,7 @@ export default {
 /**
  * @type {import('@web3-storage/gateway-lib').Middleware<BlockContext & UnixfsContext & IpfsUrlContext, BlockContext & UnixfsContext & IpfsUrlContext, Environment>}
  */
-export function withRawBlockHandler (handler) {
+export function withFormatRawHandler (handler) {
   return async (request, env, ctx) => {
     const { headers } = request
     const { searchParams } = ctx
@@ -72,7 +72,7 @@ export function withRawBlockHandler (handler) {
 /**
  * @type {import('@web3-storage/gateway-lib').Middleware<DagContext & IpfsUrlContext, DagContext & IpfsUrlContext, Environment>}
  */
-export function withCarHandler (handler) {
+export function withFormatCarHandler (handler) {
   return async (request, env, ctx) => {
     const { headers } = request
     const { searchParams } = ctx
