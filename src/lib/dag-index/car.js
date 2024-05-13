@@ -4,7 +4,7 @@ import defer from 'p-defer'
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
- * @typedef {import('./api.js').IndexEntry} IndexEntry
+ * @typedef {import('./api.js').NotLocatedIndexEntry} NotLocatedIndexEntry
  * @typedef {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>} MultihashString
  * @typedef {import('./api.js').Index} Index
  */
@@ -26,7 +26,7 @@ export class MultiCarIndex {
 
   /**
    * @param {UnknownLink} cid
-   * @returns {Promise<IndexEntry | undefined>}
+   * @returns {Promise<NotLocatedIndexEntry | undefined>}
    */
   async get (cid) {
     const deferred = defer()
@@ -56,10 +56,10 @@ export class StreamingCarIndex {
   /** @type {import('../../bindings.js').IndexSource} */
   #source
 
-  /** @type {Map<MultihashString, IndexEntry>} */
+  /** @type {Map<MultihashString, NotLocatedIndexEntry>} */
   #idx = new Map()
 
-  /** @type {Map<MultihashString, Array<import('p-defer').DeferredPromise<IndexEntry>>>} */
+  /** @type {Map<MultihashString, Array<import('p-defer').DeferredPromise<NotLocatedIndexEntry>>>} */
   #promisedIdx = new Map()
 
   /** @type {boolean} */
@@ -86,7 +86,7 @@ export class StreamingCarIndex {
         const { done, value } = await idxReader.read()
         if (done) break
 
-        const entry = /** @type {IndexEntry} */(value)
+        const entry = /** @type {import('./api.js').NotLocatedIndexEntry} */(value)
         entry.origin = entry.origin ?? this.#source.origin
 
         const key = mhToString(entry.multihash)
