@@ -4,7 +4,7 @@ import {
   withCorsHeaders,
   withContentDispositionHeader,
   withErrorHandler,
-  withHttpGet,
+  createWithHttpMethod,
   withCdnCache,
   withParsedIpfsUrl,
   withFixedLengthStream,
@@ -19,13 +19,15 @@ import {
   withContentClaimsDagula,
   withHttpRangeUnsupported,
   withVersionHeader,
-  withCarHandler
+  withCarBlockHandler
 } from './middleware.js'
 
 /**
  * @typedef {import('./bindings.js').Environment} Environment
  * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} IpfsUrlContext
- * @typedef {import('@web3-storage/gateway-lib').DagulaContext} DagulaContext
+ * @typedef {import('@web3-storage/gateway-lib').BlockContext} BlockContext
+ * @typedef {import('@web3-storage/gateway-lib').DagContext} DagContext
+ * @typedef {import('@web3-storage/gateway-lib').UnixfsContext} UnixfsContext
  */
 
 export default {
@@ -37,30 +39,47 @@ export default {
       withContext,
       withCorsHeaders,
       withVersionHeader,
-      withContentDispositionHeader,
       withErrorHandler,
       withParsedIpfsUrl,
-      withCarHandler,
-      withHttpRangeUnsupported,
-      withHttpGet,
+      createWithHttpMethod('GET', 'HEAD'),
+      withCarBlockHandler,
       withContentClaimsDagula,
+      withRawBlockHandler,
+      withHttpRangeUnsupported,
+      withCarHandler,
+      withContentDispositionHeader,
       withFixedLengthStream
     )
-    return middleware(handler)(request, env, ctx)
+    return middleware(handleUnixfs)(request, env, ctx)
   }
 }
 
-/** @type {import('@web3-storage/gateway-lib').Handler<DagulaContext & IpfsUrlContext, Environment>} */
-async function handler (request, env, ctx) {
-  const { headers } = request
-  const { searchParams } = ctx
-  if (!searchParams) throw new Error('missing URL search params')
+/**
+ * @type {import('@web3-storage/gateway-lib').Middleware<BlockContext & UnixfsContext & IpfsUrlContext, BlockContext & UnixfsContext & IpfsUrlContext, Environment>}
+ */
+export function withRawBlockHandler (handler) {
+  return async (request, env, ctx) => {
+    const { headers } = request
+    const { searchParams } = ctx
+    if (!searchParams) throw new Error('missing URL search params')
+    if (searchParams.get('format') === 'raw' || headers.get('Accept')?.includes('application/vnd.ipld.raw')) {
+      return await handleBlock(request, env, ctx)
+    }
+    return handler(request, env, ctx) // pass to other handlers
+  }
+}
 
-  if (searchParams.get('format') === 'raw' || headers.get('Accept')?.includes('application/vnd.ipld.raw')) {
-    return await handleBlock(request, env, ctx)
+/**
+ * @type {import('@web3-storage/gateway-lib').Middleware<DagContext & IpfsUrlContext, DagContext & IpfsUrlContext, Environment>}
+ */
+export function withCarHandler (handler) {
+  return async (request, env, ctx) => {
+    const { headers } = request
+    const { searchParams } = ctx
+    if (!searchParams) throw new Error('missing URL search params')
+    if (searchParams.get('format') === 'car' || headers.get('Accept')?.includes('application/vnd.ipld.car')) {
+      return await handleCar(request, env, ctx)
+    }
+    return handler(request, env, ctx) // pass to other handlers
   }
-  if (searchParams.get('format') === 'car' || headers.get('Accept')?.includes('application/vnd.ipld.car')) {
-    return await handleCar(request, env, ctx)
-  }
-  return await handleUnixfs(request, env, ctx)
 }

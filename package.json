@@ -41,7 +41,7 @@
     "@ipld/dag-json": "^10.1.7",
     "@ipld/dag-pb": "^4.0.8",
     "@web3-storage/content-claims": "^4.0.5",
-    "@web3-storage/gateway-lib": "^4.1.1",
+    "@web3-storage/gateway-lib": "github:web3-storage/gateway-lib#feat/support-byte-range-reqs-for-raw-block",
     "cardex": "^3.0.0",
     "dagula": "^7.3.0",
     "http-range-parse": "^1.0.0",

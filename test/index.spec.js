@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
 import { equals } from 'uint8arrays'
 import { CarIndexer, CarReader } from '@ipld/car'
-import { Builder } from './helpers/builder.js'
+import { Builder, toBlobKey } from './helpers/builder.js'
 import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
 import { generateClaims, generateLocationClaims, mockClaimsService } from './helpers/content-claims.js'
 
@@ -221,13 +221,10 @@ describe('freeway', () => {
   it('should use location content claim', async () => {
     const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
     // no dudewhere or satnav so only content claims can satisfy the request
-    const { dataCid, carCids } = await builder.add(input, {
-      dudewhere: true,
-      satnav: true
-    })
+    const { dataCid, carCids } = await builder.add(input, { asBlob: true })
 
     const carpark = await miniflare.getR2Bucket('CARPARK')
-    const res = await carpark.get(`${carCids[0]}/${carCids[0]}.car`)
+    const res = await carpark.get(toBlobKey(carCids[0].multihash))
     assert(res)
 
     // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly

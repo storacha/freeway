@@ -125,6 +125,7 @@ export const generateClaims = async (signer, dataCid, carCid, carStream, indexCi
 export const generateLocationClaims = async (signer, carCid, carStream) => {
   /** @type {Claims} */
   const claims = new LinkMap()
+  const rawCid = Link.create(raw.code, carCid.multihash)
 
   await carStream
     .pipeThrough(new CARReaderStream())
@@ -137,15 +138,14 @@ export const generateLocationClaims = async (signer, carCid, carStream) => {
           nb: {
             content: cid,
             location: [
-              /** @type {import('@ucanto/interface').URI<'http:'>} */
-              (`http://localhost/${carCid}/${carCid}.car`)
+              /** @type {import('@ucanto/interface').URI<'https:'>} */
+              (`https://w3s.link/ipfs/${rawCid}?format=raw`)
             ],
             range: { offset: blockOffset, length: blockLength }
           }
         })
 
         const blocks = claims.get(cid) ?? []
-        // @ts-expect-error
         blocks.push(await encode(invocation))
         claims.set(cid, blocks)
       }
@@ -156,7 +156,7 @@ export const generateLocationClaims = async (signer, carCid, carStream) => {
 
 /**
  * Encode a claim to a block.
- * @param {import('@ucanto/interface').IssuedInvocationView} invocation
+ * @param {import('@ucanto/interface').IPLDViewBuilder<import('@ucanto/interface').Delegation>} invocation
  */
 const encode = async invocation => {
   const view = await invocation.buildIPLDView()
