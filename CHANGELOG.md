@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.0](https://github.com/web3-storage/freeway/compare/v2.16.0...v2.17.0) (2024-05-15)
+
+
+### Features
+
+* support byte range for raw block requests ([#101](https://github.com/web3-storage/freeway/issues/101)) ([1ff3bad](https://github.com/web3-storage/freeway/commit/1ff3bad8f395a0f459617b20fd8a97d82870514e))
+
 ## [2.16.0](https://github.com/web3-storage/freeway/compare/v2.15.0...v2.16.0) (2024-05-02)
 
 
