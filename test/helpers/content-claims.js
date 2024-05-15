@@ -119,10 +119,10 @@ export const generateClaims = async (signer, dataCid, carCid, carStream, indexCi
 
 /**
  * @param {import('@ucanto/interface').Signer} signer
- * @param {import('cardex/api').CARLink} carCid
+ * @param {import('multiformats').Link} shard
  * @param {ReadableStream<Uint8Array>} carStream CAR file data
  */
-export const generateBlockLocationClaims = async (signer, carCid, carStream) => {
+export const generateBlockLocationClaims = async (signer, shard, carStream) => {
   /** @type {Claims} */
   const claims = new LinkMap()
 
@@ -131,8 +131,8 @@ export const generateBlockLocationClaims = async (signer, carCid, carStream) => 
     .pipeTo(new WritableStream({
       async write ({ cid, blockOffset, blockLength }) {
         const blocks = claims.get(cid) ?? []
-        const location = new URL(`https://w3s.link/ipfs/${carCid}?format=raw`)
-        blocks.push(await generateLocationClaim(signer, carCid, location, blockOffset, blockLength))
+        const location = new URL(`https://w3s.link/ipfs/${shard}?format=raw`)
+        blocks.push(await generateLocationClaim(signer, shard, location, blockOffset, blockLength))
         claims.set(cid, blocks)
       }
     }))

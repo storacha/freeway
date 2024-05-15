@@ -3,6 +3,7 @@ import { pack } from 'ipfs-car/pack'
 import * as Link from 'multiformats/link'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { base58btc } from 'multiformats/bases/base58'
+import * as raw from 'multiformats/codecs/raw'
 import { CarIndexer } from '@ipld/car'
 import { concat } from 'uint8arrays'
 import { TreewalkCarSplitter } from 'carbites/treewalk'
@@ -13,7 +14,7 @@ import * as CAR from './car.js'
 
 /**
  * @typedef {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>} MultihashString
- * @typedef {import('multiformats').ToString<import('cardex/api.js').CARLink>} ShardCID
+ * @typedef {import('multiformats').ToString<import('cardex/api').CARLink>} ShardCID
  * @typedef {number} Offset
  */
 
@@ -107,24 +108,28 @@ export class Builder {
 
     /** @type {import('cardex/api').CARLink[]} */
     const carCids = []
+    /** @type {import('multiformats').Link<Uint8Array, typeof raw.code>[]} */
+    const blobCids = []
     /** @type {Array<{ cid: import('multiformats').Link, carCid: import('cardex/api').CARLink }>} */
     const indexes = []
     const splitter = await TreewalkCarSplitter.fromIterable(out, TARGET_SHARD_SIZE)
 
     for await (const car of splitter.cars()) {
       const carBytes = concat(await collect(car))
-      const carCid = Link.create(CAR.code, await sha256.digest(carBytes))
 
       if (options.asBlob) {
-        this.#carpark.put(toBlobKey(carCid.multihash), carBytes)
+        const blobCid = Link.create(raw.code, await sha256.digest(carBytes))
+        this.#carpark.put(toBlobKey(blobCid.multihash), carBytes)
+        blobCids.push(blobCid)
       } else {
+        const carCid = Link.create(CAR.code, await sha256.digest(carBytes))
         this.#carpark.put(toCarKey(carCid), carBytes)
         if (options.satnav ?? true) {
           await this.#writeIndex(carCid, carBytes)
         }
         indexes.push(await this.#writeIndexCar(carBytes))
+        carCids.push(carCid)
       }
-      carCids.push(carCid)
     }
 
     if (!options.asBlob && (options.dudewhere ?? true)) {
@@ -132,7 +137,7 @@ export class Builder {
       await this.#writeLinks(dataCid, carCids)
     }
 
-    return { dataCid, carCids, indexes }
+    return { dataCid, carCids, indexes, blobCids }
   }
 
   /**

@@ -1,6 +1,5 @@
 import { readBlockHead, asyncIterableReader } from '@ipld/car/decoder'
 import { base58btc } from 'multiformats/bases/base58'
-import * as Link from 'multiformats/link'
 import defer from 'p-defer'
 import { OrderedCarBlockBatcher } from './block-batch.js'
 import * as IndexEntry from './dag-index/entry.js'
@@ -39,17 +38,11 @@ export class R2Blockstore {
     if (!entry) return
 
     if (IndexEntry.isLocated(entry)) {
-      // if host is "w3s.link" then content can be found in CARPARK
-      const url = entry.site.location.find(l => l.hostname === 'w3s.link')
-      // TODO: allow fetch from _any_ URL
-      if (!url) return
+      const keyAndOptions = IndexEntry.toBucketGet(entry)
+      if (!keyAndOptions) return
 
-      const link = Link.parse(url.pathname.split('/')[2])
-      const digestString = base58btc.encode(link.multihash.bytes)
-      const key = `${digestString}/${digestString}.blob`
-      const res = await this._dataBucket.get(key, { range: entry.site.range })
-      if (!res) return
-      return { cid, bytes: new Uint8Array(await res.arrayBuffer()) }
+      const res = await this._dataBucket.get(keyAndOptions[0], keyAndOptions[1])
+      return res ? { cid, bytes: new Uint8Array(await res.arrayBuffer()) } : undefined
     }
 
     const carPath = `${entry.origin}/${entry.origin}.car`
@@ -91,23 +84,11 @@ export class R2Blockstore {
     const entry = await this._idx.get(cid)
     if (!entry) return
 
-    // stream API exists only for blobs (i.e. location claimed)
-    if (IndexEntry.isLocated(entry)) {
-      // if host is "w3s.link" then content can be found in CARPARK
-      const url = entry.site.location.find(l => l.hostname === 'w3s.link')
-      // TODO: allow fetch from any URL
-      if (!url) return
+    const keyAndOptions = IndexEntry.toBucketGet(entry, options)
+    if (!keyAndOptions) return
 
-      const link = Link.parse(url.pathname.split('/')[2])
-      const digestString = base58btc.encode(link.multihash.bytes)
-      const key = `${digestString}/${digestString}.blob`
-      const first = entry.site.range.offset + (options?.range?.[0] ?? 0)
-      const last = entry.site.range.offset + (options?.range?.[1] ?? (entry.site.range.length - 1))
-      const range = { offset: first, length: last - first + 1 }
-      const res = await this._dataBucket.get(key, { range })
-      if (!res) return
-      return /** @type {ReadableStream<Uint8Array>} */ (res.body)
-    }
+    const res = await this._dataBucket.get(keyAndOptions[0], keyAndOptions[1])
+    return /** @type {ReadableStream<Uint8Array>|undefined} */ (res?.body)
   }
 }
 
