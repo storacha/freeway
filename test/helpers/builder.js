@@ -2,6 +2,8 @@
 import { pack } from 'ipfs-car/pack'
 import * as Link from 'multiformats/link'
 import { sha256 } from 'multiformats/hashes/sha2'
+import { base58btc } from 'multiformats/bases/base58'
+import * as raw from 'multiformats/codecs/raw'
 import { CarIndexer } from '@ipld/car'
 import { concat } from 'uint8arrays'
 import { TreewalkCarSplitter } from 'carbites/treewalk'
@@ -12,7 +14,7 @@ import * as CAR from './car.js'
 
 /**
  * @typedef {import('multiformats').ToString<import('multiformats').MultihashDigest, 'z'>} MultihashString
- * @typedef {import('multiformats').ToString<import('cardex/api.js').CARLink>} ShardCID
+ * @typedef {import('multiformats').ToString<import('cardex/api').CARLink>} ShardCID
  * @typedef {number} Offset
  */
 
@@ -33,16 +35,6 @@ export class Builder {
     this.#carpark = carpark
     this.#satnav = satnav
     this.#dudewhere = dudewhere
-  }
-
-  /**
-   * @param {Uint8Array} bytes CAR file bytes
-   */
-  async #writeCar (bytes) {
-    /** @type {import('cardex/api.js').CARLink} */
-    const cid = Link.create(CAR.code, await sha256.digest(bytes))
-    await this.#carpark.put(`${cid}/${cid}.car`, bytes)
-    return cid
   }
 
   /**
@@ -99,10 +91,10 @@ export class Builder {
 
   /**
    * @param {import('ipfs-car/pack').PackProperties['input']} input
-   * @param {Omit<import('ipfs-car/pack').PackProperties, 'input'> & {
+   * @param {Omit<import('ipfs-car/pack').PackProperties, 'input'> & ({
    *   dudewhere?: boolean
    *   satnav?: boolean
-   * }} [options]
+   * } | { asBlob?: boolean })} [options]
    */
   async add (input, options = {}) {
     const { root, out } = await pack({
@@ -116,26 +108,36 @@ export class Builder {
 
     /** @type {import('cardex/api').CARLink[]} */
     const carCids = []
+    /** @type {import('multiformats').Link<Uint8Array, typeof raw.code>[]} */
+    const blobCids = []
     /** @type {Array<{ cid: import('multiformats').Link, carCid: import('cardex/api').CARLink }>} */
     const indexes = []
     const splitter = await TreewalkCarSplitter.fromIterable(out, TARGET_SHARD_SIZE)
 
     for await (const car of splitter.cars()) {
       const carBytes = concat(await collect(car))
-      const carCid = await this.#writeCar(carBytes)
-      if (options.satnav ?? true) {
-        await this.#writeIndex(carCid, carBytes)
+
+      if (options.asBlob) {
+        const blobCid = Link.create(raw.code, await sha256.digest(carBytes))
+        this.#carpark.put(toBlobKey(blobCid.multihash), carBytes)
+        blobCids.push(blobCid)
+      } else {
+        const carCid = Link.create(CAR.code, await sha256.digest(carBytes))
+        this.#carpark.put(toCarKey(carCid), carBytes)
+        if (options.satnav ?? true) {
+          await this.#writeIndex(carCid, carBytes)
+        }
+        indexes.push(await this.#writeIndexCar(carBytes))
+        carCids.push(carCid)
       }
-      indexes.push(await this.#writeIndexCar(carBytes))
-      carCids.push(carCid)
     }
 
-    if (options.dudewhere ?? true) {
+    if (!options.asBlob && (options.dudewhere ?? true)) {
       // @ts-ignore old multiformats in ipfs-car
       await this.#writeLinks(dataCid, carCids)
     }
 
-    return { dataCid, carCids, indexes }
+    return { dataCid, carCids, indexes, blobCids }
   }
 
   /**
@@ -171,6 +173,15 @@ export class Builder {
     // @ts-expect-error
     await this.#dudewhere.put(`${dataCid}/.rollup.idx`, readable)
   }
+}
+
+/** @param {import('multiformats').Link} cid */
+export const toCarKey = cid => `${cid}/${cid}.car`
+
+/** @param {import('multiformats').MultihashDigest} digest */
+export const toBlobKey = digest => {
+  const digestString = base58btc.encode(digest.bytes)
+  return `${digestString}/${digestString}.blob`
 }
 
 /**

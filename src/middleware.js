@@ -16,7 +16,9 @@ import { handleCarBlock } from './handlers/car-block.js'
  * @typedef {import('./bindings.js').Environment} Environment
  * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} IpfsUrlContext
  * @typedef {import('./bindings.js').IndexSourcesContext} IndexSourcesContext
- * @typedef {import('@web3-storage/gateway-lib').DagulaContext} DagulaContext
+ * @typedef {import('@web3-storage/gateway-lib').BlockContext} BlockContext
+ * @typedef {import('@web3-storage/gateway-lib').DagContext} DagContext
+ * @typedef {import('@web3-storage/gateway-lib').UnixfsContext} UnixfsContext
  */
 
 /**
@@ -41,11 +43,12 @@ export function withHttpRangeUnsupported (handler) {
  *
  * @type {import('@web3-storage/gateway-lib').Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
  */
-export function withCarHandler (handler) {
+export function withCarBlockHandler (handler) {
   return async (request, env, ctx) => {
-    const { dataCid } = ctx
+    const { dataCid, searchParams } = ctx
     if (!dataCid) throw new Error('missing data CID')
-    if (dataCid.code !== CAR_CODE) {
+    // if not CAR codec, or if a different format has been requested...
+    if (dataCid.code !== CAR_CODE || searchParams.get('format') || request.headers.get('Accept')) {
       return handler(request, env, ctx) // pass to other handlers
     }
     return handleCarBlock(request, env, ctx)
@@ -55,7 +58,7 @@ export function withCarHandler (handler) {
 /**
  * Creates a dagula instance backed by the R2 blockstore backed by content claims.
  *
- * @type {import('@web3-storage/gateway-lib').Middleware<DagulaContext & IndexSourcesContext & IpfsUrlContext, IndexSourcesContext & IpfsUrlContext, Environment>}
+ * @type {import('@web3-storage/gateway-lib').Middleware<BlockContext & DagContext & UnixfsContext & IndexSourcesContext & IpfsUrlContext, IndexSourcesContext & IpfsUrlContext, Environment>}
  */
 export function withContentClaimsDagula (handler) {
   return async (request, env, ctx) => {
@@ -74,7 +77,7 @@ export function withContentClaimsDagula (handler) {
     const blockstore = new BatchingR2Blockstore(env.CARPARK, index)
 
     const dagula = new Dagula(blockstore)
-    return handler(request, env, { ...ctx, dagula })
+    return handler(request, env, { ...ctx, blocks: dagula, dag: dagula, unixfs: dagula })
   }
 }
 
@@ -160,7 +163,7 @@ export function withIndexSources (handler) {
 
 /**
  * Creates a dagula instance backed by the R2 blockstore fallback with index sources.
- * @type {import('@web3-storage/gateway-lib').Middleware<DagulaContext & IndexSourcesContext & IpfsUrlContext, IndexSourcesContext & IpfsUrlContext, Environment>}
+ * @type {import('@web3-storage/gateway-lib').Middleware<BlockContext & DagContext & UnixfsContext & IndexSourcesContext & IpfsUrlContext, IndexSourcesContext & IpfsUrlContext, Environment>}
  */
 export function withDagulaFallback (handler) {
   return async (request, env, ctx) => {
@@ -194,7 +197,7 @@ export function withDagulaFallback (handler) {
     }
 
     const dagula = new Dagula(blockstore)
-    return handler(request, env, { ...ctx, dagula })
+    return handler(request, env, { ...ctx, blocks: dagula, dag: dagula, unixfs: dagula })
   }
 }
 

@@ -1,9 +1,6 @@
 /* global ReadableStream */
 import * as Link from 'multiformats/link'
 import * as raw from 'multiformats/codecs/raw'
-import { base32 } from 'multiformats/bases/base32'
-import * as Digest from 'multiformats/hashes/digest'
-import { varint } from 'multiformats'
 import * as Claims from '@web3-storage/content-claims/client'
 import { MultihashIndexSortedReader } from 'cardex/multihash-index-sorted'
 import { Map as LinkMap } from 'lnmap'
@@ -11,6 +8,7 @@ import * as CAR from '../car.js'
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
+ * @typedef {import('./api.js').NotLocatedIndexEntry} NotLocatedIndexEntry
  * @typedef {import('./api.js').IndexEntry} IndexEntry
  * @typedef {import('./api.js').Index} Index
  */
@@ -98,14 +96,13 @@ export class ContentClaimsIndex {
     const claims = await Claims.read(cid, { serviceURL: this.#serviceURL })
     for (const claim of claims) {
       if (claim.type === 'assert/location' && claim.range?.length != null) {
-        const origin = locationToShardCID(claim.location[0])
-        if (!origin) continue
-
-        const { multihash } = cid
-        // convert offset to CARv2 index offset (start of block header)
-        const offset = claim.range.offset - (varint.encodingLength(cid.bytes.length + claim.range.length) + cid.bytes.length)
-
-        this.#cache.set(cid, { origin, multihash, digest: multihash.bytes, offset })
+        this.#cache.set(cid, {
+          digest: cid.multihash,
+          site: {
+            location: claim.location.map(l => new URL(l)),
+            range: { offset: claim.range.offset, length: claim.range.length }
+          }
+        })
         continue
       }
 
@@ -136,7 +133,11 @@ export class ContentClaimsIndex {
 
         const entries = await decodeIndex(content, block.bytes)
         for (const entry of entries) {
-          this.#cache.set(Link.create(raw.code, entry.multihash), entry)
+          const entryCid = Link.create(raw.code, entry.multihash)
+          // do not overwrite an existing LocatedIndexEntry
+          if (!this.#cache.has(entryCid)) {
+            this.#cache.set(entryCid, entry)
+          }
         }
       }
       break
@@ -169,30 +170,7 @@ const decodeIndex = async (origin, bytes) => {
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-    entries.push(/** @type {IndexEntry} */({ origin, ...value }))
+    entries.push(/** @type {NotLocatedIndexEntry} */({ origin, ...value }))
   }
   return entries
-}
-
-/**
- * Attempts to extract a CAR CID from a bucket location URL.
- *
- * @param {string} key
- */
-const locationToShardCID = key => {
-  const filename = String(key.split('/').at(-1))
-  const [hash] = filename.split('.')
-  try {
-    // recent buckets encode CAR CID in filename
-    const cid = Link.parse(hash).toV1()
-    if (isCARLink(cid)) return cid
-    throw new Error('not a CAR CID')
-  } catch (err) {
-    // older buckets base32 encode a CAR multihash <base32(car-multihash)>.car
-    try {
-      const digestBytes = base32.baseDecode(hash)
-      const digest = Digest.decode(digestBytes)
-      return Link.create(CAR.code, digest)
-    } catch {}
-  }
 }
