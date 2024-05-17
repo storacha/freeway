@@ -14,6 +14,7 @@ import * as ByteRanges from 'byteranges'
 import { Builder, toBlobKey } from './helpers/builder.js'
 import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
 import { generateClaims, generateBlockLocationClaims, mockClaimsService, generateLocationClaim } from './helpers/content-claims.js'
+import { mockBucketService } from './helpers/bucket.js'
 
 describe('freeway', () => {
   /** @type {Miniflare} */
@@ -22,6 +23,8 @@ describe('freeway', () => {
   let builder
   /** @type {import('./helpers/content-claims.js').MockClaimsService} */
   let claimsService
+  /** @type {import('./helpers/bucket.js').MockBucketService} */
+  let bucketService
 
   before(async () => {
     const bucketNames = ['CARPARK', 'SATNAV', 'DUDEWHERE']
@@ -47,15 +50,21 @@ describe('freeway', () => {
     })
 
     const buckets = await Promise.all(bucketNames.map(b => miniflare.getR2Bucket(b)))
-    // @ts-expect-error
+    // @ts-expect-error bucket type mismatch
     builder = new Builder(buckets[0], buckets[1], buckets[2])
+    // @ts-expect-error bucket type mismatch
+    bucketService = await mockBucketService(buckets[0])
   })
 
   beforeEach(() => {
     claimsService.resetCallCount()
+    bucketService.resetCallCount()
   })
 
-  after(() => claimsService.close())
+  after(() => {
+    claimsService.close()
+    bucketService.close()
+  })
 
   it('should get a file', async () => {
     const input = randomBytes(256)
@@ -99,6 +108,7 @@ describe('freeway', () => {
 
     const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
 
+    console.log(res.status, await res.text())
     assert(!res.ok)
     assert.equal(res.status, 404)
   })
@@ -230,12 +240,11 @@ describe('freeway', () => {
     // no dudewhere or satnav so only content claims can satisfy the request
     const { dataCid, blobCids } = await builder.add(input, { asBlob: true })
 
-    const carpark = await miniflare.getR2Bucket('CARPARK')
-    const res = await carpark.get(toBlobKey(blobCids[0].multihash))
-    assert(res)
+    const location = new URL(toBlobKey(blobCids[0].multihash), bucketService.url)
+    const res = await fetch(location)
+    assert(res.body)
 
-    // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly
-    const claims = await generateBlockLocationClaims(claimsService.signer, blobCids[0], res.body)
+    const claims = await generateBlockLocationClaims(claimsService.signer, blobCids[0], res.body, location)
     claimsService.setClaims(claims)
 
     const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
@@ -355,8 +364,8 @@ describe('freeway', () => {
     const blobKey = toBlobKey(cid.multihash)
     await carpark.put(blobKey, input)
 
-    const url = new URL(`https://w3s.link/ipfs/${cid}?format=raw`)
-    const claim = await generateLocationClaim(claimsService.signer, cid, url, 0, input.length)
+    const location = new URL(blobKey, bucketService.url)
+    const claim = await generateLocationClaim(claimsService.signer, cid, location, 0, input.length)
     claimsService.setClaims(new LinkMap([[cid, [claim]]]))
 
     const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${cid}?format=raw`)
@@ -380,8 +389,8 @@ describe('freeway', () => {
     const blobKey = toBlobKey(cid.multihash)
     await carpark.put(blobKey, input)
 
-    const url = new URL(`https://w3s.link/ipfs/${cid}?format=raw`)
-    const claim = await generateLocationClaim(claimsService.signer, cid, url, 0, input.length)
+    const location = new URL(blobKey, bucketService.url)
+    const claim = await generateLocationClaim(claimsService.signer, cid, location, 0, input.length)
     claimsService.setClaims(new LinkMap([[cid, [claim]]]))
 
     const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${cid}?format=raw`, {
@@ -402,21 +411,18 @@ describe('freeway', () => {
     // no dudewhere or satnav so only content claims can satisfy the request
     const { blobCids } = await builder.add(input, { asBlob: true })
 
-    const carpark = await miniflare.getR2Bucket('CARPARK')
-    const res0 = await carpark.get(toBlobKey(blobCids[0].multihash))
-    assert(res0)
-
-    const url = new URL(`https://w3s.link/ipfs/${blobCids[0]}?format=raw`)
-    const claim = await generateLocationClaim(claimsService.signer, blobCids[0], url, 0, input[0].content.length)
+    const location = new URL(toBlobKey(blobCids[0].multihash), bucketService.url)
+    const claim = await generateLocationClaim(claimsService.signer, blobCids[0], location, 0, input[0].content.length)
     claimsService.setClaims(new LinkMap([[blobCids[0], [claim]]]))
 
-    const res1 = await carpark.get(toBlobKey(blobCids[0].multihash))
-    assert(res1)
+    const res = await fetch(location)
+    assert(res.ok)
+    assert(res.body)
 
-    await /** @type {ReadableStream} */ (res1.body)
+    await res.body
       .pipeThrough(new CARReaderStream())
       .pipeTo(new WritableStream({
-        async write ({ bytes, blockOffset, blockLength }) {
+        async write ({ cid, bytes, blockOffset, blockLength }) {
           const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${blobCids[0]}?format=raw`, {
             headers: {
               Range: `bytes=${blockOffset}-${blockOffset + blockLength - 1}`
@@ -440,17 +446,17 @@ describe('freeway', () => {
     // no dudewhere or satnav so only content claims can satisfy the request
     const { blobCids } = await builder.add(input, { asBlob: true })
 
-    const url = new URL(`https://w3s.link/ipfs/${blobCids[0]}?format=raw`)
-    const claim = await generateLocationClaim(claimsService.signer, blobCids[0], url, 0, input[0].content.length)
+    const location = new URL(toBlobKey(blobCids[0].multihash), bucketService.url)
+    const claim = await generateLocationClaim(claimsService.signer, blobCids[0], location, 0, input[0].content.length)
     claimsService.setClaims(new LinkMap([[blobCids[0], [claim]]]))
 
-    const carpark = await miniflare.getR2Bucket('CARPARK')
-    const res0 = await carpark.get(toBlobKey(blobCids[0].multihash))
-    assert(res0)
+    const res0 = await fetch(location)
+    assert(res0.ok)
+    assert(res0.body)
 
     /** @type {Array<import('carstream/api').Block & import('carstream/api').Position>} */
     const blocks = []
-    await /** @type {ReadableStream} */ (res0.body)
+    await res0.body
       .pipeThrough(new CARReaderStream())
       .pipeTo(new WritableStream({ write (block) { blocks.push(block) } }))
 
