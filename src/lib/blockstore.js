@@ -38,11 +38,16 @@ export class R2Blockstore {
     if (!entry) return
 
     if (IndexEntry.isLocated(entry)) {
-      const keyAndOptions = IndexEntry.toBucketGet(entry)
-      if (!keyAndOptions) return
-
-      const res = await this._dataBucket.get(keyAndOptions[0], keyAndOptions[1])
-      return res ? { cid, bytes: new Uint8Array(await res.arrayBuffer()) } : undefined
+      for (const { url, range } of IndexEntry.toRequestCandidates(entry)) {
+        const headers = { Range: `bytes=${range[0]}-${range[1]}` }
+        const res = await fetch(url, { headers })
+        if (!res.ok) {
+          console.warn(`failed to fetch ${url}: ${res.status} ${await res.text()}`)
+          continue
+        }
+        return { cid, bytes: new Uint8Array(await res.arrayBuffer()) }
+      }
+      return
     }
 
     const carPath = `${entry.origin}/${entry.origin}.car`
@@ -84,11 +89,15 @@ export class R2Blockstore {
     const entry = await this._idx.get(cid)
     if (!entry) return
 
-    const keyAndOptions = IndexEntry.toBucketGet(entry, options)
-    if (!keyAndOptions) return
-
-    const res = await this._dataBucket.get(keyAndOptions[0], keyAndOptions[1])
-    return /** @type {ReadableStream<Uint8Array>|undefined} */ (res?.body)
+    for (const { url, range } of IndexEntry.toRequestCandidates(entry, options)) {
+      const headers = { Range: `bytes=${range[0]}-${range[1]}` }
+      const res = await fetch(url, { headers })
+      if (!res.ok) {
+        console.warn(`failed to fetch ${url}: ${res.status} ${await res.text()}`)
+        continue
+      }
+      return /** @type {ReadableStream<Uint8Array>|undefined} */ (res?.body)
+    }
   }
 }
 

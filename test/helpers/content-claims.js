@@ -121,8 +121,9 @@ export const generateClaims = async (signer, dataCid, carCid, carStream, indexCi
  * @param {import('@ucanto/interface').Signer} signer
  * @param {import('multiformats').Link} shard
  * @param {ReadableStream<Uint8Array>} carStream CAR file data
+ * @param {URL} location
  */
-export const generateBlockLocationClaims = async (signer, shard, carStream) => {
+export const generateBlockLocationClaims = async (signer, shard, carStream, location) => {
   /** @type {Claims} */
   const claims = new LinkMap()
 
@@ -131,7 +132,6 @@ export const generateBlockLocationClaims = async (signer, shard, carStream) => {
     .pipeTo(new WritableStream({
       async write ({ cid, blockOffset, blockLength }) {
         const blocks = claims.get(cid) ?? []
-        const location = new URL(`https://w3s.link/ipfs/${shard}?format=raw`)
         blocks.push(await generateLocationClaim(signer, shard, location, blockOffset, blockLength))
         claims.set(cid, blocks)
       }
@@ -155,8 +155,8 @@ export const generateLocationClaim = async (signer, content, location, offset, l
     nb: {
       content,
       location: [
-        // @ts-expect-error string is not ${string}:$string
-        location.toString()
+        /** @type {import('@ucanto/interface').URI} */
+        (location.toString())
       ],
       range: { offset, length }
     }
