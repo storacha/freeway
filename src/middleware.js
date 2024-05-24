@@ -4,9 +4,10 @@ import { composeMiddleware } from '@web3-storage/gateway-lib/middleware'
 import { CarReader } from '@ipld/car'
 import { parseCid, HttpError, toIterable } from '@web3-storage/gateway-lib/util'
 import { base32 } from 'multiformats/bases/base32'
+import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
+import * as ContentClaimsLocator from '@web3-storage/blob-fetcher/locator/content-claims'
 import { BatchingR2Blockstore } from './lib/blockstore.js'
 import { version } from '../package.json'
-import { ContentClaimsIndex } from './lib/dag-index/content-claims.js'
 import { MultiCarIndex, StreamingCarIndex } from './lib/dag-index/car.js'
 import { CachingBucket, asSimpleBucket } from './lib/bucket.js'
 import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE } from './constants.js'
@@ -56,27 +57,49 @@ export function withCarBlockHandler (handler) {
 }
 
 /**
- * Creates a dagula instance backed by the R2 blockstore backed by content claims.
+ * Creates a dagula instance backed by content claims.
  *
  * @type {import('@web3-storage/gateway-lib').Middleware<BlockContext & DagContext & UnixfsContext & IndexSourcesContext & IpfsUrlContext, IndexSourcesContext & IpfsUrlContext, Environment>}
  */
 export function withContentClaimsDagula (handler) {
   return async (request, env, ctx) => {
     const { dataCid } = ctx
-    const index = new ContentClaimsIndex(asSimpleBucket(env.CARPARK), {
+    const locator = ContentClaimsLocator.create({
       serviceURL: env.CONTENT_CLAIMS_SERVICE_URL ? new URL(env.CONTENT_CLAIMS_SERVICE_URL) : undefined
     })
-    const found = await index.get(dataCid)
-    if (!found) {
-      // fallback to old index sources and dagula fallback
-      return composeMiddleware(
-        withIndexSources,
-        withDagulaFallback
-      )(handler)(request, env, ctx)
+    const locRes = await locator.locate(dataCid.multihash)
+    if (locRes.error) {
+      if (locRes.error.name === 'NotFound') {
+        // fallback to old index sources and dagula fallback
+        return composeMiddleware(
+          withIndexSources,
+          withDagulaFallback
+        )(handler)(request, env, ctx)
+      }
+      throw new Error(`failed to locate: ${dataCid}`, { cause: locRes.error })
     }
-    const blockstore = new BatchingR2Blockstore(env.CARPARK, index)
 
-    const dagula = new Dagula(blockstore)
+    const fetcher = BatchingFetcher.create(locator)
+    const dagula = new Dagula({
+      async get (cid) {
+        const res = await fetcher.fetch(cid.multihash)
+        return res.ok ? { cid, bytes: await res.ok.bytes() } : undefined
+      },
+      async stream (cid, options) {
+        const res = await fetcher.fetch(cid.multihash, options)
+        // @ts-expect-error `MINIFLARE` is not a property of `globalThis`
+        if (globalThis.MINIFLARE && res.ok) {
+          return res.ok.stream().pipeThrough(new TransformStream({
+            transform: (chunk, controller) => controller.enqueue(chunk.slice())
+          }))
+        }
+        return res.ok ? res.ok.stream() : undefined
+      },
+      async stat (cid) {
+        const res = await locator.locate(cid.multihash)
+        return res.ok ? { size: res.ok.site[0].range.length } : undefined
+      }
+    })
     return handler(request, env, { ...ctx, blocks: dagula, dag: dagula, unixfs: dagula })
   }
 }
