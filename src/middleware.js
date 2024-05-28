@@ -87,6 +87,12 @@ export function withContentClaimsDagula (handler) {
       },
       async stream (cid, options) {
         const res = await fetcher.fetch(cid.multihash, options)
+        // In Miniflare, the response data is `structuredClone`'d - this
+        // causes the underlying `ArrayBuffer` to become "detached" and
+        // all Uint8Array views are reset to zero! So after the first
+        // chunk is sent, any additional chunks that are views on the
+        // same `ArrayBuffer` become Uint8Array(0), instead of the
+        // content they're supposed to contain.
         // @ts-expect-error `MINIFLARE` is not a property of `globalThis`
         if (globalThis.MINIFLARE && res.ok) {
           return res.ok.stream().pipeThrough(new TransformStream({
