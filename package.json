@@ -40,7 +40,7 @@
     "@ipld/dag-cbor": "^9.0.8",
     "@ipld/dag-json": "^10.1.7",
     "@ipld/dag-pb": "^4.0.8",
-    "@web3-storage/blob-fetcher": "^2.1.0",
+    "@web3-storage/blob-fetcher": "^2.1.2",
     "@web3-storage/content-claims": "^4.0.5",
     "@web3-storage/gateway-lib": "^5.0.1",
     "cardex": "^3.0.0",
