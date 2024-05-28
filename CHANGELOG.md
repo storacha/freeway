@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.18.0](https://github.com/web3-storage/freeway/compare/v2.17.0...v2.18.0) (2024-05-28)
+
+
+### Features
+
+* fetch blocks from location URLs ([#103](https://github.com/web3-storage/freeway/issues/103)) ([1c7b7a6](https://github.com/web3-storage/freeway/commit/1c7b7a6faff866bb7c8fece427777e33e7e27416))
+* use blob-fetcher lib ([#105](https://github.com/web3-storage/freeway/issues/105)) ([14e8b6d](https://github.com/web3-storage/freeway/commit/14e8b6d0ccb0d9ab78939bb95fbb1ea0c7d7a840))
+
 ## [2.17.0](https://github.com/web3-storage/freeway/compare/v2.16.0...v2.17.0) (2024-05-15)
 
 
