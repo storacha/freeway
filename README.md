@@ -8,28 +8,7 @@
 
 🧪 Experimental IPFS HTTP gateway providing access to UnixFS data via CAR CIDs.
 
-<img src="https://w3s.link/ipfs/bafybeibbcsx634rh4ignnxwttgj2xbpmc7f42l7zlp2lcuhz2tugjbdaoy/freeway-diagram.png" width="471" />
-
-The freeway currently works with the following R2 buckets:
-
-* `CARPARK` - CAR file storage area. Key format `<CAR_CID>/<CAR_CID>.car`
-* `SATNAV` - Indexes of block offsets within CARs. Key format `<CAR_CID>/<CAR_CID>.car.idx`, index format [`MultihashIndexSorted`](https://ipld.io/specs/transport/car/carv2/#format-0x0401-multihashindexsorted).
-* `DUDEWHERE` - Mapping of root data CIDs to CAR CID(s). Key format `<DATA_CID>/<CAR_CID>`.
-
-How it works:
-
-1. Extract `DATA_CID` from URL.
-1. Lookup `CAR_CID`(s) in `DUDEWHERE`.
-1. Read indexes from `SATNAV`
-1. UnixFS export directly from `CARPARK` using index data to locate block positions.
-
-The querystring parameter `origin` can optionally provide the hint of which CAR file(s) the data DAG is contained within. e.g.
-
-```
-https://freeway.dag.haus/ipfs/bafybeiaaxqlnwlfeirgr5p63ftnfszmerttupnwrim52h4zv2tfpntbjdy/data.txt?origin=bagbaieralsmnkvhi3t3d7lek2ti2vhfglb4bhw7gite2qsz467zjuqvbvyva
-```
-
-[Read MOAR](READMOAR.md)
+![freeway overview diagram](./docs/freeway.png)
 
 ## Contributing
 
