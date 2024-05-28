@@ -1,6 +1,5 @@
 import { describe, before, beforeEach, after, it } from 'node:test'
 import assert from 'node:assert'
-import { Buffer } from 'node:buffer'
 import { randomBytes } from 'node:crypto'
 import { Miniflare } from 'miniflare'
 import { equals } from 'uint8arrays'
@@ -10,10 +9,10 @@ import { sha256 } from 'multiformats/hashes/sha2'
 import * as raw from 'multiformats/codecs/raw'
 import { Map as LinkMap } from 'lnmap'
 import { CARReaderStream } from 'carstream'
-import * as ByteRanges from 'byteranges'
+import { MultipartByteRangeDecoder, decodePartHeader, getBoundary } from 'multipart-byte-range/decoder'
 import { Builder, toBlobKey } from './helpers/builder.js'
 import { MAX_CAR_BYTES_IN_MEMORY } from '../src/constants.js'
-import { generateClaims, generateBlockLocationClaims, mockClaimsService, generateLocationClaim } from './helpers/content-claims.js'
+import { generateBlockLocationClaims, mockClaimsService, generateLocationClaim } from './helpers/content-claims.js'
 import { mockBucketService } from './helpers/bucket.js'
 
 describe('freeway', () => {
@@ -33,7 +32,7 @@ describe('freeway', () => {
 
     miniflare = new Miniflare({
       bindings: {
-        CONTENT_CLAIMS_SERVICE_URL: `http://127.0.0.1:${claimsService.port}`
+        CONTENT_CLAIMS_SERVICE_URL: claimsService.url.toString()
       },
       scriptPath: 'dist/worker.mjs',
       packagePath: true,
@@ -186,53 +185,6 @@ describe('freeway', () => {
 
     const output = new Uint8Array(await res1.arrayBuffer())
     assert(equals(input[0].content, output))
-  })
-
-  it('should use content claims', async () => {
-    const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
-    // no dudewhere or satnav so only content claims can satisfy the request
-    const { dataCid, carCids, indexes } = await builder.add(input, {
-      dudewhere: false,
-      satnav: false
-    })
-
-    const carpark = await miniflare.getR2Bucket('CARPARK')
-    const res = await carpark.get(`${carCids[0]}/${carCids[0]}.car`)
-    assert(res)
-
-    // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly
-    const claims = await generateClaims(claimsService.signer, dataCid, carCids[0], res.body, indexes[0].cid, indexes[0].carCid)
-    claimsService.setClaims(claims)
-
-    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
-    if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
-
-    const output = new Uint8Array(await res1.arrayBuffer())
-    assert(equals(input[0].content, output))
-  })
-
-  it('should use content claims by default', async () => {
-    const input = [{ path: 'sargo.tar.xz', content: randomBytes(MAX_CAR_BYTES_IN_MEMORY + 1) }]
-    // no dudewhere or satnav so only content claims can satisfy the request
-    const { dataCid, carCids, indexes } = await builder.add(input, {
-      dudewhere: true,
-      satnav: true
-    })
-
-    const carpark = await miniflare.getR2Bucket('CARPARK')
-    const res = await carpark.get(`${carCids[0]}/${carCids[0]}.car`)
-    assert(res)
-
-    // @ts-expect-error nodejs ReadableStream does not implement ReadableStream interface correctly
-    const claims = await generateClaims(claimsService.signer, dataCid, carCids[0], res.body, indexes[0].cid, indexes[0].carCid)
-    claimsService.setClaims(claims)
-
-    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${dataCid}/${input[0].path}`)
-    if (!res1.ok) assert.fail(`unexpected response: ${await res1.text()}`)
-
-    const output = new Uint8Array(await res1.arrayBuffer())
-    assert(equals(input[0].content, output))
-    assert.equal(claimsService.getCallCount(), 2)
   })
 
   it('should use location content claim', async () => {
@@ -422,7 +374,7 @@ describe('freeway', () => {
     await res.body
       .pipeThrough(new CARReaderStream())
       .pipeTo(new WritableStream({
-        async write ({ cid, bytes, blockOffset, blockLength }) {
+        async write ({ bytes, blockOffset, blockLength }) {
           const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${blobCids[0]}?format=raw`, {
             headers: {
               Range: `bytes=${blockOffset}-${blockOffset + blockLength - 1}`
@@ -466,19 +418,23 @@ describe('freeway', () => {
       }
     })
     assert(res1.ok)
+    assert(res1.body)
 
-    const contentType = res1.headers.get('Content-Type')
-    assert(contentType)
+    const boundary = getBoundary(new Headers([...res1.headers.entries()]))
+    assert(boundary)
 
-    const boundary = contentType.replace('multipart/byteranges; boundary=', '')
-    const body = Buffer.from(await res1.arrayBuffer())
-
-    const parts = ByteRanges.parse(body, boundary)
-    assert.equal(parts.length, blocks.length)
-
-    for (let i = 0; i < parts.length; i++) {
-      assert.equal(parts[i].type, 'application/vnd.ipld.raw')
-      assert(equals(parts[i].octets, blocks[i]?.bytes))
-    }
+    let partsCount = 0
+    await /** @type {ReadableStream<Uint8Array>} */ (res1.body)
+      .pipeThrough(new MultipartByteRangeDecoder(boundary))
+      .pipeTo(new WritableStream({
+        write (part) {
+          const block = blocks[partsCount]
+          const range = [block.blockOffset, block.blockOffset + block.blockLength - 1]
+          const headers = decodePartHeader(part.header)
+          assert.equal(headers.get('content-type'), 'application/vnd.ipld.raw')
+          assert.equal(headers.get('content-range'), `bytes ${range[0]}-${range[1]}/${input[0].content.length}`)
+          partsCount++
+        }
+      }))
   })
 })

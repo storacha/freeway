@@ -2,7 +2,7 @@ import { readBlockHead, asyncIterableReader } from '@ipld/car/decoder'
 import { base58btc } from 'multiformats/bases/base58'
 import defer from 'p-defer'
 import { OrderedCarBlockBatcher } from './block-batch.js'
-import * as IndexEntry from './dag-index/entry.js'
+import { resolveRange } from '@web3-storage/blob-fetcher/fetcher'
 
 /**
  * @typedef {import('multiformats').UnknownLink} UnknownLink
@@ -37,19 +37,6 @@ export class R2Blockstore {
     const entry = await this._idx.get(cid)
     if (!entry) return
 
-    if (IndexEntry.isLocated(entry)) {
-      for (const { url, range } of IndexEntry.toRequestCandidates(entry)) {
-        const headers = { Range: `bytes=${range[0]}-${range[1]}` }
-        const res = await fetch(url, { headers })
-        if (!res.ok) {
-          console.warn(`failed to fetch ${url}: ${res.status} ${await res.text()}`)
-          continue
-        }
-        return { cid, bytes: new Uint8Array(await res.arrayBuffer()) }
-      }
-      return
-    }
-
     const carPath = `${entry.origin}/${entry.origin}.car`
     const range = { offset: entry.offset }
     const res = await this._dataBucket.get(carPath, { range })
@@ -72,13 +59,8 @@ export class R2Blockstore {
 
   /** @param {UnknownLink} cid */
   async stat (cid) {
-    const entry = await this._idx.get(cid)
-    if (!entry) return
-
-    // stat API exists only for blobs (i.e. location claimed)
-    if (IndexEntry.isLocated(entry)) {
-      return { size: entry.site.range.length }
-    }
+    const block = await this.get(cid)
+    return block ? { size: block.bytes.size } : undefined
   }
 
   /**
@@ -86,18 +68,21 @@ export class R2Blockstore {
    * @param {import('dagula').AbortOptions & import('dagula').RangeOptions} [options]
    */
   async stream (cid, options) {
-    const entry = await this._idx.get(cid)
-    if (!entry) return
-
-    for (const { url, range } of IndexEntry.toRequestCandidates(entry, options)) {
-      const headers = { Range: `bytes=${range[0]}-${range[1]}` }
-      const res = await fetch(url, { headers })
-      if (!res.ok) {
-        console.warn(`failed to fetch ${url}: ${res.status} ${await res.text()}`)
-        continue
+    // Simulated streaming - it's not anticipated that legacy blockstore will
+    // be serving large blobs.
+    const block = await this.get(cid)
+    if (!block) return
+    return new ReadableStream({
+      pull (controller) {
+        if (options?.range) {
+          const range = resolveRange(options.range, block.bytes.length)
+          controller.enqueue(block.bytes.slice(range[0], range[1] + 1))
+        } else {
+          controller.enqueue(block.bytes)
+        }
+        controller.close()
       }
-      return /** @type {ReadableStream<Uint8Array>|undefined} */ (res?.body)
-    }
+    })
   }
 }
 
@@ -246,12 +231,6 @@ export class BatchingR2Blockstore extends R2Blockstore {
     // console.log(`get ${cid}`)
     const entry = await this._idx.get(cid)
     if (!entry) return
-
-    // TODO: batch with multipart gyte range request when we switch to reading
-    // from any URL.
-    if (IndexEntry.isLocated(entry)) {
-      return super.get(cid)
-    }
 
     this.#batcher.add({ carCid: entry.origin, blockCid: cid, offset: entry.offset })
 

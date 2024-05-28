@@ -2,15 +2,8 @@
 import http from 'node:http'
 import { Writable } from 'node:stream'
 import { CARReaderStream, CARWriterStream } from 'carstream'
-import * as raw from 'multiformats/codecs/raw'
-import * as Block from 'multiformats/block'
 import { sha256 } from 'multiformats/hashes/sha2'
-import { identity } from 'multiformats/hashes/identity'
-import { blake2b256 } from '@multiformats/blake2/blake2b'
 import * as Link from 'multiformats/link'
-import * as pb from '@ipld/dag-pb'
-import * as cbor from '@ipld/dag-cbor'
-import * as json from '@ipld/dag-json'
 import { Map as LinkMap } from 'lnmap'
 import { Assert } from '@web3-storage/content-claims/capability'
 import * as ed25519 from '@ucanto/principal/ed25519'
@@ -19,103 +12,15 @@ import { CAR_CODE } from '../../src/constants.js'
 /**
  * @typedef {import('carstream/api').Block & { children: import('multiformats').UnknownLink[] }} RelationIndexData
  * @typedef {Map<import('multiformats').UnknownLink, import('carstream/api').Block[]>} Claims
- * @typedef {{ setClaims: (c: Claims) => void, close: () => void, port: number, signer: import('@ucanto/interface').Signer, getCallCount: () => number, resetCallCount: () => void }} MockClaimsService
+ * @typedef {{
+ *   url: URL
+ *   close: () => void
+ *   signer: import('@ucanto/interface').Signer
+ *   setClaims: (c: Claims) => void
+ *   getCallCount: () => number
+ *   resetCallCount: () => void
+ * }} MockClaimsService
  */
-
-const Decoders = {
-  [raw.code]: raw,
-  [pb.code]: pb,
-  [cbor.code]: cbor,
-  [json.code]: json
-}
-
-const Hashers = {
-  [identity.code]: identity,
-  [sha256.code]: sha256,
-  [blake2b256.code]: blake2b256
-}
-
-/**
- * @param {import('@ucanto/interface').Signer} signer
- * @param {import('multiformats').UnknownLink} dataCid
- * @param {import('cardex/api').CARLink} carCid
- * @param {ReadableStream<Uint8Array>} carStream CAR file data
- * @param {import('multiformats').Link} indexCid
- * @param {import('cardex/api').CARLink} indexCarCid
- */
-export const generateClaims = async (signer, dataCid, carCid, carStream, indexCid, indexCarCid) => {
-  /** @type {Claims} */
-  const claims = new LinkMap()
-
-  // partition claim for the data CID
-  claims.set(dataCid, [
-    await encode(Assert.partition.invoke({
-      issuer: signer,
-      audience: signer,
-      with: signer.did(),
-      nb: {
-        content: dataCid,
-        parts: [carCid]
-      }
-    }))
-  ])
-
-  /** @type {Map<import('multiformats').UnknownLink, RelationIndexData>} */
-  const indexData = new LinkMap()
-
-  await carStream
-    .pipeThrough(new CARReaderStream())
-    .pipeTo(new WritableStream({
-      async write ({ cid, bytes }) {
-        const decoder = Decoders[cid.code]
-        if (!decoder) throw Object.assign(new Error(`missing decoder: ${cid.code}`), { code: 'ERR_MISSING_DECODER' })
-
-        const hasher = Hashers[cid.multihash.code]
-        if (!hasher) throw Object.assign(new Error(`missing hasher: ${cid.multihash.code}`), { code: 'ERR_MISSING_HASHER' })
-
-        const block = await Block.decode({ bytes, codec: decoder, hasher })
-        indexData.set(cid, { cid, bytes, children: [...block.links()].map(([, cid]) => cid) })
-      }
-    }))
-
-  for (const [cid, { children }] of indexData) {
-    const invocation = Assert.relation.invoke({
-      issuer: signer,
-      audience: signer,
-      with: signer.did(),
-      nb: {
-        content: cid,
-        children,
-        parts: [{
-          content: carCid,
-          includes: {
-            content: indexCid,
-            parts: [indexCarCid]
-          }
-        }]
-      }
-    })
-
-    const blocks = claims.get(cid) ?? []
-    blocks.push(await encode(invocation))
-    claims.set(cid, blocks)
-  }
-
-  // partition claim for the index
-  claims.set(indexCid, [
-    await encode(Assert.partition.invoke({
-      issuer: signer,
-      audience: signer,
-      with: signer.did(),
-      nb: {
-        content: indexCid,
-        parts: [indexCarCid]
-      }
-    }))
-  ])
-
-  return claims
-}
 
 /**
  * @param {import('@ucanto/interface').Signer} signer
@@ -175,6 +80,7 @@ const encode = async invocation => {
   return { cid: Link.create(CAR_CODE, await sha256.digest(bytes.ok)), bytes: bytes.ok }
 }
 
+/** @returns {Promise<MockClaimsService>} */
 export const mockClaimsService = async () => {
   let callCount = 0
   /** @type {Claims} */
@@ -182,9 +88,7 @@ export const mockClaimsService = async () => {
   /** @param {Claims} s */
   const setClaims = s => { claims = s }
   const getCallCount = () => callCount
-  const resetCallCount = () => {
-    callCount = 0
-  }
+  const resetCallCount = () => { callCount = 0 }
 
   const server = http.createServer(async (req, res) => {
     callCount++
@@ -208,5 +112,6 @@ export const mockClaimsService = async () => {
   }
   // @ts-expect-error
   const { port } = server.address()
-  return { setClaims, close, port, signer: await ed25519.generate(), getCallCount, resetCallCount }
+  const url = new URL(`http://127.0.0.1:${port}`)
+  return { setClaims, close, url, signer: await ed25519.generate(), getCallCount, resetCallCount }
 }
