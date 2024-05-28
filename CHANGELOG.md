@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.1](https://github.com/web3-storage/freeway/compare/v2.18.0...v2.18.1) (2024-05-28)
+
+
+### Bug Fixes
+
+* batching block fetcher ([8c02c94](https://github.com/web3-storage/freeway/commit/8c02c94b270797d23573e05c68a624f5ed2b3ae2))
+
 ## [2.18.0](https://github.com/web3-storage/freeway/compare/v2.17.0...v2.18.0) (2024-05-28)
 
 
