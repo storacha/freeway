@@ -3,7 +3,10 @@ import http from 'node:http'
 import { Writable } from 'node:stream'
 import { CARReaderStream, CARWriterStream } from 'carstream'
 import { sha256 } from 'multiformats/hashes/sha2'
+import { base58btc } from 'multiformats/bases/base58'
+import * as Digest from 'multiformats/hashes/digest'
 import * as Link from 'multiformats/link'
+import * as raw from 'multiformats/codecs/raw'
 import { Map as LinkMap } from 'lnmap'
 import { Assert } from '@web3-storage/content-claims/capability'
 import * as ed25519 from '@ucanto/principal/ed25519'
@@ -92,7 +95,7 @@ export const mockClaimsService = async () => {
 
   const server = http.createServer(async (req, res) => {
     callCount++
-    const content = Link.parse(String(req.url?.split('/')[2]))
+    const content = Link.create(raw.code, Digest.decode(base58btc.decode(String(req.url?.split('/')[3]))))
     const blocks = [...claims.get(content) ?? []]
     const readable = new ReadableStream({
       pull (controller) {
