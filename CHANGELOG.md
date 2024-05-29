@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.2](https://github.com/web3-storage/freeway/compare/v2.18.1...v2.18.2) (2024-05-29)
+
+
+### Bug Fixes
+
+* upgrade to latest content-claims ([d78221e](https://github.com/web3-storage/freeway/commit/d78221e4407232e5c79bfc571c1faa1a00db5a33))
+
 ## [2.18.1](https://github.com/web3-storage/freeway/compare/v2.18.0...v2.18.1) (2024-05-28)
 
 
