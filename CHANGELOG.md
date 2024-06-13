@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.18.3](https://github.com/web3-storage/freeway/compare/v2.18.2...v2.18.3) (2024-06-13)
+
+
+### Bug Fixes
+
+* update blob-fetcher dependency ([98c1a37](https://github.com/web3-storage/freeway/commit/98c1a3750768334c600fa6cfb896f45434e414b2))
+* upgrade dagula ([f23a111](https://github.com/web3-storage/freeway/commit/f23a1117dc22cc7b95d442084ca31ef6b09b4660))
+
 ## [2.18.2](https://github.com/web3-storage/freeway/compare/v2.18.1...v2.18.2) (2024-05-29)
 
 
