@@ -1,10 +1,15 @@
 /* eslint-env browser */
 /* global FixedLengthStream */
 import { HttpError } from '@web3-storage/gateway-lib/util'
+// @ts-expect-error no types
+import httpRangeParse from 'http-range-parse'
+import { base58btc } from 'multiformats/bases/base58'
 import { CAR_CODE } from '../constants.js'
-import * as Http from '../lib/http.js'
 
-/** @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} CarBlockHandlerContext */
+/**
+ * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} CarBlockHandlerContext
+ * @typedef {{ offset: number, length?: number } | { offset?: number, length: number } | { suffix: number }} Range
+ */
 
 /**
  * Handler that serves CAR files directly from R2.
@@ -29,7 +34,10 @@ export async function handleCarBlock (request, env, ctx) {
   }
 
   if (request.method === 'HEAD') {
-    const obj = await env.CARPARK.head(`${dataCid}/${dataCid}.car`)
+    let obj = await env.CARPARK.head(toBlobKey(dataCid.multihash))
+    if (!obj) {
+      obj = await env.CARPARK.head(toCARKey(dataCid))
+    }
     if (!obj) throw new HttpError('CAR not found', { status: 404 })
     return new Response(undefined, {
       headers: {
@@ -40,17 +48,20 @@ export async function handleCarBlock (request, env, ctx) {
     })
   }
 
-  /** @type {import('../lib/http.js').Range|undefined} */
+  /** @type {Range|undefined} */
   let range
   if (request.headers.has('range')) {
     try {
-      range = Http.parseRange(request.headers.get('range') ?? '')
+      range = parseRange(request.headers.get('range') ?? '')
     } catch (err) {
       throw new HttpError('invalid range', { status: 400, cause: err })
     }
   }
 
-  const obj = await env.CARPARK.get(`${dataCid}/${dataCid}.car`, { range })
+  let obj = await env.CARPARK.get(toBlobKey(dataCid.multihash), { range })
+  if (!obj) {
+    obj = await env.CARPARK.get(toCARKey(dataCid), { range })
+  }
   if (!obj) throw new HttpError('CAR not found', { status: 404 })
 
   const status = range ? 206 : 200
@@ -79,4 +90,28 @@ export async function handleCarBlock (request, env, ctx) {
 
   // @ts-expect-error ReadableStream types incompatible
   return new Response(obj.body.pipeThrough(new FixedLengthStream(contentLength)), { status, headers })
+}
+
+/** @param {import('multiformats').UnknownLink} cid */
+const toCARKey = cid => `${cid}/${cid}.car`
+
+/** @param {import('multiformats').MultihashDigest} digest */
+const toBlobKey = digest => {
+  const mhStr = base58btc.encode(digest.bytes)
+  return `${mhStr}/${mhStr}.blob`
+}
+
+/**
+ * Convert a HTTP Range header to a range object.
+ * @param {string} value
+ * @returns {Range}
+ */
+function parseRange (value) {
+  const result = httpRangeParse(value)
+  if (result.ranges) throw new Error('Multipart ranges not supported')
+  const { unit, first, last, suffix } = result
+  if (unit !== 'bytes') throw new Error(`Unsupported range unit: ${unit}`)
+  return suffix != null
+    ? { suffix }
+    : { offset: first, length: last != null ? last - first + 1 : undefined }
 }

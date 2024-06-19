@@ -19,7 +19,8 @@ import { CAR_CODE } from '../../src/constants.js'
  *   url: URL
  *   close: () => void
  *   signer: import('@ucanto/interface').Signer
- *   setClaims: (c: Claims) => void
+ *   addClaims: (c: Claims) => void
+ *   resetClaims: () => void
  *   getCallCount: () => number
  *   resetCallCount: () => void
  * }} MockClaimsService
@@ -87,9 +88,16 @@ const encode = async invocation => {
 export const mockClaimsService = async () => {
   let callCount = 0
   /** @type {Claims} */
-  let claims = new LinkMap()
+  const claims = new LinkMap()
   /** @param {Claims} s */
-  const setClaims = s => { claims = s }
+  const addClaims = s => {
+    for (const [k, v] of s) {
+      const blocks = claims.get(k) ?? []
+      blocks.push(...v)
+      claims.set(k, blocks)
+    }
+  }
+  const resetClaims = () => claims.clear()
   const getCallCount = () => callCount
   const resetCallCount = () => { callCount = 0 }
 
@@ -116,5 +124,5 @@ export const mockClaimsService = async () => {
   // @ts-expect-error
   const { port } = server.address()
   const url = new URL(`http://127.0.0.1:${port}`)
-  return { setClaims, close, url, signer: await ed25519.generate(), getCallCount, resetCallCount }
+  return { addClaims, resetClaims, close, url, signer: await ed25519.generate(), getCallCount, resetCallCount }
 }
