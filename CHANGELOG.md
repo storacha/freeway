@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.19.0](https://github.com/web3-storage/freeway/compare/v2.18.3...v2.19.0) (2024-06-19)
+
+
+### Features
+
+* remove dudewhere and satnav ([#110](https://github.com/web3-storage/freeway/issues/110)) ([f510808](https://github.com/web3-storage/freeway/commit/f51080873cb0e7c18b00189dccff48c0b9a541a3))
+
 ## [2.18.3](https://github.com/web3-storage/freeway/compare/v2.18.2...v2.18.3) (2024-06-13)
 
 
