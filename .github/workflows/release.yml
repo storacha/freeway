@@ -6,6 +6,9 @@ name: Release
 jobs:
   release-staging:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/test
@@ -16,6 +19,9 @@ jobs:
           environment: 'staging'
   release-production:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: google-github-actions/release-please-action@v3
         id: release
