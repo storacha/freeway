@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.1](https://github.com/storacha/freeway/compare/v2.20.0...v2.20.1) (2024-09-10)
+
+
+### Bug Fixes
+
+* remove middleware preventing range requests ([fde04c1](https://github.com/storacha/freeway/commit/fde04c1341455fa42e294e2a36d69e76c78fcda2))
+
 ## [2.20.0](https://github.com/storacha/freeway/compare/v2.19.0...v2.20.0) (2024-09-10)
 
 
