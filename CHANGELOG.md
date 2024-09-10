@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.2](https://github.com/storacha/freeway/compare/v2.20.1...v2.20.2) (2024-09-10)
+
+
+### Bug Fixes
+
+* content length for byte range requests ([bcb973c](https://github.com/storacha/freeway/commit/bcb973c10084fef53b207db93dbdbcb7458c16e9))
+
 ## [2.20.1](https://github.com/storacha/freeway/compare/v2.20.0...v2.20.1) (2024-09-10)
 
 
