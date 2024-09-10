@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.0](https://github.com/storacha/freeway/compare/v2.19.0...v2.20.0) (2024-09-10)
+
+
+### Features
+
+* byte range requests for UnixFS files ([8343890](https://github.com/storacha/freeway/commit/83438907a23e68c0d97f3923123ec8a71af50ec5))
+
 ## [2.19.0](https://github.com/web3-storage/freeway/compare/v2.18.3...v2.19.0) (2024-06-19)
 
 
