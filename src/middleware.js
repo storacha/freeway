@@ -10,9 +10,8 @@ import { BatchingR2Blockstore } from './lib/blockstore.js'
 import { version } from '../package.json'
 import { MultiCarIndex, StreamingCarIndex } from './lib/dag-index/car.js'
 import { CachingBucket, asSimpleBucket } from './lib/bucket.js'
-import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE } from './constants.js'
+import { MAX_CAR_BYTES_IN_MEMORY, CAR_CODE, RATE_LIMIT_EXCEEDED } from './constants.js'
 import { handleCarBlock } from './handlers/car-block.js'
-import { RateLimitExceeded } from './bindings.js'
 
 /**
  * @typedef {import('./bindings.js').Environment} Environment
@@ -23,15 +22,93 @@ import { RateLimitExceeded } from './bindings.js'
  * @typedef {import('@web3-storage/gateway-lib').UnixfsContext} UnixfsContext
  */
 
+/**
+ * 
+ * @param {string} s 
+ * @returns {import('./bindings.js').TokenMetadata}
+ */
+function deserializeTokenMetadata(s) {
+  // TODO should this be dag-json?
+  return JSON.parse(s)
+}
+
+/**
+ * 
+ * @param {import('./bindings.js').TokenMetadata} m 
+ * @returns string
+ */
+function serializeTokenMetadata(m) {
+  // TODO should this be dag-json?
+  return JSON.stringify(m)
+}
+
+/**
+ * 
+ * @param {Environment} env 
+ * @param {import('@web3-storage/gateway-lib/handlers').CID} cid 
+ */
+async function checkRateLimitForCID(env, cid) {
+  const rateLimitResponse = await env.MY_RATE_LIMITER.limit({ key: cid.toString() })
+  if (rateLimitResponse.success) {
+    return RATE_LIMIT_EXCEEDED.NO
+  } else {
+    console.log(`limiting CID ${cid}`)
+    return RATE_LIMIT_EXCEEDED.YES
+  }
+}
+
+/**
+ * 
+ * @param {Environment} env 
+ * @param {string} authToken
+ * @returns TokenMetadata
+ */
+async function getTokenMetadata(env, authToken) {
+  const cachedValue = await env.AUTH_TOKEN_METADATA.get(authToken)
+  // TODO: we should implement an SWR pattern here - record an expiry in the metadata and if the expiry has passed, re-validate the cache after
+  // returning the value
+  if (cachedValue) {
+    return deserializeTokenMetadata(cachedValue)
+  } else {
+    const accounting = Accounting.create({ serviceURL: env.ACCOUNTING_SERVICE_URL })
+    const tokenMetadata = await accounting.getTokenMetadata(authToken)
+    if (tokenMetadata) {
+      await env.AUTH_TOKEN_METADATA.put(authToken, serializeTokenMetadata(tokenMetadata))
+      return tokenMetadata
+    } else {
+      return null
+    }
+  }
+}
 
 /**
  * @type {import('./bindings.js').RateLimits}
  */
 const RateLimits = {
-  create: ({ serviceURL }) => ({
+  create: ({ env }) => ({
     check: async (cid, options) => {
-      console.log(`checking ${serviceURL} to see if rate limits are exceeded for ${cid} with options`, options)
-      return RateLimitExceeded.MAYBE
+      const authToken = await getAuthorizationTokenFromRequest(options)
+      if (authToken) {
+        console.log(`found token ${authToken}, looking for content commitment`)
+        const tokenMetadata = await getTokenMetadata(env, authToken)
+
+        if (tokenMetadata) {
+          if (tokenMetadata.invalid) {
+            return checkRateLimitForCID(env, cid)
+          } else {
+            // TODO at some point we should enforce user configurable rate limits and origin matching
+            // but for now we just serve all valid token requests
+            return RATE_LIMIT_EXCEEDED.NO
+          }
+        } else {
+          // we didn't get any metadata - for now just use the top level rate limit
+          // this means token based requests will be subject to normal rate limits until the data propagates
+          return checkRateLimitForCID(env, cid)
+        }
+      } else {
+        // no token, use normal rate limit
+        return checkRateLimitForCID(env, cid)
+      }
     }
   })
 }
@@ -43,8 +120,24 @@ const Accounting = {
   create: ({ serviceURL }) => ({
     record: async (cid, options) => {
       console.log(`using ${serviceURL} to record a GET for ${cid} with options`, options)
+    },
+
+    getTokenMetadata: async () => {
+      // TODO I think this needs to check the content claims service (?) for any claims relevant to this token
+      // TODO do we have a plan for this? need to ask Hannah if the indexing service covers this?
+      return null
     }
   })
+}
+
+/**
+ * 
+ * @param {Pick<Request, 'headers'>} request 
+ * @returns string
+ */
+async function getAuthorizationTokenFromRequest(request) {
+  const authToken = request.headers.get('Authorization')
+  return authToken
 }
 
 /**
@@ -54,17 +147,15 @@ const Accounting = {
 export function withRateLimits(handler) {
   return async (request, env, ctx) => {
     const { dataCid } = ctx
-    const rateLimits = RateLimits.create({
-      serviceURL: env.RATE_LIMITS_SERVICE_URL ? new URL(env.RATE_LIMITS_SERVICE_URL) : undefined
-    })
+
+    const rateLimits = RateLimits.create({ env })
     const isRateLimitExceeded = await rateLimits.check(dataCid, request)
-    if (isRateLimitExceeded === RateLimitExceeded.YES) {
+
+    if (isRateLimitExceeded === RATE_LIMIT_EXCEEDED.YES) {
       // TODO should we record this?
       throw new HttpError('Too Many Requests', { status: 429 })
     } else {
-      const accounting = Accounting.create({
-        serviceURL: env.ACCOUNTING_SERVICE_URL ? new URL(env.ACCOUNTING_SERVICE_URL) : undefined
-      })
+      const accounting = Accounting.create({ serviceURL: env.ACCOUNTING_SERVICE_URL })
       // ignore the response from the accounting service - this is "fire and forget"
       void accounting.record(dataCid, request)
       return handler(request, env, ctx)

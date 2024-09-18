@@ -13,6 +13,24 @@ CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
 [build]
 command = "npm run build:debug"
 
+[[unsafe.bindings]]
+# TODO BEFORE MERGE - update this to work in all environments - useful to do it like this for now
+name = "MY_RATE_LIMITER"
+type = "ratelimit"
+# An identifier you define, that is unique to your Cloudflare account.
+# Must be an integer.
+namespace_id = "0"
+
+# Limit: the number of tokens allowed within a given period in a single
+# Cloudflare location
+# Period: the duration of the period, in seconds. Must be either 10 or 60
+simple = { limit = 100, period = 60 }
+
+[[kv_namespaces]]
+# TODO BEFORE MERGE - update this to work in all environments - useful to do it like this for now
+binding = "AUTH_TOKEN_METADATA"
+id = "f848730e45d94f17bcaf3b6d0915da40"
+
 # PROD!
 [env.production]
 account_id = "fffa4b4363a7e5250af8357087263b3a"
