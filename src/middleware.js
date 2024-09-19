@@ -158,23 +158,6 @@ export function withRateLimits(handler) {
   }
 }
 
-
-/**
- * Validates the request does not contain a HTTP `Range` header.
- * Returns 501 Not Implemented in case it has.
- * @type {import('@web3-storage/gateway-lib').Middleware<import('@web3-storage/gateway-lib').Context>}
- */
-export function withHttpRangeUnsupported (handler) {
-  return (request, env, ctx) => {
-    // Range request https://github.com/web3-storage/gateway-lib/issues/12
-    if (request.headers.get('range')) {
-      throw new HttpError('Not Implemented', { status: 501 })
-    }
-
-    return handler(request, env, ctx)
-  }
-}
-
 /**
  * Middleware that will serve CAR files if a CAR codec is found in the path
  * CID. If the CID is not a CAR CID it delegates to the next middleware.
