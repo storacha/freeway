@@ -18,7 +18,8 @@ import {
 import {
   withContentClaimsDagula,
   withVersionHeader,
-  withCarBlockHandler
+  withCarBlockHandler,
+  withRateLimits
 } from './middleware.js'
 
 /**
@@ -34,6 +35,7 @@ export default {
   fetch (request, env, ctx) {
     console.log(request.method, request.url)
     const middleware = composeMiddleware(
+      withRateLimits,
       withCdnCache,
       withContext,
       withCorsHeaders,
