@@ -1,5 +1,41 @@
 # Changelog
 
+## [2.20.2](https://github.com/storacha/freeway/compare/v2.20.1...v2.20.2) (2024-09-10)
+
+
+### Bug Fixes
+
+* content length for byte range requests ([bcb973c](https://github.com/storacha/freeway/commit/bcb973c10084fef53b207db93dbdbcb7458c16e9))
+
+## [2.20.1](https://github.com/storacha/freeway/compare/v2.20.0...v2.20.1) (2024-09-10)
+
+
+### Bug Fixes
+
+* remove middleware preventing range requests ([fde04c1](https://github.com/storacha/freeway/commit/fde04c1341455fa42e294e2a36d69e76c78fcda2))
+
+## [2.20.0](https://github.com/storacha/freeway/compare/v2.19.0...v2.20.0) (2024-09-10)
+
+
+### Features
+
+* byte range requests for UnixFS files ([8343890](https://github.com/storacha/freeway/commit/83438907a23e68c0d97f3923123ec8a71af50ec5))
+
+## [2.19.0](https://github.com/web3-storage/freeway/compare/v2.18.3...v2.19.0) (2024-06-19)
+
+
+### Features
+
+* remove dudewhere and satnav ([#110](https://github.com/web3-storage/freeway/issues/110)) ([f510808](https://github.com/web3-storage/freeway/commit/f51080873cb0e7c18b00189dccff48c0b9a541a3))
+
+## [2.18.3](https://github.com/web3-storage/freeway/compare/v2.18.2...v2.18.3) (2024-06-13)
+
+
+### Bug Fixes
+
+* update blob-fetcher dependency ([98c1a37](https://github.com/web3-storage/freeway/commit/98c1a3750768334c600fa6cfb896f45434e414b2))
+* upgrade dagula ([f23a111](https://github.com/web3-storage/freeway/commit/f23a1117dc22cc7b95d442084ca31ef6b09b4660))
+
 ## [2.18.2](https://github.com/web3-storage/freeway/compare/v2.18.1...v2.18.2) (2024-05-29)
 
 

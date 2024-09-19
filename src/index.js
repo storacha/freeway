@@ -17,7 +17,6 @@ import {
 } from '@web3-storage/gateway-lib/handlers'
 import {
   withContentClaimsDagula,
-  withHttpRangeUnsupported,
   withVersionHeader,
   withCarBlockHandler,
   withRateLimits
@@ -47,7 +46,6 @@ export default {
       withCarBlockHandler,
       withContentClaimsDagula,
       withFormatRawHandler,
-      withHttpRangeUnsupported,
       withFormatCarHandler,
       withContentDispositionHeader,
       withFixedLengthStream
