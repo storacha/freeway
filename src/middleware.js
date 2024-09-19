@@ -94,6 +94,7 @@ const RateLimits = {
 
         if (tokenMetadata) {
           if (tokenMetadata.invalid) {
+            // this means we know about the token and we know it's invalid, so we should just use the CID rate limit
             return checkRateLimitForCID(env, cid)
           } else {
             // TODO at some point we should enforce user configurable rate limits and origin matching
@@ -136,6 +137,7 @@ const Accounting = {
  * @returns string
  */
 async function getAuthorizationTokenFromRequest(request) {
+  // TODO this is probably wrong
   const authToken = request.headers.get('Authorization')
   return authToken
 }
