@@ -13,13 +13,16 @@
   },
   "scripts": {
     "prepare": "npm run build",
-    "start": "npm run dev",
+    "set-version": "node ./set-version-env.js",
+    "start": "export $(npm run -s set-version) && npm run dev",
     "dev": "npm run build:debug && miniflare dist/worker.mjs --watch --debug -m --r2-persist --global-async-io --global-timers",
-    "build": "esbuild --bundle src/index.js --format=esm --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
-    "build:debug": "esbuild --bundle src/index.js --format=esm --outfile=dist/worker.mjs",
+    "build": "export $(npm run -s set-version) && esbuild --bundle src/index.js --format=esm --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
+    "build:debug": "export $(npm run -s set-version) && esbuild --bundle src/index.js --format=esm --outfile=dist/worker.mjs",
     "build:tsc": "tsc --build",
-    "test": "npm run build:debug && node --test --experimental-vm-modules",
-    "lint": "standard"
+    "test": "npm run build:debug && node --test --experimental-vm-modules test/index.spec.js",
+    "test:unit": "export $(npm run -s set-version) && node --experimental-vm-modules ./node_modules/.bin/jest --config jest.unit.config.json",
+    "lint": "standard",
+    "lint:fix": "standard --fix"
   },
   "keywords": [
     "IPFS",
@@ -40,18 +43,23 @@
     "multiformats": "^13.0.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.4",
     "@cloudflare/workers-types": "^4.20231218.0",
     "@ucanto/principal": "^8.1.0",
     "@web3-storage/content-claims": "^5.0.0",
     "@web3-storage/public-bucket": "^1.1.0",
     "@web3-storage/upload-client": "^16.1.1",
+    "babel-jest": "^29.7.0",
     "carstream": "^2.1.0",
     "esbuild": "^0.18.20",
     "files-from-path": "^0.2.6",
-    "miniflare": "^3.20240610.1",
+    "jest": "^29.7.0",
+    "miniflare": "^3.20240909.5",
     "multipart-byte-range": "^3.0.1",
     "standard": "^17.1.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "wrangler": "^3.78.8"
   },
   "standard": {
     "ignore": [

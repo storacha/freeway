@@ -1,20 +1,22 @@
 import type { Link } from 'multiformats/link'
 import type { Context } from '@web3-storage/gateway-lib'
 import type { CARLink } from 'cardex/api'
-import type { R2Bucket, KVNamespace } from '@cloudflare/workers-types'
+import type { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
 import type { MemoryBudget } from './lib/mem-budget'
 import { CID } from '@web3-storage/gateway-lib/handlers'
 
 export {}
 
 export interface Environment {
+  VERSION: string
   DEBUG: string
   CARPARK: R2Bucket
   CONTENT_CLAIMS_SERVICE_URL?: string
   RATE_LIMITS_SERVICE_URL?: string
   ACCOUNTING_SERVICE_URL: string
-  MY_RATE_LIMITER: RateLimit
+  RATE_LIMITER: RateLimit
   AUTH_TOKEN_METADATA: KVNamespace
+  FF_RATE_LIMITER_ENABLED: boolean
 }
 
 export type GetCIDRequestData = Pick<Request, 'url' | 'headers'>

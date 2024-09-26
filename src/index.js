@@ -35,13 +35,13 @@ export default {
   fetch (request, env, ctx) {
     console.log(request.method, request.url)
     const middleware = composeMiddleware(
-      withRateLimits,
       withCdnCache,
       withContext,
       withCorsHeaders,
       withVersionHeader,
       withErrorHandler,
       withParsedIpfsUrl,
+      withRateLimits,
       createWithHttpMethod('GET', 'HEAD'),
       withCarBlockHandler,
       withContentClaimsDagula,

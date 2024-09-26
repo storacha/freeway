@@ -10,6 +10,80 @@
 
 ![freeway overview diagram](./docs/freeway.png)
 
+## Running Locally
+
+1. Install the project
+```sh
+npm i
+```
+
+2. CloudFlare Authentication
+```sh
+npx wrangler login
+```
+
+3. Get Your Account Id
+```sh
+npx wrangler whoami
+```
+
+4. Add your configs to `wrangler.toml`
+```sh
+[env.YOUR_USERNAME]
+workers_dev = true
+account_id = "YOUR_ACCOUNT_ID"
+r2_buckets = [
+  { binding = "CARPARK", bucket_name = "carpark-YOUR_USERNAME-0", preview_bucket_name = "carpark-YOUR_USERNAME-preview-0" }
+]
+
+[env.YOUR_USERNAME.vars]
+DEBUG = "true"
+FF_RATE_LIMITER_ENABLED = "false"
+CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
+```
+
+If you want to enable the Rate Limiter and KV add the following too:
+```sh
+[[env.YOUR_USERNAME.unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "0"
+simple = { limit = 100, period = 60 }
+
+[[env.YOUR_USERNAME.kv_namespaces]]
+binding = "AUTH_TOKEN_METADATA"
+id = "YOUR_TOKEN" //FIXME how to obtain this token?
+```
+
+5. Start local server
+```sh
+npx wrangler dev -e YOUR_USERNAME
+```
+
+## Testing
+
+Freeway is using miniflare v3 for testing which allows you to define the testing configurations in the JavaScript code (see `src/test/index.spec.js`). 
+
+Note:
+- Miniflare v3 doesn't support the Rate Limiting bidding for now, so we need to mock the rate limiting API to be able to use it in tests and in local development?
+
+In order to run the existing tests you can execute the following commands:
+
+**Miniflare Tests**
+```sh
+npm run test
+```
+
+**Unit Tests**
+```sh
+npm run test:unit
+```
+
+**Integration Tests**
+```sh
+TBD
+```
+
 ## Contributing
 
 Feel free to join in. All welcome. Please read our [contributing guidelines](https://github.com/web3-storage/freeway/blob/main/CONTRIBUTING.md) and/or [open an issue](https://github.com/web3-storage/freeway/issues)!

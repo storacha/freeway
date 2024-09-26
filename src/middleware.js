@@ -3,7 +3,6 @@ import { Dagula } from 'dagula'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
 import * as ContentClaimsLocator from '@web3-storage/blob-fetcher/locator/content-claims'
-import { version } from '../package.json'
 import { CAR_CODE, RATE_LIMIT_EXCEEDED } from './constants.js'
 import { handleCarBlock } from './handlers/car-block.js'
 
@@ -16,32 +15,38 @@ import { handleCarBlock } from './handlers/car-block.js'
  */
 
 /**
- * 
- * @param {string} s 
+ *
+ * @param {string} s
  * @returns {import('./bindings.js').TokenMetadata}
  */
-function deserializeTokenMetadata(s) {
+function deserializeTokenMetadata (s) {
   // TODO should this be dag-json?
   return JSON.parse(s)
 }
 
 /**
- * 
- * @param {import('./bindings.js').TokenMetadata} m 
+ *
+ * @param {import('./bindings.js').TokenMetadata} m
  * @returns string
  */
-function serializeTokenMetadata(m) {
+function serializeTokenMetadata (m) {
   // TODO should this be dag-json?
   return JSON.stringify(m)
 }
 
 /**
- * 
- * @param {Environment} env 
- * @param {import('@web3-storage/gateway-lib/handlers').CID} cid 
+ *
+ * @param {Environment} env
+ * @param {import('@web3-storage/gateway-lib/handlers').CID} cid
+ * @returns {Promise<import('./constants.js').RATE_LIMIT_EXCEEDED>}
  */
-async function checkRateLimitForCID(env, cid) {
-  const rateLimitResponse = await env.MY_RATE_LIMITER.limit({ key: cid.toString() })
+async function checkRateLimitForCID (env, cid) {
+  const rateLimiter = env.RATE_LIMITER
+  if (!rateLimiter) {
+    console.warn('no rate limiter found')
+    return RATE_LIMIT_EXCEEDED.NO
+  }
+  const rateLimitResponse = await rateLimiter.limit({ key: cid.toString() })
   if (rateLimitResponse.success) {
     return RATE_LIMIT_EXCEEDED.NO
   } else {
@@ -51,12 +56,12 @@ async function checkRateLimitForCID(env, cid) {
 }
 
 /**
- * 
- * @param {Environment} env 
+ *
+ * @param {Environment} env
  * @param {string} authToken
  * @returns TokenMetadata
  */
-async function getTokenMetadata(env, authToken) {
+async function getTokenMetadata (env, authToken) {
   const cachedValue = await env.AUTH_TOKEN_METADATA.get(authToken)
   // TODO: we should implement an SWR pattern here - record an expiry in the metadata and if the expiry has passed, re-validate the cache after
   // returning the value
@@ -125,22 +130,27 @@ const Accounting = {
 }
 
 /**
- * 
- * @param {Pick<Request, 'headers'>} request 
+ *
+ * @param {Pick<Request, 'headers'>} request
  * @returns string
  */
-async function getAuthorizationTokenFromRequest(request) {
+async function getAuthorizationTokenFromRequest (request) {
   // TODO this is probably wrong
   const authToken = request.headers.get('Authorization')
   return authToken
 }
 
 /**
- * 
+ *
  * @type {import('@web3-storage/gateway-lib').Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
  */
-export function withRateLimits(handler) {
+export function withRateLimits (handler) {
   return async (request, env, ctx) => {
+    if (!env.FF_RATE_LIMITER_ENABLED) {
+      console.warn('rate limiting disabled')
+      return handler(request, env, ctx)
+    }
+
     const { dataCid } = ctx
 
     const rateLimits = RateLimits.create({ env })
@@ -152,7 +162,7 @@ export function withRateLimits(handler) {
     } else {
       const accounting = Accounting.create({ serviceURL: env.ACCOUNTING_SERVICE_URL })
       // ignore the response from the accounting service - this is "fire and forget"
-      void accounting.record(dataCid, request)
+      accounting.record(dataCid, request)
       return handler(request, env, ctx)
     }
   }
@@ -237,7 +247,8 @@ export function withContentClaimsDagula (handler) {
 export function withVersionHeader (handler) {
   return async (request, env, ctx) => {
     const response = await handler(request, env, ctx)
-    response.headers.set('x-freeway-version', version)
+    // @ts-expect-error The type definition for env.VERSION is defined but it is not detected by typescript
+    response.headers.set('x-freeway-version', env.VERSION || 'unknown')
     return response
   }
 }

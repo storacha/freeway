@@ -13,7 +13,7 @@ command = "npm run build:debug"
 
 [[unsafe.bindings]]
 # TODO BEFORE MERGE - update this to work in all environments - useful to do it like this for now
-name = "MY_RATE_LIMITER"
+name = "RATE_LIMITER"
 type = "ratelimit"
 # An identifier you define, that is unique to your Cloudflare account.
 # Must be an integer.
@@ -81,3 +81,25 @@ r2_buckets = [
 [env.alanshaw.vars]
 DEBUG = "true"
 CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
+
+[env.fforbeck]
+workers_dev = true
+account_id = "9e46c5ddfefedb9bae5d81a0dd911e5a"
+r2_buckets = [
+  { binding = "CARPARK", bucket_name = "carpark-fforbeck-0", preview_bucket_name = "carpark-fforbeck-preview-0" }
+]
+
+[env.fforbeck.vars]
+DEBUG = "true"
+FF_RATE_LIMITER_ENABLED = "false"
+CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
+
+[[env.fforbeck.unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "0"
+simple = { limit = 100, period = 60 }
+
+[[env.fforbeck.kv_namespaces]]
+binding = "AUTH_TOKEN_METADATA"
+id = "f848730e45d94f17bcaf3b6d0915da40"
