@@ -1,0 +1,12 @@
+{
+  "testMatch": ["**/test/integration/**/*.spec.(js|ts)"],
+  "transform": {
+    "^.+\\.js$": "babel-jest"
+  },
+  "moduleFileExtensions": ["js", "ts"],
+  "globals": {
+    "ts-jest": {
+      "useESM": true
+    }
+  }
+}

@@ -1,9 +1,17 @@
 {
+<<<<<<< Updated upstream
   "testMatch": ["**/test/unit/**/*.spec.js"],
   "transform": {
     "^.+\\.js$": "babel-jest"
   },
   "moduleFileExtensions": ["js"],
+=======
+  "testMatch": ["**/test/unit/**/*.spec.(js|ts)"],
+  "transform": {
+    "^.+\\.js$": "babel-jest"
+  },
+  "moduleFileExtensions": ["js", "ts"],
+>>>>>>> Stashed changes
   "globals": {
     "ts-jest": {
       "useESM": true
