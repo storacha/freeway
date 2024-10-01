@@ -18,9 +18,9 @@ import {
 import {
   withContentClaimsDagula,
   withVersionHeader,
-  withCarBlockHandler,
-  withRateLimits
+  withCarBlockHandler
 } from './middleware.js'
+import { withRateLimit } from './handlers/rate-limiter.js'
 
 /**
  * @typedef {import('./bindings.js').Environment} Environment
@@ -41,7 +41,7 @@ export default {
       withVersionHeader,
       withErrorHandler,
       withParsedIpfsUrl,
-      withRateLimits,
+      withRateLimit,
       createWithHttpMethod('GET', 'HEAD'),
       withCarBlockHandler,
       withContentClaimsDagula,

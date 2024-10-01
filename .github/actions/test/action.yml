@@ -16,6 +16,6 @@ runs:
     - run: npm run test:unit
       name: Unit Tests
       shell: bash
-    - run: npm run test
-      name: Miniflare Integration Tests
+    - run: npm run test:miniflare
+      name: Miniflare Tests
       shell: bash

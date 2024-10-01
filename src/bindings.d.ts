@@ -1,11 +1,9 @@
-import type { Link } from 'multiformats/link'
-import type { Context } from '@web3-storage/gateway-lib'
-import type { CARLink } from 'cardex/api'
 import type { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
-import type { MemoryBudget } from './lib/mem-budget'
+import type { RateLimitExceeded } from '@cloudflare/workers-types/experimental'
 import { CID } from '@web3-storage/gateway-lib/handlers'
+import { RATE_LIMIT_EXCEEDED } from './constants.js'
 
-export {}
+export { }
 
 export interface Environment {
   VERSION: string
@@ -19,12 +17,10 @@ export interface Environment {
   FF_RATE_LIMITER_ENABLED: boolean
 }
 
-export type GetCIDRequestData = Pick<Request, 'url' | 'headers'>
+export type RateLimitExceeded = typeof RATE_LIMIT_EXCEEDED[keyof typeof RATE_LIMIT_EXCEEDED]
 
-export type GetCIDRequestOptions = GetCIDRequestData
-
-export interface RateLimitsService {
-  check: (cid: CID, options: GetCIDRequestOptions) => Promise<RateLimitExceeded>
+export interface RateLimitService {
+  check: (cid: CID, req: Request) => Promise<RateLimitExceeded>
 }
 
 export interface TokenMetadata {
@@ -32,12 +28,8 @@ export interface TokenMetadata {
   invalid?: boolean
 }
 
-export interface RateLimits {
-  create: ({ env }: { env: Environment }) => RateLimitsService
-}
-
 export interface AccountingService {
-  record: (cid: CID, options: GetCIDRequestOptions) => Promise<void>
+  record: (cid: CID, options: GetCIDRequestConfig) => Promise<void>
   getTokenMetadata: (token: string) => Promise<TokenMetadata | null>
 }
 

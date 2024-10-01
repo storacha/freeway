@@ -14,7 +14,7 @@
 
 1. Install the project
 ```sh
-npm i
+npm install
 ```
 
 2. CloudFlare Authentication
@@ -52,7 +52,7 @@ simple = { limit = 100, period = 60 }
 
 [[env.YOUR_USERNAME.kv_namespaces]]
 binding = "AUTH_TOKEN_METADATA"
-id = "YOUR_TOKEN" //FIXME how to obtain this token?
+id = "YOUR_TOKEN" // Listed when you create the binding or you can see it in the Cloudflare dashboard when you browser KV namespaces
 ```
 
 5. Start local server
@@ -65,13 +65,13 @@ npx wrangler dev -e YOUR_USERNAME
 Freeway is using miniflare v3 for testing which allows you to define the testing configurations in the JavaScript code (see `src/test/index.spec.js`). 
 
 Note:
-- Miniflare v3 doesn't support the Rate Limiting bidding for now, so we need to mock the rate limiting API to be able to use it in tests and in local development?
+- Miniflare v3 doesn't support the Rate Limiting binding for now, so we need to mock the rate limiting API to be able to use it in tests and in local development.
 
 In order to run the existing tests you can execute the following commands:
 
 **Miniflare Tests**
 ```sh
-npm run test
+npm run test:miniflare
 ```
 
 **Unit Tests**
