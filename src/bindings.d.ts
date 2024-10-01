@@ -10,7 +10,6 @@ export interface Environment {
   DEBUG: string
   CARPARK: R2Bucket
   CONTENT_CLAIMS_SERVICE_URL?: string
-  RATE_LIMITS_SERVICE_URL?: string
   ACCOUNTING_SERVICE_URL: string
   RATE_LIMITER: RateLimit
   AUTH_TOKEN_METADATA: KVNamespace

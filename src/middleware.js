@@ -3,6 +3,7 @@ import { Dagula } from 'dagula'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
 import * as ContentClaimsLocator from '@web3-storage/blob-fetcher/locator/content-claims'
+import { version } from '../package.json'
 import { CAR_CODE } from './constants.js'
 import { handleCarBlock } from './handlers/car-block.js'
 
@@ -20,7 +21,7 @@ import { handleCarBlock } from './handlers/car-block.js'
  *
  * @type {import('@web3-storage/gateway-lib').Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
  */
-export async function withCarBlockHandler (handler) {
+export function withCarBlockHandler (handler) {
   return async (request, env, ctx) => {
     const { dataCid, searchParams } = ctx
     if (!dataCid) throw new Error('missing data CID')
@@ -93,7 +94,7 @@ export function withContentClaimsDagula (handler) {
 export function withVersionHeader (handler) {
   return async (request, env, ctx) => {
     const response = await handler(request, env, ctx)
-    response.headers.set('x-freeway-version', env.VERSION)
+    response.headers.set('x-freeway-version', version)
     return response
   }
 }
