@@ -1,5 +1,4 @@
 import type { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
-import type { RateLimitExceeded } from '@cloudflare/workers-types/experimental'
 import { CID } from '@web3-storage/gateway-lib/handlers'
 import { RATE_LIMIT_EXCEEDED } from './constants.js'
 
