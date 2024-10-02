@@ -93,10 +93,11 @@ async function getAuthorizationTokenFromRequest (request) {
  * @param {import('@cloudflare/workers-types').RateLimit} rateLimitAPI
  * @param {import('multiformats/cid').CID} cid
  * @returns {Promise<import('../constants.js').RATE_LIMIT_EXCEEDED>}
+ * @throws {Error} if no rate limit API is found
  */
 async function isRateLimited (rateLimitAPI, cid) {
   if (!rateLimitAPI) {
-    return RATE_LIMIT_EXCEEDED.NO
+    throw new Error('no rate limit API found')
   }
   const rateLimitResponse = await rateLimitAPI.limit({ key: cid.toString() })
   if (rateLimitResponse.success) {
