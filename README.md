@@ -30,10 +30,16 @@ npx wrangler whoami
 4. Add your configs to `wrangler.toml`
 ```sh
 [env.YOUR_USERNAME]
+# Custom name for your testing/dev worker
+name = "YOUR_USERNAME-freeway"
 workers_dev = true
+# Account Id from step 3
 account_id = "YOUR_ACCOUNT_ID"
+# See step 4.2 to create the R2 Bucket
 r2_buckets = [
-  { binding = "CARPARK", bucket_name = "carpark-YOUR_USERNAME-0", preview_bucket_name = "carpark-YOUR_USERNAME-preview-0" }
+  { 
+    binding = "CARPARK", bucket_name = "carpark-YOUR_USERNAME-0", preview_bucket_name = "carpark-YOUR_USERNAME-preview-0" 
+  }
 ]
 
 [env.YOUR_USERNAME.vars]
@@ -52,7 +58,21 @@ simple = { limit = 100, period = 60 }
 
 [[env.YOUR_USERNAME.kv_namespaces]]
 binding = "AUTH_TOKEN_METADATA"
-id = "YOUR_TOKEN" // Listed when you create the binding or you can see it in the Cloudflare dashboard when you browser KV namespaces
+# See step 4.1 to create the KV store
+id = "KV_ID"
+```
+
+4.1
+In order to get the KV ID you need to create a KV with the following command:
+```sh
+ npx wrangler kv namespace create YOUR_USERNAME-AUTH_TOKEN_METADATA       
+ ```
+Copy the `id` from the output and add it to your `env.YOUR_USERNAME.kv_namespaces`.
+
+4.2
+You will also need to create the R2 Bucket:
+```sh
+npx wrangler r2 bucket create carpark-YOUR_USERNAME-0
 ```
 
 5. Start local server
@@ -83,6 +103,19 @@ npm run test:unit
 ```sh
 TBD
 ```
+
+## Deployment
+
+Deploy the worker to Cloudflare using your environment configuration:
+```sh
+npx wrangler deploy -e YOUR_USERNAME
+```
+
+In order to remove the worker after your testing is done, you can execute:
+```sh
+npx wrangler delete YOUR_WORKER_NAME -e YOUR_USERNAME
+```
+If you are connected with the Cloudflare Company account, please make sure you are not deleting the `freeway-worker` - which is the Production worker.
 
 ## Contributing
 
