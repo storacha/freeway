@@ -13,5 +13,9 @@ runs:
       shell: bash
     - run: npm run lint
       shell: bash
-    - run: npm test
+    - run: npm run test:unit
+      name: Unit Tests
+      shell: bash
+    - run: npm run test:miniflare
+      name: Miniflare Tests
       shell: bash

@@ -89,7 +89,7 @@ export function withContentClaimsDagula (handler) {
 }
 
 /**
- * @type {import('@web3-storage/gateway-lib').Middleware<import('@web3-storage/gateway-lib').Context>}
+ * @type {import('@web3-storage/gateway-lib').Middleware<import('@web3-storage/gateway-lib').Context, import('@web3-storage/gateway-lib').Context, Environment>}
  */
 export function withVersionHeader (handler) {
   return async (request, env, ctx) => {

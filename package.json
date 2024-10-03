@@ -18,8 +18,10 @@
     "build": "esbuild --bundle src/index.js --format=esm --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
     "build:debug": "esbuild --bundle src/index.js --format=esm --outfile=dist/worker.mjs",
     "build:tsc": "tsc --build",
-    "test": "npm run build:debug && node --test --experimental-vm-modules",
-    "lint": "standard"
+    "test:miniflare": "npm run build:debug && mocha --experimental-vm-modules --recursive test/**/*.spec.js",
+    "test:unit": "npm run build:debug && mocha --experimental-vm-modules --recursive test/unit/**/*.spec.js",
+    "lint": "standard",
+    "lint:fix": "standard --fix"
   },
   "keywords": [
     "IPFS",
@@ -46,12 +48,16 @@
     "@web3-storage/public-bucket": "^1.1.0",
     "@web3-storage/upload-client": "^16.1.1",
     "carstream": "^2.1.0",
+    "chai": "^5.1.1",
     "esbuild": "^0.18.20",
     "files-from-path": "^0.2.6",
-    "miniflare": "^3.20240610.1",
+    "miniflare": "^3.20240909.5",
+    "mocha": "^10.7.3",
     "multipart-byte-range": "^3.0.1",
+    "sinon": "^19.0.2",
     "standard": "^17.1.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "wrangler": "^3.78.8"
   },
   "standard": {
     "ignore": [
