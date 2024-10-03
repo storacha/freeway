@@ -19,7 +19,7 @@ describe('withRateLimits', () => {
     }
     env = {
       RATE_LIMITER: rateLimiter,
-      FF_RATE_LIMITER_ENABLED: true,
+      FF_RATE_LIMITER_ENABLED: 'true',
       ACCOUNTING_SERVICE_URL: 'http://example.com',
       AUTH_TOKEN_METADATA: {
         get: sandbox.stub(),

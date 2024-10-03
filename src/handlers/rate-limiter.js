@@ -19,14 +19,13 @@ import { Accounting } from '../services/accounting.js'
  */
 export function withRateLimit (handler) {
   return async (req, env, ctx) => {
-    if (env.FF_RATE_LIMITER_ENABLED !== true) {
+    if (env.FF_RATE_LIMITER_ENABLED !== 'true') {
       return handler(req, env, ctx)
     }
 
     const { dataCid } = ctx
-    const rateLimitService = createRateLimitService(env, ctx)
+    const rateLimitService = create(env, ctx)
     const isRateLimitExceeded = await rateLimitService.check(dataCid, req)
-
     if (isRateLimitExceeded === RATE_LIMIT_EXCEEDED.YES) {
       throw new HttpError('Too Many Requests', { status: 429 })
     } else {
@@ -43,7 +42,7 @@ export function withRateLimit (handler) {
  * @param {IpfsUrlContext} ctx
  * @returns {RateLimitService}
  */
-function createRateLimitService (env, ctx) {
+function create (env, ctx) {
   return {
     /**
      * @param {import('multiformats/cid').CID} cid

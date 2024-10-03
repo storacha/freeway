@@ -19,3 +19,6 @@ runs:
     - run: npm run test:miniflare
       name: Miniflare Tests
       shell: bash
+    - run: npm run test:integration
+      name: Integration Tests
+      shell: bash
