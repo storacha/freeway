@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.21.0](https://github.com/storacha/freeway/compare/v2.20.2...v2.21.0) (2024-10-03)
+
+
+### Features
+
+* rate limiter + unit tests + readme ([#115](https://github.com/storacha/freeway/issues/115)) ([7bc4c6d](https://github.com/storacha/freeway/commit/7bc4c6d7c5f96c5a7f5071901fe61c622f16adea))
+
 ## [2.20.2](https://github.com/storacha/freeway/compare/v2.20.1...v2.20.2) (2024-09-10)
 
 
