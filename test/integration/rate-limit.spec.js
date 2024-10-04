@@ -4,13 +4,14 @@ import fetch from 'node-fetch'
 import { getWorkerInfo } from '../fixtures/worker-fixture.js'
 
 describe('Rate Limit Handler', () => {
-  const { ip, port } = getWorkerInfo()
-
-  // This is a test CID that is known to be stored in the staging environment
-  // See https://bafybeibv7vzycdcnydl5n5lbws6lul2omkm6a6b5wmqt77sicrwnhesy7y.ipfs.w3s.link
+  /**
+   * This is a test CID that is known to be stored in the staging environment
+   * See https://bafybeibv7vzycdcnydl5n5lbws6lul2omkm6a6b5wmqt77sicrwnhesy7y.ipfs.w3s.link
+   */
   const cid = 'bafybeibv7vzycdcnydl5n5lbws6lul2omkm6a6b5wmqt77sicrwnhesy7y'
 
   it('should enforce rate limits', async () => {
+    const { ip, port } = getWorkerInfo()
     const maxRequests = 130
     let successCount = 0
     let rateLimitCount = 0

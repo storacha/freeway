@@ -14,6 +14,15 @@ export const wranglerEntryPath = path.resolve(
 )
 
 /**
+ * @typedef {Object} WranglerProcessInfo
+ * @property {string} ip - The IP address of the test worker.
+ * @property {number} port - The port of the test worker.
+ * @property {() => Promise<void>} stop - Function to stop the test worker.
+ * @property {() => string} getOutput - Function to get the output of the test worker.
+ * @property {() => void} clearOutput - Function to clear the output buffer.
+ */
+
+/**
  * Runs the command `wrangler dev` in a child process.
  *
  * Returns an object that gives you access to:
@@ -25,7 +34,7 @@ export const wranglerEntryPath = path.resolve(
  * @param {string[]} options - The options to pass to the wrangler command.
  * @param {NodeJS.ProcessEnv} [env] - The environment variables.
  * @param {string} [wranglerEnv] - The wrangler environment to use.
- * @returns {Promise<{ip: string, port: number, stop: () => Promise<void>, getOutput: () => string, clearOutput: () => void}>}
+ * @returns {Promise<WranglerProcessInfo>}
  */
 export async function runWranglerDev (
   cwd,
@@ -34,7 +43,7 @@ export async function runWranglerDev (
   wranglerEnv
 ) {
   return runLongLivedWrangler(
-    ['dev', `--env=${wranglerEnv}`, '--ip=127.0.0.1', ...options],
+    ['dev', `--env=${wranglerEnv}`, ...options],
     cwd,
     env
   )
@@ -46,7 +55,7 @@ export async function runWranglerDev (
  * @param {string[]} command - The wrangler command to run.
  * @param {string} cwd - The current working directory.
  * @param {NodeJS.ProcessEnv} [env] - The environment variables.
- * @returns {Promise<{ip: string, port: number, stop: () => Promise<void>, getOutput: () => string, clearOutput: () => void}>}
+ * @returns {Promise<WranglerProcessInfo>}
  */
 async function runLongLivedWrangler (
   command,

@@ -7,52 +7,47 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 /**
- * The IP address of the test worker.
- * @type {string}
+ * Worker information object
+ * @typedef {Object} WorkerInfo
+ * @property {string | undefined} ip - The IP address of the test worker.
+ * @property {number | undefined} port - The port of the test worker.
+ * @property {() => Promise<void> | undefined} stop - Function to stop the test worker.
+ * @property {() => string | undefined} getOutput - Function to get the output of the test worker.
+ * @property {string} wranglerEnv - The wrangler environment to use for the test worker.
  */
-let ip = 'localhost'
 
 /**
- * The port of the test worker.
- * Default is 8585.
- * @type {number}
+ * Worker information object
+ * @type {WorkerInfo}
  */
-let port = 8585
-
-/**
- * Stops the test worker.
- * @type {() => Promise<unknown> | undefined}
- */
-let stop
-
-/**
- * Gets the output of the test worker.
- * @type {() => string}
- */
-let getOutput
-
-/**
- * The wrangler environment to use for the test worker.
- * Default is "integration".
- * @type {string}
- */
-const wranglerEnv = process.env.WRANGLER_ENV || 'integration'
+const workerInfo = {
+  ip: undefined,
+  port: undefined,
+  stop: undefined,
+  getOutput: undefined,
+  wranglerEnv: process.env.WRANGLER_ENV || 'integration'
+}
 
 /**
  * Sets up the test worker.
  * @returns {Promise<void>}
  */
 export const mochaGlobalSetup = async () => {
-  ({ ip, port, stop, getOutput } = await runWranglerDev(
-    resolve(__dirname, '../../'), // The directory of the worker with the wrangler.toml
-    ['--local', `--port=${port}`],
-    process.env,
-    wranglerEnv
-  ))
-
-  console.log(`Output: ${getOutput()}`)
-  console.log(`Using wrangler environment: ${wranglerEnv}`)
-  console.log('Test worker started!')
+  try {
+    const result = await runWranglerDev(
+      resolve(__dirname, '../../'), // The directory of the worker with the wrangler.toml
+      ['--local'],
+      process.env,
+      workerInfo.wranglerEnv
+    )
+    Object.assign(workerInfo, result)
+    console.log(`Output: ${await workerInfo.getOutput()}`)
+    console.log('WorkerInfo:', workerInfo)
+    console.log('Test worker started!')
+  } catch (error) {
+    console.error('Failed to start test worker:', error)
+    throw error
+  }
 }
 
 /**
@@ -60,15 +55,21 @@ export const mochaGlobalSetup = async () => {
  * @returns {Promise<void>}
  */
 export const mochaGlobalTeardown = async () => {
-  await stop?.()
-  // console.log('getOutput', getOutput()) // uncomment for debugging
-  console.log('Test worker stopped!')
+  try {
+    const { stop } = workerInfo
+    await stop?.()
+    // console.log('getOutput', getOutput()) // uncomment for debugging
+    console.log('Test worker stopped!')
+  } catch (error) {
+    console.error('Failed to stop test worker:', error)
+    throw error
+  }
 }
 
 /**
  * Gets the worker info.
-* @returns {{ ip: string, port: number, wranglerEnv: string, stop: (() => Promise<void>) | undefined, getOutput: () => string }}
+ * @returns {WorkerInfo}
  */
 export function getWorkerInfo () {
-  return { ip, port, wranglerEnv, stop, getOutput }
+  return workerInfo
 }

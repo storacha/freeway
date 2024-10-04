@@ -18,7 +18,7 @@
     "build": "esbuild --bundle src/index.js --format=esm --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
     "build:debug": "esbuild --bundle src/index.js --format=esm --outfile=dist/worker.mjs",
     "build:tsc": "tsc --build",
-    "test:miniflare": "npm run build:debug && mocha --experimental-vm-modules test/index.spec.js",
+    "test:miniflare": "npm run build:debug && mocha --experimental-vm-modules --recursive test/miniflare/**/*.spec.js",
     "test:unit": "npm run build:debug && mocha --experimental-vm-modules --recursive test/unit/**/*.spec.js",
     "test:integration": "npm run build:debug && mocha --experimental-vm-modules --recursive test/integration/**/*.spec.js --require test/fixtures/worker-fixture.js",
     "lint": "standard",

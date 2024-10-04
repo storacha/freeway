@@ -9,9 +9,9 @@ import { equals } from 'multiformats/bytes'
 import { Map as LinkMap } from 'lnmap'
 import { CARReaderStream } from 'carstream'
 import { MultipartByteRangeDecoder, decodePartHeader, getBoundary } from 'multipart-byte-range/decoder'
-import { Builder, toBlobKey } from './helpers/builder.js'
-import { generateBlockLocationClaims, mockClaimsService, generateLocationClaim } from './helpers/content-claims.js'
-import { mockBucketService } from './helpers/bucket.js'
+import { Builder, toBlobKey } from '../helpers/builder.js'
+import { generateBlockLocationClaims, mockClaimsService, generateLocationClaim } from '../helpers/content-claims.js'
+import { mockBucketService } from '../helpers/bucket.js'
 
 /**
  * @param {{ arrayBuffer: () => Promise<ArrayBuffer> }} a
@@ -27,9 +27,9 @@ describe('freeway', () => {
   let miniflare
   /** @type {Builder} */
   let builder
-  /** @type {import('./helpers/content-claims.js').MockClaimsService} */
+  /** @type {import('../helpers/content-claims.js').MockClaimsService} */
   let claimsService
-  /** @type {import('./helpers/bucket.js').MockBucketService} */
+  /** @type {import('../helpers/bucket.js').MockBucketService} */
   let bucketService
 
   before(async () => {
