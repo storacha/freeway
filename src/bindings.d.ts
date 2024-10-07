@@ -12,7 +12,7 @@ export interface Environment {
   ACCOUNTING_SERVICE_URL: string
   RATE_LIMITER: RateLimit
   AUTH_TOKEN_METADATA: KVNamespace
-  FF_RATE_LIMITER_ENABLED: boolean
+  FF_RATE_LIMITER_ENABLED: string
 }
 
 export type RateLimitExceeded = typeof RATE_LIMIT_EXCEEDED[keyof typeof RATE_LIMIT_EXCEEDED]
