@@ -3,3 +3,4 @@ dist
 .mf
 .env
 .dev.vars
+.wrangler
