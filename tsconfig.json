@@ -1,6 +1,6 @@
 
 {
-  "include": ["src"],
+  "include": ["src", "test"],
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,
