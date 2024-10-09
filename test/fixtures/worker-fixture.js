@@ -6,7 +6,7 @@ import { runWranglerDev } from '../helpers/run-wrangler.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-/** 
+/**
  * The wrangler environment to use for the test worker.
  * @type {string}
  */
@@ -25,7 +25,7 @@ const wranglerEnv = process.env.WRANGLER_ENV || 'integration'
  * Worker information object
  * @type {WorkerInfo | undefined}
  */
-let workerInfo;
+let workerInfo
 
 /**
  * Sets up the test worker.
@@ -54,7 +54,7 @@ export const mochaGlobalSetup = async () => {
  */
 export const mochaGlobalTeardown = async () => {
   // If the worker is not running, nothing to do.
-  if (!workerInfo) return;
+  if (!workerInfo) return
 
   try {
     const { stop } = workerInfo
@@ -72,6 +72,6 @@ export const mochaGlobalTeardown = async () => {
  * @returns {WorkerInfo}
  */
 export function getWorkerInfo () {
-  if (!workerInfo) throw new Error('Worker not running.');
+  if (!workerInfo) throw new Error('Worker not running.')
   return workerInfo
 }

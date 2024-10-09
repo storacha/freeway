@@ -71,7 +71,7 @@ async function runLongLivedWrangler (
       clearTimeout(timeoutHandle)
       /** @type {{ ip: string, port: number }} */
       const message = JSON.parse(messageJSON.toString())
-      resolve({...message, stop, getOutput, clearOutput})
+      resolve({ ...message, stop, getOutput, clearOutput })
     })
 
     /** @type {Buffer[]} */
