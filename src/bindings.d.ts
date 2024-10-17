@@ -1,10 +1,9 @@
-import type { R2Bucket } from '@cloudflare/workers-types'
 import { CID } from '@web3-storage/gateway-lib/handlers'
 import { Environment as RateLimiterEnvironment } from './handlers/rate-limiter.types.ts'
+import { Environment as CarBlockEnvironment } from './handlers/car-block.types.ts'
 
-export interface Environment extends RateLimiterEnvironment {
+export interface Environment extends CarBlockEnvironment, RateLimiterEnvironment {
   VERSION: string
-  CARPARK: R2Bucket
   CONTENT_CLAIMS_SERVICE_URL?: string
 }
 
