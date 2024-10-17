@@ -1,204 +1,296 @@
-/* eslint-disable no-unused-expressions */
-import { describe, it, beforeEach, afterEach } from 'mocha'
+/* eslint-disable no-unused-expressions
+   ---
+   `no-unused-expressions` doesn't understand that several of Chai's assertions
+   are implemented as getters rather than explicit function calls; it thinks
+   the assertions are unused expressions. */
+import { describe, it, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
 import { withRateLimit } from '../../../src/handlers/rate-limiter.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
+import { CID } from 'multiformats'
+import { sha256 } from 'multiformats/hashes/sha2'
+import * as raw from 'multiformats/codecs/raw'
+import { inspect } from 'util'
 
-describe('withRateLimits', () => {
-  let env
-  let rateLimiter
-  let handler
-  let ctx
-  let sandbox
+/**
+ * @import { SinonStub } from 'sinon'
+ * @import { Environment } from '../../../src/handlers/rate-limiter.types.js'
+ * @import {
+ *   Handler,
+ *   IpfsUrlContext,
+ *   Context as MiddlewareContext,
+ *   Environment as MiddlewareEnvironment,
+ * } from '@web3-storage/gateway-lib'
+ */
 
-  beforeEach(() => {
-    sandbox = sinon.createSandbox()
-    rateLimiter = {
-      limit: sandbox.stub()
-    }
-    env = {
-      RATE_LIMITER: rateLimiter,
-      FF_RATE_LIMITER_ENABLED: 'true',
-      ACCOUNTING_SERVICE_URL: 'http://example.com',
-      AUTH_TOKEN_METADATA: {
-        get: sandbox.stub(),
-        put: sandbox.stub()
-      }
-    }
-    handler = sandbox.stub()
-    ctx = {
-      dataCid: 'test-cid',
-      waitUntil: sandbox.stub()
+/**
+ * Resolves to the reason for the rejection of a promise, or `undefined` if the
+ * promise resolves.
+ * @param {Promise<unknown>} promise
+ * @returns {Promise<unknown>}
+ */
+const rejection = (promise) => promise.then(() => {}).catch((err) => err)
+
+/**
+ * Asserts that a value is an instance of a class, in a way that TypeScript can
+ * understand too. Just a simple wrapper around Chai's `instanceOf`, typed as an
+ * assertion function.
+ *
+ * @template {Function} Class
+ * @param {unknown} value
+ * @param {Class} aClass
+ * @returns {asserts value is InstanceType<Class>}
+ */
+const expectToBeInstanceOf = (value, aClass) => {
+  expect(value).to.be.instanceOf(aClass)
+}
+
+const sandbox = sinon.createSandbox()
+
+/**
+ * Creates a Sinon stub which has no default behavior and throws an error if
+ * called without a specific behavior being set.
+ *
+ * @example
+ * const toWord = stub('toWord')
+ * toWord.withArgs(1).returns('one')
+ * toWord.withArgs(2).returns('two')
+ *
+ * toWord(1) // => 'one'
+ * toWord(2) // => 'two'
+ * toWord(3) // => Error: Unexpected call to toWord with args: 3
+ *
+ * @template {readonly any[]} TArgs
+ * @template {any} R
+ * @param {string} name
+ * @returns {sinon.SinonStub<TArgs, R>}
+ */
+const stub = (name) =>
+  /** @type {sinon.SinonStub<TArgs, R>} */ (
+    /** @type {unknown} */
+    (
+      sandbox.stub().callsFake((...args) => {
+        throw new Error(
+          `Unexpected call to ${name} with args: ${inspect(args)}`
+        )
+      })
+    )
+  )
+
+/**
+ * Same as {@link stub}, but with concessions for overloaded functions.
+ * TypeScript cannot properly infer from the type of overloaded functions, and
+ * instead infers from the last overload. This can cause surprising results.
+ * `stubOverloaded` returns a stub typed with `unknown` arg and return types,
+ * but also typed as the original function, with all its overloads intact.
+ * Sinon calls will lack type information, but regular use of the function
+ * will be properly typed.
+ *
+ * @template {Function} Fn
+ * @param {string} name
+ * @returns {Fn & sinon.SinonStub<unknown[], unknown>}
+ */
+const stubOverloaded = (name) =>
+  /** @type {Fn & sinon.SinonStub<unknown[], unknown>} */ (
+    /** @type {unknown} */
+    (
+      sandbox.stub().callsFake((...args) => {
+        throw new Error(
+          `Unexpected call to ${name} with args: ${inspect(args)}`
+        )
+      })
+    )
+  )
+
+/** @typedef {Handler<MiddlewareContext, MiddlewareEnvironment>} RequestHandler */
+/** @type {SinonStub<Parameters<RequestHandler>, ReturnType<RequestHandler>>} */
+const innerHandler = stub('nextHandler')
+
+/**
+ * Creates a request with an optional authorization header.
+ *
+ * @param {Object} [options]
+ * @param {string} [options.authorization] The value for the `Authorization`
+ * header, if any.
+ */
+const createRequest = async ({ authorization } = {}) =>
+  new Request('http://doesnt-matter.com/', {
+    headers: new Headers(
+      authorization ? { Authorization: authorization } : {}
+    )
+  })
+
+const env =
+  /** @satisfies {Environment} */
+  ({
+    DEBUG: 'false',
+    ACCOUNTING_SERVICE_URL: 'http://example.com',
+    RATE_LIMITER: {
+      limit: stub('limit')
+    },
+    FF_RATE_LIMITER_ENABLED: 'true',
+    AUTH_TOKEN_METADATA: {
+      get: stubOverloaded('get'),
+      getWithMetadata: stubOverloaded('getWithMetadata'),
+      put: stub('put'),
+      list: stub('list'),
+      delete: stub('delete')
     }
   })
 
+const ctx =
+  /** @satisfies {IpfsUrlContext} */
+  ({
+    // Doesn't matter what the CID is, as long as it's consistent.
+    dataCid: CID.create(
+      1,
+      raw.code,
+      await sha256.digest(new Uint8Array([1, 2, 3]))
+    ),
+    waitUntil: stub('waitUntil').returns(undefined),
+    path: '',
+    searchParams: new URLSearchParams()
+  })
+
+describe('withRateLimits', async () => {
   afterEach(() => {
-    sandbox.restore()
+    sandbox.reset()
   })
 
   it('should call next if no auth token and rate limit is not exceeded', async () => {
-    rateLimiter.limit.resolves({ success: true })
+    const request = await createRequest()
 
-    const request = {
-      headers: {
-        get: sandbox.stub()
-      }
-    }
-    const wrappedHandler = withRateLimit(handler)
+    env.RATE_LIMITER.limit
+      .withArgs({ key: ctx.dataCid.toString() })
+      .resolves({ success: true })
 
-    await wrappedHandler(request, env, ctx)
+    const innerResponse = new Response()
+    innerHandler.withArgs(request, env, ctx).resolves(innerResponse)
 
-    expect(rateLimiter.limit.calledOnce).to.be.true
-    expect(rateLimiter.limit.calledWith({ key: ctx.dataCid.toString() })).to.be.true
-    expect(handler.calledOnce).to.be.true
-    expect(handler.calledWith(request, env, ctx)).to.be.true
+    const wrappedHandler = withRateLimit(innerHandler)
+    const response = await wrappedHandler(request, env, ctx)
+
+    expect(innerHandler.calledOnce).to.be.true
+    expect(innerHandler.calledWith(request, env, ctx)).to.be.true
+    expect(response).to.equal(innerResponse)
   })
 
   it('should throw an error if no auth token and rate limit is exceeded', async () => {
-    rateLimiter.limit.resolves({ success: false })
+    const request = await createRequest()
 
-    const request = {
-      headers: {
-        get: sandbox.stub()
-      }
-    }
-    const wrappedHandler = withRateLimit(handler)
+    env.RATE_LIMITER.limit
+      .withArgs({ key: ctx.dataCid.toString() })
+      .resolves({ success: false })
 
-    try {
-      await wrappedHandler(request, env, ctx)
-      throw new Error('Expected error was not thrown')
-    } catch (err) {
-      expect(rateLimiter.limit.calledOnce).to.be.true
-      expect(rateLimiter.limit.calledWith({ key: ctx.dataCid.toString() })).to.be.true
-      expect(handler.notCalled).to.be.true
-      expect(err).to.be.instanceOf(HttpError)
-      expect(err.message).to.equal('Too Many Requests')
-    }
+    const wrappedHandler = withRateLimit(innerHandler)
+    const error = await rejection(wrappedHandler(request, env, ctx))
+
+    expect(innerHandler.notCalled).to.be.true
+    expectToBeInstanceOf(error, HttpError)
+    expect(error.status).to.equal(429)
+    expect(error.message).to.equal('Too Many Requests')
   })
 
   it('should call next if auth token is present but no token metadata and rate limit is not exceeded', async () => {
-    rateLimiter.limit.resolves({ success: true })
-    env.AUTH_TOKEN_METADATA.get.resolves(null)
+    const request = await createRequest({
+      authorization: 'Bearer test-token'
+    })
 
-    const request = {
-      headers: {
-        get: sandbox.stub().callsFake((header) => {
-          if (header === 'Authorization') {
-            return 'Bearer test-token'
-          }
-          return null
-        })
-      }
-    }
-    const wrappedHandler = withRateLimit(handler)
+    const innerResponse = new Response()
+    innerHandler.withArgs(request, env, ctx).resolves(innerResponse)
 
-    await wrappedHandler(request, env, ctx)
+    env.RATE_LIMITER.limit
+      .withArgs({ key: ctx.dataCid.toString() })
+      .resolves({ success: true })
+    env.AUTH_TOKEN_METADATA.get.withArgs('test-token').resolves(null)
 
-    expect(rateLimiter.limit.calledOnce).to.be.true
-    expect(rateLimiter.limit.calledWith({ key: ctx.dataCid.toString() })).to.be.true
-    expect(handler.calledOnce).to.be.true
-    expect(handler.calledWith(request, env, ctx)).to.be.true
+    const wrappedHandler = withRateLimit(innerHandler)
+    const response = await wrappedHandler(request, env, ctx)
+
+    expect(response).to.equal(innerResponse)
   })
 
   it('should throw an error if auth token is present but no token metadata and rate limit is exceeded', async () => {
-    rateLimiter.limit.resolves({ success: false })
-    env.AUTH_TOKEN_METADATA.get.resolves(null)
+    const request = await createRequest({
+      authorization: 'Bearer test-token'
+    })
 
-    const request = {
-      headers: {
-        get: sandbox.stub().callsFake((header) => {
-          if (header === 'Authorization') {
-            return 'Bearer test-token'
-          }
-          return null
-        })
-      }
-    }
-    const wrappedHandler = withRateLimit(handler)
+    env.RATE_LIMITER.limit
+      .withArgs({ key: ctx.dataCid.toString() })
+      .resolves({ success: false })
+    env.AUTH_TOKEN_METADATA.get.withArgs('test-token').resolves(null)
 
-    try {
-      await wrappedHandler(request, env, ctx)
-      throw new Error('Expected error was not thrown')
-    } catch (err) {
-      expect(rateLimiter.limit.calledOnce).to.be.true
-      expect(rateLimiter.limit.calledWith({ key: ctx.dataCid.toString() })).to.be.true
-      expect(handler.notCalled).to.be.true
-      expect(err).to.be.instanceOf(HttpError)
-      expect(err.message).to.equal('Too Many Requests')
-    }
+    const wrappedHandler = withRateLimit(innerHandler)
+
+    const error = await rejection(wrappedHandler(request, env, ctx))
+
+    expect(innerHandler.notCalled).to.be.true
+    expectToBeInstanceOf(error, HttpError)
+    expect(error.status).to.equal(429)
+    expect(error.message).to.equal('Too Many Requests')
   })
 
   it('should call next if auth token is present and token metadata is invalid but rate limit is not exceeded', async () => {
-    rateLimiter.limit.resolves({ success: true })
-    env.AUTH_TOKEN_METADATA.get.resolves(JSON.stringify({ invalid: true }))
+    const request = await createRequest({
+      authorization: 'Bearer test-token'
+    })
 
-    const request = {
-      headers: {
-        get: sandbox.stub().callsFake((header) => {
-          if (header === 'Authorization') {
-            return 'Bearer test-token'
-          }
-          return null
-        })
-      }
-    }
-    const wrappedHandler = withRateLimit(handler)
+    const innerResponse = new Response()
+    innerHandler.withArgs(request, env, ctx).resolves(innerResponse)
 
-    await wrappedHandler(request, env, ctx)
+    env.RATE_LIMITER.limit
+      .withArgs({ key: ctx.dataCid.toString() })
+      .resolves({ success: true })
+    env.AUTH_TOKEN_METADATA.get
+      .withArgs('test-token')
+      .resolves(JSON.stringify({ invalid: true }))
 
-    expect(rateLimiter.limit.calledOnce).to.be.true
-    expect(rateLimiter.limit.calledWith({ key: ctx.dataCid.toString() })).to.be.true
-    expect(handler.calledOnce).to.be.true
-    expect(handler.calledWith(request, env, ctx)).to.be.true
+    const wrappedHandler = withRateLimit(innerHandler)
+
+    const response = await wrappedHandler(request, env, ctx)
+
+    expect(response).to.equal(innerResponse)
   })
 
   it('should throw an error if auth token is present and token metadata is invalid and rate limit is exceeded', async () => {
-    rateLimiter.limit.resolves({ success: false })
-    env.AUTH_TOKEN_METADATA.get.resolves(JSON.stringify({ invalid: true }))
+    const request = await createRequest({
+      authorization: 'Bearer test-token'
+    })
 
-    const request = {
-      headers: {
-        get: sandbox.stub().callsFake((header) => {
-          if (header === 'Authorization') {
-            return 'Bearer test-token'
-          }
-          return null
-        })
-      }
-    }
-    const wrappedHandler = withRateLimit(handler)
+    env.RATE_LIMITER.limit
+      .withArgs({ key: ctx.dataCid.toString() })
+      .resolves({ success: false })
+    env.AUTH_TOKEN_METADATA.get
+      .withArgs('test-token')
+      .resolves(JSON.stringify({ invalid: true }))
 
-    try {
-      await wrappedHandler(request, env, ctx)
-      throw new Error('Expected error was not thrown')
-    } catch (err) {
-      expect(rateLimiter.limit.calledOnce).to.be.true
-      expect(rateLimiter.limit.calledWith({ key: ctx.dataCid.toString() })).to.be.true
-      expect(handler.notCalled).to.be.true
-      expect(err).to.be.instanceOf(HttpError)
-      expect(err.message).to.equal('Too Many Requests')
-    }
+    const wrappedHandler = withRateLimit(innerHandler)
+
+    const error = await rejection(wrappedHandler(request, env, ctx))
+
+    expect(innerHandler.notCalled).to.be.true
+    expectToBeInstanceOf(error, HttpError)
+    expect(error.status).to.equal(429)
+    expect(error.message).to.equal('Too Many Requests')
   })
 
   it('should call next if auth token is present and token metadata is valid', async () => {
-    env.AUTH_TOKEN_METADATA.get.resolves(JSON.stringify({ invalid: false }))
+    const request = await createRequest({
+      authorization: 'Bearer test-token'
+    })
 
-    const request = {
-      headers: {
-        get: sandbox.stub().callsFake((header) => {
-          if (header === 'Authorization') {
-            return 'Bearer test-token'
-          }
-          return null
-        })
-      }
-    }
-    const wrappedHandler = withRateLimit(handler)
+    const innerResponse = new Response()
+    innerHandler.withArgs(request, env, ctx).resolves(innerResponse)
 
-    await wrappedHandler(request, env, ctx)
+    env.AUTH_TOKEN_METADATA.get
+      .withArgs('test-token')
+      .resolves(JSON.stringify({ invalid: false }))
 
-    expect(handler.calledOnce).to.be.true
-    expect(handler.calledWith(request, env, ctx)).to.be.true
+    const wrappedHandler = withRateLimit(innerHandler)
+
+    const response = await wrappedHandler(request, env, ctx)
+
+    expect(response).to.equal(innerResponse)
   })
 })
