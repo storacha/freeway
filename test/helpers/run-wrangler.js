@@ -103,7 +103,7 @@ async function runLongLivedWrangler (
           wranglerProcess.pid,
                   `Command "${command.join(' ')}" had no process id`
         )
-        treeKill(wranglerProcess.pid, (e) => {
+        treeKill(wranglerProcess.pid, 'SIGKILL', (e) => {
           if (e) {
             console.error(
               'Failed to kill command: ' + command.join(' '),
