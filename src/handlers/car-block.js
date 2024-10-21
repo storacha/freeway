@@ -7,14 +7,17 @@ import { base58btc } from 'multiformats/bases/base58'
 import { CAR_CODE } from '../constants.js'
 
 /**
- * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} CarBlockHandlerContext
- * @typedef {{ offset: number, length?: number } | { offset?: number, length: number } | { suffix: number }} Range
+ * @import { Context, IpfsUrlContext as CarBlockHandlerContext, Handler } from '@web3-storage/gateway-lib'
+ * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
+ * @import { Environment } from './car-block.types.js'
  */
+
+/** @typedef {{ offset: number, length?: number } | { offset?: number, length: number } | { suffix: number }} Range */
 
 /**
  * Handler that serves CAR files directly from R2.
  *
- * @type {import('@web3-storage/gateway-lib').Handler<CarBlockHandlerContext, import('../bindings.js').Environment>}
+ * @type {Handler<CarBlockHandlerContext, Environment>}
  */
 export async function handleCarBlock (request, env, ctx) {
   const { searchParams, dataCid } = ctx

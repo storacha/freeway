@@ -3,10 +3,14 @@ import { RATE_LIMIT_EXCEEDED } from '../constants.js'
 import { Accounting } from '../services/accounting.js'
 
 /**
- * @typedef {import('../bindings.js').Environment} Environment
- * @typedef {import('@web3-storage/gateway-lib').IpfsUrlContext} IpfsUrlContext
- * @typedef {import('../bindings.js').RateLimitService} RateLimitService
- * @typedef {import('../bindings.js').RateLimitExceeded} RateLimitExceeded
+ * @import { Context, IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
+ * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
+ * @import {
+ *   Environment,
+ *   TokenMetadata,
+ *   RateLimitService,
+ *   RateLimitExceeded
+ * } from './rate-limiter.types.js'
  */
 
 /**
@@ -15,7 +19,7 @@ import { Accounting } from '../services/accounting.js'
  * it can be enabled or disabled using the FF_RATE_LIMITER_ENABLED flag.
  * Every successful request is recorded in the accounting service.
  *
- * @type {import('@web3-storage/gateway-lib').Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
+ * @type {Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
  */
 export function withRateLimit (handler) {
   return async (req, env, ctx) => {
@@ -29,7 +33,9 @@ export function withRateLimit (handler) {
     if (isRateLimitExceeded === RATE_LIMIT_EXCEEDED.YES) {
       throw new HttpError('Too Many Requests', { status: 429 })
     } else {
-      const accounting = Accounting.create({ serviceURL: env.ACCOUNTING_SERVICE_URL })
+      const accounting = Accounting.create({
+        serviceURL: env.ACCOUNTING_SERVICE_URL
+      })
       // NOTE: non-blocking call to the accounting service
       ctx.waitUntil(accounting.record(dataCid, req))
       return handler(req, env, ctx)
@@ -89,7 +95,7 @@ async function getAuthorizationTokenFromRequest (request) {
 }
 
 /**
- * @param {import('@cloudflare/workers-types').RateLimit} rateLimitAPI
+ * @param {RateLimit} rateLimitAPI
  * @param {import('multiformats/cid').CID} cid
  * @returns {Promise<import('../constants.js').RATE_LIMIT_EXCEEDED>}
  * @throws {Error} if no rate limit API is found
@@ -108,10 +114,10 @@ async function isRateLimited (rateLimitAPI, cid) {
 }
 
 /**
- * @param {import("../bindings.js").Environment} env
+ * @param {Environment} env
  * @param {string} authToken
- * @param {import('@web3-storage/gateway-lib').Context} ctx
- * @returns {Promise<import('../bindings.js').TokenMetadata | null>}
+ * @param {Context} ctx
+ * @returns {Promise<TokenMetadata | null>}
  */
 async function getTokenMetadata (env, authToken, ctx) {
   const cachedValue = await env.AUTH_TOKEN_METADATA.get(authToken)
@@ -121,7 +127,9 @@ async function getTokenMetadata (env, authToken, ctx) {
     return decode(cachedValue)
   }
 
-  const accounting = Accounting.create({ serviceURL: env.ACCOUNTING_SERVICE_URL })
+  const accounting = Accounting.create({
+    serviceURL: env.ACCOUNTING_SERVICE_URL
+  })
   const tokenMetadata = await accounting.getTokenMetadata(authToken)
   if (tokenMetadata) {
     // NOTE: non-blocking call to the auth token metadata cache
@@ -134,7 +142,7 @@ async function getTokenMetadata (env, authToken, ctx) {
 
 /**
  * @param {string} s
- * @returns {import('../bindings.js').TokenMetadata}
+ * @returns {TokenMetadata}
  */
 function decode (s) {
   // TODO should this be dag-json?
@@ -142,7 +150,7 @@ function decode (s) {
 }
 
 /**
- * @param {import('../bindings.js').TokenMetadata} m
+ * @param {TokenMetadata} m
  * @returns {string}
  */
 function encode (m) {

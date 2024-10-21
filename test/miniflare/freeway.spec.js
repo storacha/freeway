@@ -13,6 +13,8 @@ import { Builder, toBlobKey } from '../helpers/builder.js'
 import { generateBlockLocationClaims, mockClaimsService, generateLocationClaim } from '../helpers/content-claims.js'
 import { mockBucketService } from '../helpers/bucket.js'
 
+/** @import { Block, Position } from 'carstream' */
+
 /**
  * @param {{ arrayBuffer: () => Promise<ArrayBuffer> }} a
  * @param {{ arrayBuffer: () => Promise<ArrayBuffer> }} b
@@ -163,6 +165,7 @@ describe('freeway', () => {
     const source = /** @type {ReadableStream<Uint8Array>} */ (res.body)
     const carStream = new CARReaderStream()
 
+    /** @type {(Block & Position)[]} */
     const blocks = []
     await source.pipeThrough(carStream).pipeTo(new WritableStream({
       write: (block) => { blocks.push(block) }
@@ -221,6 +224,7 @@ describe('freeway', () => {
     const source = /** @type {ReadableStream<Uint8Array>} */ (obj.body)
     const carStream = new CARReaderStream()
 
+    /** @type {(Block & Position)[]} */
     const blocks = []
     await source.pipeThrough(carStream).pipeTo(new WritableStream({
       write: (block) => { blocks.push(block) }

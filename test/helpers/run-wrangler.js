@@ -62,70 +62,58 @@ async function runLongLivedWrangler (
   cwd,
   env
 ) {
-  let settledReadyPromise = false
-  /** @type {(value: { ip: string port: number }) => void} */
-  let resolveReadyPromise
-  /** @type {(reason: unknown) => void} */
-  let rejectReadyPromise
-
-  const ready = new Promise((resolve, reject) => {
-    resolveReadyPromise = resolve
-    rejectReadyPromise = reject
-  })
-
-  const wranglerProcess = fork(wranglerEntryPath, command, {
-    stdio: ['ignore', /* stdout */ 'pipe', /* stderr */ 'pipe', 'ipc'],
-    cwd,
-    env: { ...process.env, ...env, PWD: cwd }
-  }).on('message', (message) => {
-    if (settledReadyPromise) return
-    settledReadyPromise = true
-    clearTimeout(timeoutHandle)
-    resolveReadyPromise(JSON.parse(message.toString()))
-  })
-
-  const chunks = []
-  wranglerProcess.stdout?.on('data', (chunk) => {
-    chunks.push(chunk)
-  })
-  wranglerProcess.stderr?.on('data', (chunk) => {
-    chunks.push(chunk)
-  })
-  const getOutput = () => Buffer.concat(chunks).toString()
-  const clearOutput = () => (chunks.length = 0)
-
-  const timeoutHandle = setTimeout(() => {
-    if (settledReadyPromise) return
-    settledReadyPromise = true
-    const separator = '='.repeat(80)
-    const message = [
-      'Timed out starting long-lived Wrangler:',
-      separator,
-      getOutput(),
-      separator
-    ].join('\n')
-    rejectReadyPromise(new Error(message))
-  }, 50_000)
-
-  async function stop () {
-    return new Promise((resolve) => {
-      assert(
-        wranglerProcess.pid,
-                `Command "${command.join(' ')}" had no process id`
-      )
-      treeKill(wranglerProcess.pid, (e) => {
-        if (e) {
-          console.error(
-            'Failed to kill command: ' + command.join(' '),
-            wranglerProcess.pid,
-            e
-          )
-        }
-        resolve()
-      })
+  return new Promise((resolve, reject) => {
+    const wranglerProcess = fork(wranglerEntryPath, command, {
+      stdio: ['ignore', /* stdout */ 'pipe', /* stderr */ 'pipe', 'ipc'],
+      cwd,
+      env: { ...process.env, ...env, PWD: cwd }
+    }).on('message', (messageJSON) => {
+      clearTimeout(timeoutHandle)
+      /** @type {{ ip: string, port: number }} */
+      const message = JSON.parse(messageJSON.toString())
+      resolve({ ...message, stop, getOutput, clearOutput })
     })
-  }
 
-  const { ip, port } = await ready
-  return { ip, port, stop, getOutput, clearOutput }
+    /** @type {Buffer[]} */
+    const chunks = []
+    wranglerProcess.stdout?.on('data', (chunk) => {
+      chunks.push(chunk)
+    })
+    wranglerProcess.stderr?.on('data', (chunk) => {
+      chunks.push(chunk)
+    })
+    const getOutput = () => Buffer.concat(chunks).toString()
+    const clearOutput = () => (chunks.length = 0)
+
+    const timeoutHandle = setTimeout(() => {
+      const separator = '='.repeat(80)
+      const message = [
+        'Timed out starting long-lived Wrangler:',
+        separator,
+        getOutput(),
+        separator
+      ].join('\n')
+      reject(new Error(message))
+    }, 50_000)
+
+    /** @type {WranglerProcessInfo['stop']} */
+    async function stop () {
+      return new Promise((resolve) => {
+        assert(
+          wranglerProcess.pid,
+                  `Command "${command.join(' ')}" had no process id`
+        )
+        treeKill(wranglerProcess.pid, 'SIGKILL', (e) => {
+          if (e) {
+            console.error(
+              'Failed to kill command: ' + command.join(' '),
+              wranglerProcess.pid,
+              e
+            )
+          }
+          resolve()
+        })
+      })
+    }
+  })
 }
