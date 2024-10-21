@@ -1,18 +1,59 @@
 /* eslint-env browser */
 /* global FixedLengthStream */
+
+import { CAR_CODE } from '../constants.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 // @ts-expect-error no types
 import httpRangeParse from 'http-range-parse'
 import { base58btc } from 'multiformats/bases/base58'
-import { CAR_CODE } from '../constants.js'
 
 /**
- * @import { Context, IpfsUrlContext as CarBlockHandlerContext, Handler } from '@web3-storage/gateway-lib'
  * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
- * @import { Environment } from './car-block.types.js'
+ * @import {
+ *   IpfsUrlContext,
+ *   Middleware,
+ *   Context,
+ *   IpfsUrlContext as CarBlockHandlerContext,
+ *   Handler
+ * } from '@web3-storage/gateway-lib'
+ * @import { Environment } from './withCarBlockHandler.types.js'
  */
 
 /** @typedef {{ offset: number, length?: number } | { offset?: number, length: number } | { suffix: number }} Range */
+
+/**
+ * Middleware that will serve CAR files if a CAR codec is found in the path
+ * CID. If the CID is not a CAR CID it delegates to the next middleware.
+ *
+ * @type {Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
+ */
+
+export function withCarBlockHandler (handler) {
+  return async (request, env, ctx) => {
+    const { dataCid, searchParams } = ctx
+    if (!dataCid) throw new Error('missing data CID')
+
+    // if not CAR codec, or if trusted gateway format has been requested...
+    const formatParam = searchParams.get('format')
+    const acceptHeader = request.headers.get('Accept')
+    if (dataCid.code !== CAR_CODE ||
+      formatParam === 'car' ||
+      acceptHeader === 'application/vnd.ipld.car' ||
+      formatParam === 'raw' ||
+      acceptHeader === 'application/vnd.ipld.raw') {
+      return handler(request, env, ctx) // pass to other handlers
+    }
+
+    try {
+      return await handleCarBlock(request, env, ctx)
+    } catch (/** @type {any} */err) {
+      if (err.status === 404) {
+        return handler(request, env, ctx) // use content claims to resolve
+      }
+      throw err
+    }
+  }
+}
 
 /**
  * Handler that serves CAR files directly from R2.

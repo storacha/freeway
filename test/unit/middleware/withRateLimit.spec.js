@@ -6,7 +6,7 @@
 import { describe, it, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { withRateLimit } from '../../../src/handlers/rate-limiter.js'
+import { withRateLimit } from '../../../src/middleware/withRateLimit.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import { CID } from 'multiformats'
 import { sha256 } from 'multiformats/hashes/sha2'
@@ -15,7 +15,7 @@ import { inspect } from 'util'
 
 /**
  * @import { SinonStub } from 'sinon'
- * @import { Environment } from '../../../src/handlers/rate-limiter.types.js'
+ * @import { Environment } from '../../../src/middleware/withRateLimit.types.js'
  * @import {
  *   Handler,
  *   IpfsUrlContext,

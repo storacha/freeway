@@ -18,9 +18,9 @@ import {
 import {
   withContentClaimsDagula,
   withVersionHeader,
+  withRateLimit,
   withCarBlockHandler
-} from './middleware.js'
-import { withRateLimit } from './handlers/rate-limiter.js'
+} from './middleware/index.js'
 
 /**
  * @typedef {import('./bindings.js').Environment} Environment

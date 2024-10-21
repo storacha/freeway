@@ -10,7 +10,7 @@ import { Accounting } from '../services/accounting.js'
  *   TokenMetadata,
  *   RateLimitService,
  *   RateLimitExceeded
- * } from './rate-limiter.types.js'
+ * } from './withRateLimit.types.js'
  */
 
 /**
