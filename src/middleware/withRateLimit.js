@@ -3,10 +3,11 @@ import { RATE_LIMIT_EXCEEDED } from '../constants.js'
 import { Accounting } from '../services/accounting.js'
 
 /**
- * @import { Context, IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
+ * @import { Middleware } from '@web3-storage/gateway-lib'
  * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
  * @import {
  *   Environment,
+ *   Context,
  *   TokenMetadata,
  *   RateLimitService,
  *   RateLimitExceeded
@@ -19,7 +20,7 @@ import { Accounting } from '../services/accounting.js'
  * it can be enabled or disabled using the FF_RATE_LIMITER_ENABLED flag.
  * Every successful request is recorded in the accounting service.
  *
- * @type {Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
+ * @type {Middleware<Context, Context, Environment>}
  */
 export function withRateLimit (handler) {
   return async (req, env, ctx) => {
@@ -45,7 +46,7 @@ export function withRateLimit (handler) {
 
 /**
  * @param {Environment} env
- * @param {IpfsUrlContext} ctx
+ * @param {Context} ctx
  * @returns {RateLimitService}
  */
 function create (env, ctx) {
@@ -56,7 +57,7 @@ function create (env, ctx) {
      * @returns {Promise<RateLimitExceeded>}
      */
     check: async (cid, request) => {
-      const authToken = await getAuthorizationTokenFromRequest(request)
+      const authToken = ctx.authToken
       if (!authToken) {
         // no token, use normal rate limit
         return isRateLimited(env.RATE_LIMITER, cid)
@@ -80,18 +81,6 @@ function create (env, ctx) {
       return RATE_LIMIT_EXCEEDED.NO
     }
   }
-}
-
-/**
- * @param {Request} request
- * @returns {Promise<string | null>}
- */
-async function getAuthorizationTokenFromRequest (request) {
-  const authHeader = request.headers.get('Authorization')
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.substring(7) // Remove 'Bearer ' prefix
-  }
-  return null
 }
 
 /**

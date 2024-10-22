@@ -5,8 +5,9 @@ import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
 import * as ContentClaimsLocator from '@web3-storage/blob-fetcher/locator/content-claims'
 import { version } from '../../package.json'
 
-export { withRateLimit } from './withRateLimit.js'
+export { withAuthToken } from './withAuthToken.js'
 export { withCarBlockHandler } from './withCarBlockHandler.js'
+export { withRateLimit } from './withRateLimit.js'
 
 /**
  * @import {

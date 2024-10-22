@@ -18,8 +18,9 @@ import {
 import {
   withContentClaimsDagula,
   withVersionHeader,
-  withRateLimit,
-  withCarBlockHandler
+  withAuthToken,
+  withCarBlockHandler,
+  withRateLimit
 } from './middleware/index.js'
 
 /**
@@ -43,6 +44,7 @@ export default {
       withErrorHandler,
       withParsedIpfsUrl,
       createWithHttpMethod('GET', 'HEAD'),
+      withAuthToken,
 
       // Rate-limit requests
       withRateLimit,
