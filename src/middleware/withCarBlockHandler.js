@@ -46,8 +46,8 @@ export function withCarBlockHandler (handler) {
 
     try {
       return await handleCarBlock(request, env, ctx)
-    } catch (/** @type {any} */err) {
-      if (err.status === 404) {
+    } catch (err) {
+      if (err instanceof HttpError && err.status === 404) {
         return handler(request, env, ctx) // use content claims to resolve
       }
       throw err
