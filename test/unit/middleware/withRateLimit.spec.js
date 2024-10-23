@@ -17,8 +17,8 @@ import { expectToBeInstanceOf } from './util/expectToBeInstanceOf.js'
 /**
  * @import { SinonStub } from 'sinon'
  * @import {
- *   Environment,
- *   Context
+ *   RateLimitEnvironment,
+ *   RateLimitContext
  * } from '../../../src/middleware/withRateLimit.types.js'
  * @import {
  *   Handler,
@@ -44,7 +44,7 @@ const innerHandler = strictStub(sandbox, 'nextHandler')
 const request = new Request('http://example.com/')
 
 const env =
-  /** @satisfies {Environment} */
+  /** @satisfies {RateLimitEnvironment} */
   ({
     DEBUG: 'false',
     ACCOUNTING_SERVICE_URL: 'http://example.com/accounting-service',
@@ -66,7 +66,7 @@ const env =
  *
  * @param {Object} [options]
  * @param {string|null} [options.authToken] The value for the `authToken` key
- * @returns {Promise<Context>}
+ * @returns {Promise<RateLimitContext>}
  */
 const createContext = async ({ authToken } = {}) => ({
   // Doesn't matter what the CID is, as long as it's consistent.

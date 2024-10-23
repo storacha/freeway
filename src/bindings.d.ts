@@ -1,5 +1,5 @@
 import { CID } from '@web3-storage/gateway-lib/handlers'
-import { Environment as RateLimiterEnvironment } from './middleware/withRateLimit.types.ts'
+import { RateLimitEnvironment as RateLimiterEnvironment } from './middleware/withRateLimit.types.ts'
 import { Environment as CarBlockEnvironment } from './middleware/withCarBlockHandler.types.ts'
 
 export interface Environment extends CarBlockEnvironment, RateLimiterEnvironment {

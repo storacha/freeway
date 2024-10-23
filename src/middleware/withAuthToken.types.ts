@@ -3,10 +3,8 @@ import {
   Context as MiddlewareContext,
 } from '@web3-storage/gateway-lib'
 
-export interface Environment extends MiddlewareEnvironment {}
+export interface AuthTokenEnvironment extends MiddlewareEnvironment {}
 
-export interface InContext extends MiddlewareContext {}
-
-export type OutContext<IncomingContext> = IncomingContext & {
+export interface AuthTokenContext {
   authToken: string | null
 }

@@ -3,14 +3,14 @@ import { IpfsUrlContext, Environment as MiddlewareEnvironment } from '@web3-stor
 import { KVNamespace, RateLimit } from '@cloudflare/workers-types'
 import { RATE_LIMIT_EXCEEDED } from '../constants.js'
 
-export interface Environment extends MiddlewareEnvironment {
+export interface RateLimitEnvironment extends MiddlewareEnvironment {
   ACCOUNTING_SERVICE_URL: string
   RATE_LIMITER: RateLimit
   AUTH_TOKEN_METADATA: KVNamespace
   FF_RATE_LIMITER_ENABLED: string
 }
 
-export interface Context extends IpfsUrlContext {
+export interface RateLimitContext extends IpfsUrlContext {
   authToken: string | null
 }
 

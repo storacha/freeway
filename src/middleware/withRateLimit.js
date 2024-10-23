@@ -6,8 +6,8 @@ import { Accounting } from '../services/accounting.js'
  * @import { Middleware } from '@web3-storage/gateway-lib'
  * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
  * @import {
- *   Environment,
- *   Context,
+ *   RateLimitEnvironment,
+ *   RateLimitContext,
  *   TokenMetadata,
  *   RateLimitService,
  *   RateLimitExceeded
@@ -20,7 +20,7 @@ import { Accounting } from '../services/accounting.js'
  * it can be enabled or disabled using the FF_RATE_LIMITER_ENABLED flag.
  * Every successful request is recorded in the accounting service.
  *
- * @type {Middleware<Context, Context, Environment>}
+ * @type {Middleware<RateLimitContext, RateLimitContext, RateLimitEnvironment>}
  */
 export function withRateLimit (handler) {
   return async (req, env, ctx) => {
@@ -45,8 +45,8 @@ export function withRateLimit (handler) {
 }
 
 /**
- * @param {Environment} env
- * @param {Context} ctx
+ * @param {RateLimitEnvironment} env
+ * @param {RateLimitContext} ctx
  * @returns {RateLimitService}
  */
 function create (env, ctx) {
@@ -103,9 +103,9 @@ async function isRateLimited (rateLimitAPI, cid) {
 }
 
 /**
- * @param {Environment} env
+ * @param {RateLimitEnvironment} env
  * @param {string} authToken
- * @param {Context} ctx
+ * @param {RateLimitContext} ctx
  * @returns {Promise<TokenMetadata | null>}
  */
 async function getTokenMetadata (env, authToken, ctx) {

@@ -1,20 +1,23 @@
 /**
  * @import {
- *   Middleware,
+ *   Handler,
  *   Context as MiddlewareContext,
  *  } from '@web3-storage/gateway-lib'
  * @import {
- *   Environment,
- *   InContext,
- *   OutContext,
+ *   AuthTokenEnvironment,
+ *   AuthTokenContext,
  * } from './withAuthToken.types.js'
  */
+
+// BOOKMARK: Try Middleware2 where we track what's *added* to the context
 
 /**
  * Finds an authentication token in the URL query parameters or the
  * `Authorization` header and adds it to the context as `authToken`.
  *
- * @type {Middleware<OutContext<MiddlewareContext>, InContext, Environment>}
+ * @template {MiddlewareContext} OuterContext
+ * @param {Handler<AuthTokenContext & OuterContext, AuthTokenEnvironment>} handler
+ * @return {Handler<OuterContext, AuthTokenEnvironment>}
  */
 export function withAuthToken (handler) {
   return async (req, env, ctx) => {
