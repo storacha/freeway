@@ -20,7 +20,9 @@ import {
   withVersionHeader,
   withAuthToken,
   withCarBlockHandler,
-  withRateLimit
+  withRateLimit,
+  withNotFound,
+  withLocator
 } from './middleware/index.js'
 
 /**
@@ -50,12 +52,14 @@ export default {
       withParsedIpfsUrl,
       createWithHttpMethod('GET', 'HEAD'),
       withAuthToken,
+      withLocator,
 
       // Rate-limit requests
       withRateLimit,
 
       // Fetch data
       withCarBlockHandler,
+      withNotFound,
       withContentClaimsDagula,
       withFormatRawHandler,
       withFormatCarHandler,

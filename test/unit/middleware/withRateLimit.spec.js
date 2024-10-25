@@ -9,10 +9,11 @@ import sinon from 'sinon'
 import { withRateLimit } from '../../../src/middleware/withRateLimit.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import { CID } from 'multiformats'
-import { sha256 } from 'multiformats/hashes/sha2'
+import { identity } from 'multiformats/hashes/identity'
 import * as raw from 'multiformats/codecs/raw'
 import { strictStub } from './util/strictStub.js'
 import { expectToBeInstanceOf } from './util/expectToBeInstanceOf.js'
+import { rejection } from './util/rejection.js'
 
 /**
  * @import { SinonStub } from 'sinon'
@@ -26,14 +27,6 @@ import { expectToBeInstanceOf } from './util/expectToBeInstanceOf.js'
  *   Environment as MiddlewareEnvironment,
  * } from '@web3-storage/gateway-lib'
  */
-
-/**
- * Resolves to the reason for the rejection of a promise, or `undefined` if the
- * promise resolves.
- * @param {Promise<unknown>} promise
- * @returns {Promise<unknown>}
- */
-const rejection = (promise) => promise.then(() => {}).catch((err) => err)
 
 const sandbox = sinon.createSandbox()
 
@@ -70,11 +63,7 @@ const env =
  */
 const createContext = async ({ authToken } = {}) => ({
   // Doesn't matter what the CID is, as long as it's consistent.
-  dataCid: CID.create(
-    1,
-    raw.code,
-    await sha256.digest(new Uint8Array([1, 2, 3]))
-  ),
+  dataCid: CID.createV1(raw.code, identity.digest(Uint8Array.of(1))),
   waitUntil: strictStub(sandbox, 'waitUntil').returns(undefined),
   path: '',
   searchParams: new URLSearchParams(),
