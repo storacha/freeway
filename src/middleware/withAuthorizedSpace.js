@@ -7,7 +7,8 @@ import {
   nullable,
   string,
   ok,
-  access
+  access,
+  Unauthorized
 } from '@ucanto/validator'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 
@@ -81,45 +82,73 @@ export function withAuthorizedSpace (handler) {
       throw new Error(`failed to locate: ${dataCid}`, { cause: locRes.error })
     }
 
-    const spaces = locRes.ok.site.map((site) => site.space)
-    const space = spaces[0]
-    if (!space) throw 'TK'
-    if (!isDIDKey(space)) throw 'TK'
+    const spaces = locRes.ok.site
+      .map((site) => site.space)
+      .filter((s) => s !== undefined)
 
-    const relevantDelegations = await ctx.delegationsStorage.find({
-      audience: ctx.gatewayIdentity.did(),
-      can: 'space/content/serve',
-      with: space
-    })
-
-    if (relevantDelegations.error) throw 'TK'
-
-    const invocation = await serve
-      .invoke({
-        issuer: ctx.gatewayIdentity,
-        audience: ctx.gatewayIdentity,
-        with: space,
-        nb: {
-          token: ctx.authToken
-        },
-        proofs: relevantDelegations.ok
-      })
-      .delegate()
-
-    const accessResult = await access(invocation, {
-      capability: serve,
-      authority: ctx.gatewayIdentity,
-      principal: Verifier,
-      validateAuthorization: () => ok({})
-    })
-
-    if (accessResult.error) {
-      throw new HttpError('Not Found', {
-        status: 404,
-        cause: accessResult.error
-      })
+    try {
+      // First space to successfully authorize is the one we'll use.
+      const space = await Promise.any(
+        spaces.map(async (space) => {
+          const result = await authorize(space, ctx)
+          if (result.error) throw result.error
+          return space
+        })
+      )
+      return handler(request, env, { ...ctx, space })
+    } catch (error) {
+      // If all spaces failed to authorize, throw the first error.
+      if (
+        error instanceof AggregateError &&
+        error.errors.every((e) => e instanceof Unauthorized)
+      ) {
+        throw new HttpError('Not Found', { status: 404, cause: error })
+      } else {
+        throw error
+      }
     }
-
-    return handler(request, env, { ...ctx, space })
   }
+}
+
+/**
+ * @param {string} space
+ * @param {AuthTokenContext & DelegationsStorageContext} ctx
+ * @returns {Promise<Ucanto.Result<{}, Ucanto.Unauthorized>>}
+ */
+const authorize = async (space, ctx) => {
+  if (!space) throw 'TK'
+  if (!isDIDKey(space)) throw 'TK'
+
+  const relevantDelegations = await ctx.delegationsStorage.find({
+    audience: ctx.gatewayIdentity.did(),
+    can: 'space/content/serve',
+    with: space
+  })
+
+  if (relevantDelegations.error) throw 'TK'
+
+  const invocation = await serve
+    .invoke({
+      issuer: ctx.gatewayIdentity,
+      audience: ctx.gatewayIdentity,
+      with: space,
+      nb: {
+        token: ctx.authToken
+      },
+      proofs: relevantDelegations.ok
+    })
+    .delegate()
+
+  const accessResult = await access(invocation, {
+    capability: serve,
+    authority: ctx.gatewayIdentity,
+    principal: Verifier,
+    validateAuthorization: () => ok({})
+  })
+
+  if (accessResult.error) {
+    return accessResult
+  }
+
+  return { ok: {} }
 }
