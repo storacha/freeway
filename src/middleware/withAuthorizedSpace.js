@@ -82,6 +82,14 @@ export function withAuthorizedSpace (handler) {
       throw new Error(`failed to locate: ${dataCid}`, { cause: locRes.error })
     }
 
+    const shouldServeLegacy =
+      locRes.ok.site.some((site) => site.space === undefined) &&
+      ctx.authToken === null
+
+    if (shouldServeLegacy) {
+      return handler(request, env, { ...ctx, space: null })
+    }
+
     const spaces = locRes.ok.site
       .map((site) => site.space)
       .filter((s) => s !== undefined)

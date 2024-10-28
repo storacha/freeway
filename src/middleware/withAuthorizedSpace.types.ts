@@ -8,7 +8,7 @@ export interface DelegationsStorageContext extends MiddlewareContext {
 }
 
 export interface SpaceContext extends MiddlewareContext {
-  space: Ucanto.DID
+  space: Ucanto.DID | null
 }
 
 // TEMP: https://github.com/storacha/blob-fetcher/pull/13/files

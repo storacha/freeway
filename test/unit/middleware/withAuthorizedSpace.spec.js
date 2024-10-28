@@ -278,16 +278,15 @@ describe('withAuthorizedSpace', async () => {
       `Served ${cid} from space ${space1.did()} with token space1-token`
     )
 
-    const handler = sinon.fake(innerHandler)
     const error = await rejection(
-      withAuthorizedSpace(handler)(
+      withAuthorizedSpace(sinon.fake(innerHandler))(
         request,
         {},
         { ...ctx, authToken: 'space2-token' }
       )
     )
 
-    expect(handler.notCalled).to.be.true
+    expect(sinon.fake(innerHandler).notCalled).to.be.true
     expectToBeInstanceOf(error, HttpError)
     expect(error.status).to.equal(404)
     expect(error.message).to.equal('Not Found')
@@ -301,6 +300,53 @@ describe('withAuthorizedSpace', async () => {
     expect(await response3.text()).to.equal(
       `Served ${cid} from space ${space3.did()} with token space3-token`
     )
+  })
+
+  it('should serve a found legacy CID only using no token', async () => {
+    const cid = createTestCID(0)
+
+    const ctx = {
+      ...context,
+      dataCid: cid,
+      locator: createLocator(cid.multihash, {
+        ok: {
+          digest: cid.multihash,
+          site: [
+            {
+              location: [new URL('http://example.com/1/blob')],
+              range: { offset: 0, length: 100 }
+              // No `space` value means it's legacy
+            }
+          ]
+        },
+        error: undefined
+      }),
+      delegationsStorage: createDelegationStorage([]),
+      gatewayIdentity
+    }
+
+    const responseWithoutToken = await withAuthorizedSpace(innerHandler)(
+      request,
+      {},
+      { ...ctx, authToken: null }
+    )
+
+    expect(await responseWithoutToken.text()).to.equal(
+      `Served ${cid} from no space with no token`
+    )
+
+    const errorWithToken = await rejection(
+      withAuthorizedSpace(sinon.fake(innerHandler))(
+        request,
+        {},
+        { ...ctx, authToken: 'a1b2c3' }
+      )
+    )
+
+    expect(sinon.fake(innerHandler).notCalled).to.be.true
+    expectToBeInstanceOf(errorWithToken, HttpError)
+    expect(errorWithToken.status).to.equal(404)
+    expect(errorWithToken.message).to.equal('Not Found')
   })
 
   it('should throw a 404 error if the content is not found', async () => {
