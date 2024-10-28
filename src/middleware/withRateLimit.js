@@ -12,6 +12,7 @@ import { Accounting } from '../services/accounting.js'
  *   RateLimitService,
  *   RateLimitExceeded
  * } from './withRateLimit.types.js'
+ * @typedef {Context & { ACCOUNTING_SERVICE?: import('../bindings.js').AccountingService }} RateLimiterContext
  */
 
 /**
@@ -20,7 +21,7 @@ import { Accounting } from '../services/accounting.js'
  * it can be enabled or disabled using the FF_RATE_LIMITER_ENABLED flag.
  * Every successful request is recorded in the accounting service.
  *
- * @type {Middleware<Context, Context, Environment>}
+ * @type {Middleware<RateLimiterContext, RateLimiterContext, Environment>}
  */
 export function withRateLimit (handler) {
   return async (req, env, ctx) => {
@@ -33,20 +34,14 @@ export function withRateLimit (handler) {
     const isRateLimitExceeded = await rateLimitService.check(dataCid, req)
     if (isRateLimitExceeded === RATE_LIMIT_EXCEEDED.YES) {
       throw new HttpError('Too Many Requests', { status: 429 })
-    } else {
-      const accounting = Accounting.create({
-        serviceURL: env.ACCOUNTING_SERVICE_URL
-      })
-      // NOTE: non-blocking call to the accounting service
-      ctx.waitUntil(accounting.record(dataCid, req))
-      return handler(req, env, ctx)
     }
+    return handler(req, env, ctx)
   }
 }
 
 /**
  * @param {Environment} env
- * @param {Context} ctx
+ * @param {RateLimiterContext} ctx
  * @returns {RateLimitService}
  */
 function create (env, ctx) {
@@ -105,7 +100,7 @@ async function isRateLimited (rateLimitAPI, cid) {
 /**
  * @param {Environment} env
  * @param {string} authToken
- * @param {Context} ctx
+ * @param {RateLimiterContext} ctx
  * @returns {Promise<TokenMetadata | null>}
  */
 async function getTokenMetadata (env, authToken, ctx) {
@@ -116,9 +111,7 @@ async function getTokenMetadata (env, authToken, ctx) {
     return decode(cachedValue)
   }
 
-  const accounting = Accounting.create({
-    serviceURL: env.ACCOUNTING_SERVICE_URL
-  })
+  const accounting = ctx.ACCOUNTING_SERVICE ?? Accounting.create({ serviceURL: env.ACCOUNTING_SERVICE_URL })
   const tokenMetadata = await accounting.getTokenMetadata(authToken)
   if (tokenMetadata) {
     // NOTE: non-blocking call to the auth token metadata cache

@@ -22,7 +22,8 @@ import {
   withCarBlockHandler,
   withRateLimit,
   withNotFound,
-  withLocator
+  withLocator,
+  withEgressTracker
 } from './middleware/index.js'
 
 /**
@@ -56,6 +57,9 @@ export default {
 
       // Rate-limit requests
       withRateLimit,
+
+      // Track egress bytes
+      withEgressTracker,
 
       // Fetch data
       withCarBlockHandler,
