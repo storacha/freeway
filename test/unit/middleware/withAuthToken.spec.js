@@ -3,15 +3,14 @@ import { expect } from 'chai'
 import { withAuthToken } from '../../../src/middleware/withAuthToken.js'
 
 /**
- * @import { OutContext } from '../../../src/middleware/withAuthToken.types.js'
+ * @import { AuthTokenContext } from '../../../src/middleware/withAuthToken.types.js'
  * @import {
  *   Handler,
- *   Context as MiddlewareContext,
  *   Environment as MiddlewareEnvironment,
  * } from '@web3-storage/gateway-lib'
  */
 
-/** @type {Handler<OutContext<MiddlewareContext>, MiddlewareEnvironment>} */
+/** @type {Handler<AuthTokenContext, MiddlewareEnvironment>} */
 const innerHandler = async (_req, _env, ctx) =>
   new Response(
     ctx.authToken === null ? 'No token given' : `Got token: ${ctx.authToken}`

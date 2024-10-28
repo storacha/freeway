@@ -21,9 +21,9 @@ import {
   withAuthToken,
   withCarBlockHandler,
   withRateLimit,
-  withNotFound,
-  withLocator,
   withEgressTracker
+  withAuthorizedSpace,
+  withLocator
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
@@ -65,7 +65,7 @@ const handler = {
 
       // Fetch data
       withCarBlockHandler,
-      withNotFound,
+      withAuthorizedSpace,
       withContentClaimsDagula,
       withFormatRawHandler,
       withFormatCarHandler,
