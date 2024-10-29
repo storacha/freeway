@@ -8,7 +8,7 @@ import { describe, it, afterEach, before } from 'mocha'
 import { assert, expect } from 'chai'
 import sinon from 'sinon'
 import { CID } from 'multiformats'
-import { withEgressHandler } from '../../../src/handlers/egress-tracker.js'
+import { withEgressTracker } from '../../../src/middleware/withEgressTracker.js'
 import { Builder, toBlobKey } from '../../helpers/builder.js'
 import { CARReaderStream } from 'carstream'
 
@@ -27,7 +27,7 @@ const createRequest = async ({ authorization } = {}) =>
   })
 
 const env =
-  /** @satisfies {import('../../../src/handlers/egress-tracker.types.js').Environment} */
+  /** @satisfies {import('../../../src/middleware/withEgressTracker.types.js').Environment} */
   ({
     DEBUG: 'true',
     ACCOUNTING_SERVICE_URL: 'http://example.com',
@@ -35,11 +35,11 @@ const env =
   })
 
 const accountingRecordMethodStub = sinon.stub()
-  // @ts-expect-error
-  .returns(async (cid, bytes, servedAt) => {
-    console.log(`[mock] record called with cid: ${cid}, bytes: ${bytes}, servedAt: ${servedAt}`)
-    return Promise.resolve()
-  })
+  .returns(
+    /** @type {import('../../../src/bindings.js').AccountingService['record']} */
+    async (cid, bytes, servedAt) => {
+      console.log(`[mock] record called with cid: ${cid}, bytes: ${bytes}, servedAt: ${servedAt}`)
+    })
 
 /**
  * Mock implementation of the AccountingService.
@@ -58,7 +58,7 @@ const AccountingService = ({ serviceURL }) => {
 }
 
 const ctx =
-  /** @satisfies {import('../../../src/handlers/egress-tracker.js').EgressTrackerContext} */
+  /** @satisfies {import('../../../src/middleware/withEgressTracker.js').EgressTrackerContext} */
   ({
     dataCid: CID.parse('bafybeibv7vzycdcnydl5n5lbws6lul2omkm6a6b5wmqt77sicrwnhesy7y'),
     waitUntil: sinon.stub().returns(undefined),
@@ -110,7 +110,7 @@ describe('withEgressTracker', async () => {
 
       const innerHandler = sinon.stub().resolves(mockResponse)
 
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
       const response = await handler(request, env, ctx)
       // Ensure the response body is fully consumed
@@ -134,7 +134,7 @@ describe('withEgressTracker', async () => {
       }), { status: 200 })
 
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       const response = await handler(request, env, ctx)
@@ -160,7 +160,7 @@ describe('withEgressTracker', async () => {
       }), { status: 200 })
 
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       const response = await handler(request, env, ctx)
@@ -197,7 +197,7 @@ describe('withEgressTracker', async () => {
       })
 
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       const response = await handler(request, env, ctx)
@@ -233,7 +233,7 @@ describe('withEgressTracker', async () => {
       }), { status: 200 })
 
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       const response = await handler(request, env, ctx)
@@ -249,7 +249,7 @@ describe('withEgressTracker', async () => {
   describe('withEgressTracker -> Feature Flag', () => {
     it('should not track egress if the feature flag is disabled', async () => {
       const innerHandler = sinon.stub().resolves(new Response(null, { status: 200 }))
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
       const envDisabled = { ...env, FF_EGRESS_TRACKER_ENABLED: 'false' }
 
@@ -264,7 +264,7 @@ describe('withEgressTracker', async () => {
     it('should not track egress for non-OK responses', async () => {
       const mockResponse = new Response(null, { status: 404 })
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       const response = await handler(request, env, ctx)
@@ -276,7 +276,7 @@ describe('withEgressTracker', async () => {
     it('should not track egress if the response has no body', async () => {
       const mockResponse = new Response(null, { status: 200 })
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       const response = await handler(request, env, ctx)
@@ -310,8 +310,8 @@ describe('withEgressTracker', async () => {
       const innerHandler1 = sinon.stub().resolves(mockResponse1)
       const innerHandler2 = sinon.stub().resolves(mockResponse2)
 
-      const handler1 = withEgressHandler(innerHandler1)
-      const handler2 = withEgressHandler(innerHandler2)
+      const handler1 = withEgressTracker(innerHandler1)
+      const handler2 = withEgressTracker(innerHandler2)
 
       const request1 = await createRequest()
       const request2 = await createRequest()
@@ -347,7 +347,7 @@ describe('withEgressTracker', async () => {
       }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       const response = await handler(request, env, ctx)
@@ -370,7 +370,7 @@ describe('withEgressTracker', async () => {
       }), { status: 200 })
 
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       const response = await handler(request, env, ctx)
@@ -391,7 +391,7 @@ describe('withEgressTracker', async () => {
       }), { status: 200 })
 
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       const response = await handler(request, env, ctx)
@@ -418,7 +418,7 @@ describe('withEgressTracker', async () => {
       }), { status: 200 })
 
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
       const response = await handler(request, env, ctx)
 
@@ -445,7 +445,7 @@ describe('withEgressTracker', async () => {
       }), { status: 200 })
 
       const innerHandler = sinon.stub().resolves(mockResponse)
-      const handler = withEgressHandler(innerHandler)
+      const handler = withEgressTracker(innerHandler)
       const request = await createRequest()
 
       // Simulate an error in the accounting service record method

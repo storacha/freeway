@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename)
  */
 const wranglerEnv = process.env.WRANGLER_ENV || 'integration'
 
-const DEBUG = process.env.DEBUG === 'true' || false
+const DEBUG = process.env.DEBUG === 'true'
 
 /**
  * Worker information object
