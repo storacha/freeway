@@ -75,6 +75,10 @@ export function withAuthorizedSpace (handler) {
       throw new Error(`failed to locate: ${dataCid}`, { cause: locRes.error })
     }
 
+    // Legacy behavior: Site results which have no Space attached are from
+    // before we started authorizing serving content explicitly. For these, we
+    // always serve the content, but only if the request has no authorization
+    // token.
     const shouldServeLegacy =
       locRes.ok.site.some((site) => site.space === undefined) &&
       ctx.authToken === null
@@ -83,6 +87,7 @@ export function withAuthorizedSpace (handler) {
       return handler(request, env, { ...ctx, space: null })
     }
 
+    // These Spaces all have the content we're to serve, if we're allowed to.
     const spaces = locRes.ok.site
       .map((site) => site.space)
       .filter((s) => s !== undefined)
@@ -98,7 +103,7 @@ export function withAuthorizedSpace (handler) {
       )
       return handler(request, env, { ...ctx, space })
     } catch (error) {
-      // If all spaces failed to authorize, throw the first error.
+      // If all Spaces failed to authorize, throw the first error.
       if (
         error instanceof AggregateError &&
         error.errors.every((e) => e instanceof Unauthorized)
@@ -112,11 +117,16 @@ export function withAuthorizedSpace (handler) {
 }
 
 /**
+ * Authorizes the request to serve content from the given Space. Looks for
+ * authorizing delegations in the
+ * {@link DelegationsStorageContext.delegationsStorage}.
+ *
  * @param {Ucanto.DID} space
  * @param {AuthTokenContext & DelegationsStorageContext} ctx
  * @returns {Promise<Ucanto.Result<{}, Ucanto.Failure>>}
  */
 const authorize = async (space, ctx) => {
+  // Look up delegations that might authorize us to serve the content.
   const relevantDelegationsResult = await ctx.delegationsStorage.find({
     audience: ctx.gatewayIdentity.did(),
     can: 'space/content/serve',
@@ -125,6 +135,7 @@ const authorize = async (space, ctx) => {
 
   if (relevantDelegationsResult.error) return relevantDelegationsResult
 
+  // Create an invocation of the serve capability.
   const invocation = await serve
     .invoke({
       issuer: ctx.gatewayIdentity,
@@ -137,6 +148,7 @@ const authorize = async (space, ctx) => {
     })
     .delegate()
 
+  // Validate the invocation.
   const accessResult = await access(invocation, {
     capability: serve,
     authority: ctx.gatewayIdentity,
