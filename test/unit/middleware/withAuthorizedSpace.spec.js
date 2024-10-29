@@ -26,7 +26,7 @@ import { createTestCID } from './util/createTestCID.js'
  *   Environment as MiddlewareEnvironment,
  *   IpfsUrlContext
  * } from '@web3-storage/gateway-lib'
- * @import { DelegationsStorage, SpaceContext } from '../../../src/middleware/withAuthorizedSpace.types.js'
+ * @import { DelegationsStorage, DelegationsStorageContext, SpaceContext } from '../../../src/middleware/withAuthorizedSpace.types.js'
  * @import { AuthTokenContext } from '../../../src/middleware/withAuthToken.types.js'
  */
 
@@ -477,5 +477,46 @@ describe('withAuthorizedSpace', async () => {
       message: 'Network error',
       url: 'http://example.com/blob'
     })
+  })
+
+  it('should throw errors encountered by `delegationsStorage`', async () => {
+    const cid = createTestCID(0)
+    const space = await ed25519.Signer.generate()
+
+    const ctx = {
+      ...context,
+      dataCid: cid,
+      locator: createLocator(cid.multihash, {
+        ok: {
+          digest: cid.multihash,
+          site: [
+            {
+              location: [new URL('http://example.com/1/blob')],
+              range: { offset: 0, length: 100 },
+              space: space.did()
+            }
+          ]
+        },
+        error: undefined
+      }),
+      delegationsStorage: {
+        find: async () => ({
+          error: { name: 'Weirdness', message: 'Something weird happened.' }
+        })
+      },
+      gatewayIdentity
+    }
+
+    const error = await rejection(
+      withAuthorizedSpace(sinon.fake(innerHandler))(
+        request,
+        {},
+        { ...ctx, authToken: 'a1b2c3' }
+      )
+    )
+
+    expect(sinon.fake(innerHandler).notCalled).to.be.true
+    expectToBeInstanceOf(error, AggregateError)
+    expect(error.errors.map((e) => e.name)).to.deep.equal(['Weirdness'])
   })
 })

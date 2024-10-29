@@ -1,4 +1,3 @@
-/* eslint-disable no-throw-literal --- TK */
 import { Verifier } from '@ucanto/principal'
 import {
   capability,
@@ -43,18 +42,12 @@ export const serve = capability({
    * The Space which contains the content. This Space will be charged egress
    * fees if content is actually retrieved by way of this invocation.
    */
-  with: DID.match({ method: 'key' }),
+  with: DID,
   nb: Schema.struct({
     /** The authorization token, if any, used for this request. */
     token: nullable(string())
   })
 })
-
-/**
- * @param {string} space
- * @returns {space is Ucanto.DIDKey}
- */
-const isDIDKey = (space) => space.startsWith('did:key:')
 
 /**
  * Attempts to locate the {@link IpfsUrlContext.dataCid}. If it's able to,
@@ -119,21 +112,18 @@ export function withAuthorizedSpace (handler) {
 }
 
 /**
- * @param {string} space
+ * @param {Ucanto.DID} space
  * @param {AuthTokenContext & DelegationsStorageContext} ctx
- * @returns {Promise<Ucanto.Result<{}, Ucanto.Unauthorized>>}
+ * @returns {Promise<Ucanto.Result<{}, Ucanto.Failure>>}
  */
 const authorize = async (space, ctx) => {
-  if (!space) throw 'TK'
-  if (!isDIDKey(space)) throw 'TK'
-
-  const relevantDelegations = await ctx.delegationsStorage.find({
+  const relevantDelegationsResult = await ctx.delegationsStorage.find({
     audience: ctx.gatewayIdentity.did(),
     can: 'space/content/serve',
     with: space
   })
 
-  if (relevantDelegations.error) throw 'TK'
+  if (relevantDelegationsResult.error) return relevantDelegationsResult
 
   const invocation = await serve
     .invoke({
@@ -143,7 +133,7 @@ const authorize = async (space, ctx) => {
       nb: {
         token: ctx.authToken
       },
-      proofs: relevantDelegations.ok
+      proofs: relevantDelegationsResult.ok
     })
     .delegate()
 
