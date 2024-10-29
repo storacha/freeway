@@ -1,10 +1,13 @@
 import { CID } from '@web3-storage/gateway-lib/handlers'
-import { Environment as RateLimiterEnvironment } from './handlers/rate-limiter.types.ts'
-import { Environment as CarBlockEnvironment } from './handlers/car-block.types.ts'
+import { Environment as RateLimiterEnvironment } from './middleware/withRateLimit.types.ts'
+import { Environment as CarBlockEnvironment } from './middleware/withCarBlockHandler.types.ts'
+import { Environment as ContentClaimsDagulaEnvironment } from './middleware/withCarBlockHandler.types.ts'
 
-export interface Environment extends CarBlockEnvironment, RateLimiterEnvironment {
+export interface Environment
+  extends CarBlockEnvironment,
+    RateLimiterEnvironment,
+    ContentClaimsDagulaEnvironment {
   VERSION: string
-  CONTENT_CLAIMS_SERVICE_URL?: string
 }
 
 export interface AccountingService {
@@ -15,4 +18,3 @@ export interface AccountingService {
 export interface Accounting {
   create: ({ serviceURL }: { serviceURL?: string }) => AccountingService
 }
-

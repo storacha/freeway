@@ -1,13 +1,17 @@
 import { CID } from '@web3-storage/gateway-lib/handlers'
-import { Environment as MiddlewareEnvironment } from '@web3-storage/gateway-lib'
+import { IpfsUrlContext, Environment as MiddlewareEnvironment } from '@web3-storage/gateway-lib'
 import { KVNamespace, RateLimit } from '@cloudflare/workers-types'
-import { RATE_LIMIT_EXCEEDED } from './../constants.js'
+import { RATE_LIMIT_EXCEEDED } from '../constants.js'
 
 export interface Environment extends MiddlewareEnvironment {
   ACCOUNTING_SERVICE_URL: string
   RATE_LIMITER: RateLimit
   AUTH_TOKEN_METADATA: KVNamespace
   FF_RATE_LIMITER_ENABLED: string
+}
+
+export interface Context extends IpfsUrlContext {
+  authToken: string | null
 }
 
 export interface TokenMetadata {
