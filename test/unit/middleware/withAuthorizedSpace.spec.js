@@ -278,15 +278,16 @@ describe('withAuthorizedSpace', async () => {
       `Served ${cid} from space ${space1.did()} with token space1-token`
     )
 
+    const ih = sinon.fake(innerHandler)
     const error = await rejection(
-      withAuthorizedSpace(sinon.fake(innerHandler))(
+      withAuthorizedSpace(ih)(
         request,
         {},
         { ...ctx, authToken: 'space2-token' }
       )
     )
 
-    expect(sinon.fake(innerHandler).notCalled).to.be.true
+    expect(ih.notCalled).to.be.true
     expectToBeInstanceOf(error, HttpError)
     expect(error.status).to.equal(404)
     expect(error.message).to.equal('Not Found')
@@ -335,15 +336,12 @@ describe('withAuthorizedSpace', async () => {
       `Served ${cid} from no space with no token`
     )
 
+    const ih = sinon.fake(innerHandler)
     const errorWithToken = await rejection(
-      withAuthorizedSpace(sinon.fake(innerHandler))(
-        request,
-        {},
-        { ...ctx, authToken: 'a1b2c3' }
-      )
+      withAuthorizedSpace(ih)(request, {}, { ...ctx, authToken: 'a1b2c3' })
     )
 
-    expect(sinon.fake(innerHandler).notCalled).to.be.true
+    expect(ih.notCalled).to.be.true
     expectToBeInstanceOf(errorWithToken, HttpError)
     expect(errorWithToken.status).to.equal(404)
     expect(errorWithToken.message).to.equal('Not Found')
@@ -507,15 +505,12 @@ describe('withAuthorizedSpace', async () => {
       gatewayIdentity
     }
 
+    const ih = sinon.fake(innerHandler)
     const error = await rejection(
-      withAuthorizedSpace(sinon.fake(innerHandler))(
-        request,
-        {},
-        { ...ctx, authToken: 'a1b2c3' }
-      )
+      withAuthorizedSpace(ih)(request, {}, { ...ctx, authToken: 'a1b2c3' })
     )
 
-    expect(sinon.fake(innerHandler).notCalled).to.be.true
+    expect(ih.notCalled).to.be.true
     expectToBeInstanceOf(error, AggregateError)
     expect(error.errors.map((e) => e.name)).to.deep.equal(['Weirdness'])
   })
