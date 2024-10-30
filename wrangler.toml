@@ -43,6 +43,7 @@ command = "npm run build"
 [env.production.vars]
 MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "false"
 CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
 
 # Staging!
@@ -59,6 +60,7 @@ command = "npm run build"
 [env.staging.vars]
 MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "false"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
 
 # Test!
@@ -71,6 +73,7 @@ r2_buckets = [
 [env.test.vars]
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "false"
 MAX_SHARDS = "120"
 CONTENT_CLAIMS_SERVICE_URL = "https://test.claims.web3.storage"
 
@@ -84,6 +87,7 @@ r2_buckets = [
 [env.alanshaw.vars]
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "false"
 CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
 
 [env.fforbeck]
@@ -100,7 +104,8 @@ r2_buckets = [
 [env.fforbeck.vars]
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
-CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
+FF_EGRESS_TRACKER_ENABLED = "false"
+CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
 
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"
@@ -125,7 +130,9 @@ r2_buckets = [
 [env.integration.vars]
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "true"
+FF_EGRESS_TRACKER_ENABLED = "true"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+ACCOUNTING_SERVICE_URL = "https://example.com/service"
 
 [[env.integration.unsafe.bindings]]
 name = "RATE_LIMITER"

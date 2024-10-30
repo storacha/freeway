@@ -12,6 +12,8 @@ const __dirname = path.dirname(__filename)
  */
 const wranglerEnv = process.env.WRANGLER_ENV || 'integration'
 
+const DEBUG = process.env.DEBUG === 'true'
+
 /**
  * Worker information object
  * @typedef {Object} WorkerInfo
@@ -41,7 +43,7 @@ export const mochaGlobalSetup = async () => {
     )
     console.log(`Output: ${await workerInfo.getOutput()}`)
     console.log('WorkerInfo:', workerInfo)
-    console.log('Test worker started!')
+    console.log(`Test worker started! ENV: ${wranglerEnv}, DEBUG: ${DEBUG}`)
   } catch (error) {
     console.error('Failed to start test worker:', error)
     throw error
@@ -59,7 +61,9 @@ export const mochaGlobalTeardown = async () => {
   try {
     const { stop } = workerInfo
     await stop?.()
-    // console.log('getOutput', getOutput()) // uncomment for debugging
+    if (DEBUG) {
+      console.log('getOutput', await workerInfo.getOutput())
+    }
     console.log('Test worker stopped!')
   } catch (error) {
     console.error('Failed to stop test worker:', error)

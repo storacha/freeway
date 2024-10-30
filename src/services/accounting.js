@@ -3,8 +3,8 @@
  */
 export const Accounting = {
   create: ({ serviceURL }) => ({
-    record: async (cid, options) => {
-      console.log(`using ${serviceURL} to record a GET for ${cid} with options`, options)
+    record: async (cid, bytes, servedAt) => {
+      console.log(`using ${serviceURL} to record egress for ${cid} with total bytes: ${bytes} and servedAt: ${servedAt}`)
     },
 
     getTokenMetadata: async () => {
