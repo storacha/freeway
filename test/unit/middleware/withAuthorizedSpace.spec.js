@@ -26,17 +26,31 @@ import { createTestCID } from './util/createTestCID.js'
  *   Environment as MiddlewareEnvironment,
  *   IpfsUrlContext
  * } from '@web3-storage/gateway-lib'
- * @import { DelegationsStorage, DelegationsStorageContext, SpaceContext } from '../../../src/middleware/withAuthorizedSpace.types.js'
+ * @import { DelegationsStorage, SpaceContext } from '../../../src/middleware/withAuthorizedSpace.types.js'
+ * @import { LocatorContext } from '../../../src/middleware/withLocator.types.js'
  * @import { AuthTokenContext } from '../../../src/middleware/withAuthToken.types.js'
  */
 
-/** @type {Handler<IpfsUrlContext & SpaceContext & AuthTokenContext, MiddlewareEnvironment>} */
-const innerHandler = async (_req, _env, ctx) =>
-  new Response(
-    `Served ${ctx.dataCid.toString()} from ${
-      ctx.space ? `space ${ctx.space}` : 'no space'
-    } with ${ctx.authToken ? `token ${ctx.authToken}` : 'no token'}`
+/** @type {Handler<IpfsUrlContext & SpaceContext & AuthTokenContext & LocatorContext, MiddlewareEnvironment>} */
+const innerHandler = async (_req, _env, ctx) => {
+  const locateResult = await ctx.locator.locate(ctx.dataCid.multihash)
+  if (locateResult.error) {
+    throw new Error(`Failed to locate: ${ctx.dataCid}`, {
+      cause: locateResult.error
+    })
+  }
+
+  const blobLocations = locateResult.ok.site.flatMap((site) => site.location)
+
+  return new Response(
+    JSON.stringify({
+      CID: ctx.dataCid.toString(),
+      Space: ctx.space,
+      Token: ctx.authToken,
+      URLs: blobLocations
+    })
   )
+}
 
 const request = new Request('http://example.com/')
 
@@ -127,9 +141,12 @@ describe('withAuthorizedSpace', async () => {
       }
     )
 
-    expect(await response.text()).to.equal(
-      `Served ${cid} from space ${space.did()} with token a1b2c3`
-    )
+    expect(await response.json()).to.deep.equal({
+      CID: cid.toString(),
+      Space: space.did(),
+      Token: 'a1b2c3',
+      URLs: ['http://example.com/blob']
+    })
   })
 
   it('should serve a found CID from a Space authorized using no token', async () => {
@@ -168,9 +185,12 @@ describe('withAuthorizedSpace', async () => {
       }
     )
 
-    expect(await response.text()).to.equal(
-      `Served ${cid} from space ${space.did()} with no token`
-    )
+    expect(await response.json()).to.deep.equal({
+      CID: cid.toString(),
+      Space: space.did(),
+      Token: null,
+      URLs: ['http://example.com/blob']
+    })
   })
 
   it('should not serve a found CID using a token authorizing no Space', async () => {
@@ -274,23 +294,25 @@ describe('withAuthorizedSpace', async () => {
       { ...ctx, authToken: 'space1-token' }
     )
 
-    expect(await response1.text()).to.equal(
-      `Served ${cid} from space ${space1.did()} with token space1-token`
-    )
+    expect(await response1.json()).to.deep.equal({
+      CID: cid.toString(),
+      Space: space1.did(),
+      Token: 'space1-token',
+      URLs: ['http://example.com/1/blob']
+    })
 
-    const ih = sinon.fake(innerHandler)
-    const error = await rejection(
-      withAuthorizedSpace(ih)(
+    const error2 = await rejection(
+      withAuthorizedSpace(sinon.fake(innerHandler))(
         request,
         {},
         { ...ctx, authToken: 'space2-token' }
       )
     )
 
-    expect(ih.notCalled).to.be.true
-    expectToBeInstanceOf(error, HttpError)
-    expect(error.status).to.equal(404)
-    expect(error.message).to.equal('Not Found')
+    expect(sinon.fake(innerHandler).notCalled).to.be.true
+    expectToBeInstanceOf(error2, HttpError)
+    expect(error2.status).to.equal(404)
+    expect(error2.message).to.equal('Not Found')
 
     const response3 = await withAuthorizedSpace(innerHandler)(
       request,
@@ -298,9 +320,12 @@ describe('withAuthorizedSpace', async () => {
       { ...ctx, authToken: 'space3-token' }
     )
 
-    expect(await response3.text()).to.equal(
-      `Served ${cid} from space ${space3.did()} with token space3-token`
-    )
+    expect(await response3.json()).to.deep.equal({
+      CID: cid.toString(),
+      Space: space3.did(),
+      Token: 'space3-token',
+      URLs: ['http://example.com/3/blob']
+    })
   })
 
   it('should serve a found legacy CID only using no token', async () => {
@@ -314,7 +339,7 @@ describe('withAuthorizedSpace', async () => {
           digest: cid.multihash,
           site: [
             {
-              location: [new URL('http://example.com/1/blob')],
+              location: [new URL('http://example.com/blob')],
               range: { offset: 0, length: 100 }
               // No `space` value means it's legacy
             }
@@ -332,9 +357,12 @@ describe('withAuthorizedSpace', async () => {
       { ...ctx, authToken: null }
     )
 
-    expect(await responseWithoutToken.text()).to.equal(
-      `Served ${cid} from no space with no token`
-    )
+    expect(await responseWithoutToken.json()).to.deep.equal({
+      CID: cid.toString(),
+      Space: null,
+      Token: null,
+      URLs: ['http://example.com/blob']
+    })
 
     const ih = sinon.fake(innerHandler)
     const errorWithToken = await rejection(

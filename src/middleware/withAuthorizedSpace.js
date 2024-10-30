@@ -13,6 +13,7 @@ import { HttpError } from '@web3-storage/gateway-lib/util'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
+ * @import { Locator } from '@web3-storage/blob-fetcher'
  * @import { IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
  * @import { LocatorContext } from './withLocator.types.js'
  * @import { AuthTokenContext } from './withAuthToken.types.js'
@@ -101,7 +102,11 @@ export function withAuthorizedSpace (handler) {
           return space
         })
       )
-      return handler(request, env, { ...ctx, space })
+      return handler(request, env, {
+        ...ctx,
+        space,
+        locator: spaceScopedLocator(locator, space)
+      })
     } catch (error) {
       // If all Spaces failed to authorize, throw the first error.
       if (
@@ -162,3 +167,26 @@ const authorize = async (space, ctx) => {
 
   return { ok: {} }
 }
+
+/**
+ * Wraps a {@link Locator} and locates content only from a specific Space.
+ *
+ * @param {Locator} locator
+ * @param {Ucanto.DID} space
+ * @returns {Locator}
+ */
+const spaceScopedLocator = (locator, space) => ({
+  locate: async (digest) => {
+    const locateResult = await locator.locate(digest)
+    if (locateResult.error) {
+      return locateResult
+    } else {
+      return {
+        ok: {
+          ...locateResult.ok,
+          site: locateResult.ok.site.filter((site) => site.space === space)
+        }
+      }
+    }
+  }
+})
