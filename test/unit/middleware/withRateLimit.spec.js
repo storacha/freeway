@@ -66,7 +66,11 @@ const createContext = async ({ authToken } = {}) => ({
   waitUntil: strictStub(sandbox, 'waitUntil').returns(undefined),
   path: '',
   searchParams: new URLSearchParams(),
-  authToken: authToken ?? null
+  authToken: authToken ?? null,
+  ucantoClient: {
+    record: strictStub(sandbox, 'record'),
+    getTokenMetadata: strictStub(sandbox, 'getTokenMetadata')
+  }
 })
 
 describe('withRateLimits', async () => {

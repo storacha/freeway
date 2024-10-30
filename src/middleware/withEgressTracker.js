@@ -27,9 +27,8 @@ export function withEgressTracker (handler) {
       createByteCountStream((totalBytesServed) => {
         // Non-blocking call to the accounting service to record egress
         if (totalBytesServed > 0) {
-          const { space, dataCid: resource } = ctx
           ctx.waitUntil(
-            ctx.accountingService.record(space, resource, totalBytesServed, new Date().toISOString())
+            ctx.ucantoClient.record(ctx.space, ctx.dataCid, totalBytesServed, new Date())
           )
         }
       })
@@ -44,15 +43,14 @@ export function withEgressTracker (handler) {
 }
 
 /**
- * Creates a TransformStream to count bytes served to the client.
- * It records egress when the stream is finalized without an error.
+ * Creates a TransformStream to count bytes in the response body.
  *
- * @param {(totalBytesServed: number) => void} onClose
+ * @param {(totalBytes: number) => void} onClose
  * @template {Uint8Array} T
  * @returns {TransformStream<T, T>} - The created TransformStream.
  */
 function createByteCountStream (onClose) {
-  let totalBytesServed = 0
+  let totalBytes = 0
 
   return new TransformStream({
     /**
@@ -64,7 +62,7 @@ function createByteCountStream (onClose) {
     async transform (chunk, controller) {
       try {
         controller.enqueue(chunk)
-        totalBytesServed += chunk.byteLength
+        totalBytes += chunk.byteLength
       } catch (error) {
         console.error('Error while counting bytes:', error)
         controller.error(error)
@@ -79,7 +77,7 @@ function createByteCountStream (onClose) {
      * NOTE: The flush function is NOT called in case of a stream error.
      */
     async flush () {
-      onClose(totalBytesServed)
+      onClose(totalBytes)
     }
   })
 }

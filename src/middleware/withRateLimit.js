@@ -99,7 +99,7 @@ async function isRateLimited (rateLimitAPI, cid) {
  * @param {Environment} env
  * @param {string} authToken
  * @param {RateLimiterContext} ctx
- * @returns {Promise<import('./withAccountingService.types.js').TokenMetadata | null>}
+ * @returns {Promise<import('./withUcantoClient.types.ts').TokenMetadata | null>}
  */
 async function getTokenMetadata (env, authToken, ctx) {
   const cachedValue = await env.AUTH_TOKEN_METADATA.get(authToken)
@@ -109,7 +109,7 @@ async function getTokenMetadata (env, authToken, ctx) {
     return decode(cachedValue)
   }
 
-  const tokenMetadata = findTokenMetadata(authToken)
+  const tokenMetadata = await ctx.ucantoClient.getTokenMetadata(authToken)
   if (tokenMetadata) {
     // NOTE: non-blocking call to the auth token metadata cache
     ctx.waitUntil(env.AUTH_TOKEN_METADATA.put(authToken, encode(tokenMetadata)))
@@ -120,18 +120,8 @@ async function getTokenMetadata (env, authToken, ctx) {
 }
 
 /**
- * @param {string} authToken
- * @returns {import('./withAccountingService.types.js').TokenMetadata | null}
- */
-function findTokenMetadata (authToken) {
-  // TODO I think this needs to check the content claims service (?) for any claims relevant to this token
-  // TODO do we have a plan for this? need to ask Hannah if the indexing service covers this?
-  return null
-}
-
-/**
  * @param {string} s
- * @returns {import('./withAccountingService.types.js').TokenMetadata}
+ * @returns {import('./withUcantoClient.types.ts').TokenMetadata}
  */
 function decode (s) {
   // TODO should this be dag-json?
@@ -139,7 +129,7 @@ function decode (s) {
 }
 
 /**
- * @param {import('./withAccountingService.types.js').TokenMetadata} m
+ * @param {import('./withUcantoClient.types.ts').TokenMetadata} m
  * @returns {string}
  */
 function encode (m) {

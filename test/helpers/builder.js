@@ -19,7 +19,9 @@ export class Builder {
    * @returns {Promise<{ root: import('multiformats').UnknownLink, shards: import('multiformats').Link[]}>}
    */
   async add (input, options = {}) {
-    console.log('Adding ' + (Array.isArray(input) ? `${input.length} file${input.length === 1 ? '' : 's'}` : '1 blob') + '...')
+    if (process.env.DEBUG) {
+      console.log('Adding ' + (Array.isArray(input) ? `${input.length} file${input.length === 1 ? '' : 's'}` : '1 blob') + '...')
+    }
     const unixFsEncoder = Array.isArray(input)
       ? UnixFS.createDirectoryEncoderStream(input)
       : UnixFS.createFileEncoderStream(input)

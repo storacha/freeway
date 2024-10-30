@@ -2,11 +2,13 @@ import { Environment as MiddlewareEnvironment, Context as MiddlewareContext } fr
 import { DIDKey, UnknownLink } from '@ucanto/principal/ed25519'
 
 export interface Environment extends MiddlewareEnvironment {
-  //TODO: ucanto signer principal key
+  SERVICE_ID: string
+  SIGNER_PRINCIPAL_KEY: string
+  UPLOAD_API_URL: string
 }
 
-export interface AccountingServiceContext extends MiddlewareContext {
-  accountingService?: AccountingService
+export interface UcantoClientContext extends MiddlewareContext {
+  ucantoClient?: UCantoClient
 }
 
 export interface TokenMetadata {
@@ -14,6 +16,9 @@ export interface TokenMetadata {
   invalid?: boolean
 }
 
-export interface AccountingService {
-  record: (space: DIDKey, resource: UnknownLink, bytes: number, servedAt: string) => Promise<void>
+export interface UCantoClient {
+  record: (space: DIDKey, resource: UnknownLink, bytes: number, servedAt: Date) => Promise<void>
+  getTokenMetadata: (token: string) => Promise<TokenMetadata | undefined>
 }
+
+
