@@ -150,7 +150,6 @@ DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "true"
 FF_EGRESS_TRACKER_ENABLED = "true"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
-ACCOUNTING_SERVICE_URL = "https://example.com/service"
 
 [[env.integration.unsafe.bindings]]
 name = "RATE_LIMITER"

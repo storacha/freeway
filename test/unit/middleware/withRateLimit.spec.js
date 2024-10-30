@@ -40,7 +40,6 @@ const env =
   /** @satisfies {Environment} */
   ({
     DEBUG: 'false',
-    ACCOUNTING_SERVICE_URL: 'http://example.com/accounting-service',
     RATE_LIMITER: {
       limit: strictStub(sandbox, 'limit')
     },
