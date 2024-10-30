@@ -1,6 +1,5 @@
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import { RATE_LIMIT_EXCEEDED } from '../constants.js'
-import { Accounting } from '../services/accounting.js'
 
 /**
  * @import { Middleware } from '@web3-storage/gateway-lib'
@@ -8,11 +7,10 @@ import { Accounting } from '../services/accounting.js'
  * @import {
  *   Environment,
  *   Context,
- *   TokenMetadata,
  *   RateLimitService,
  *   RateLimitExceeded
  * } from './withRateLimit.types.js'
- * @typedef {Context & { ACCOUNTING_SERVICE?: import('../bindings.js').AccountingService }} RateLimiterContext
+ * @typedef {Context} RateLimiterContext
  */
 
 /**
@@ -101,7 +99,7 @@ async function isRateLimited (rateLimitAPI, cid) {
  * @param {Environment} env
  * @param {string} authToken
  * @param {RateLimiterContext} ctx
- * @returns {Promise<TokenMetadata | null>}
+ * @returns {Promise<import('./withAccountingService.types.js').TokenMetadata | null>}
  */
 async function getTokenMetadata (env, authToken, ctx) {
   const cachedValue = await env.AUTH_TOKEN_METADATA.get(authToken)
@@ -111,8 +109,7 @@ async function getTokenMetadata (env, authToken, ctx) {
     return decode(cachedValue)
   }
 
-  const accounting = ctx.ACCOUNTING_SERVICE ?? Accounting.create({ serviceURL: env.ACCOUNTING_SERVICE_URL })
-  const tokenMetadata = await accounting.getTokenMetadata(authToken)
+  const tokenMetadata = findTokenMetadata(authToken)
   if (tokenMetadata) {
     // NOTE: non-blocking call to the auth token metadata cache
     ctx.waitUntil(env.AUTH_TOKEN_METADATA.put(authToken, encode(tokenMetadata)))
@@ -123,8 +120,18 @@ async function getTokenMetadata (env, authToken, ctx) {
 }
 
 /**
+ * @param {string} authToken
+ * @returns {import('./withAccountingService.types.js').TokenMetadata | null}
+ */
+function findTokenMetadata (authToken) {
+  // TODO I think this needs to check the content claims service (?) for any claims relevant to this token
+  // TODO do we have a plan for this? need to ask Hannah if the indexing service covers this?
+  return null
+}
+
+/**
  * @param {string} s
- * @returns {TokenMetadata}
+ * @returns {import('./withAccountingService.types.js').TokenMetadata}
  */
 function decode (s) {
   // TODO should this be dag-json?
@@ -132,7 +139,7 @@ function decode (s) {
 }
 
 /**
- * @param {TokenMetadata} m
+ * @param {import('./withAccountingService.types.js').TokenMetadata} m
  * @returns {string}
  */
 function encode (m) {

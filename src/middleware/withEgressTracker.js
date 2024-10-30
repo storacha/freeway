@@ -1,10 +1,7 @@
-import { Accounting } from '../services/accounting.js'
-
 /**
- * @import { Context, IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
+ * @import { Middleware } from '@web3-storage/gateway-lib'
  * @import { Environment } from './withEgressTracker.types.js'
- * @import { AccountingService } from '../bindings.js'
- * @typedef {IpfsUrlContext & { ACCOUNTING_SERVICE?: AccountingService }} EgressTrackerContext
+ * @typedef {import('./withEgressTracker.types.js').Context} EgressTrackerContext
  */
 
 /**
@@ -26,17 +23,13 @@ export function withEgressTracker (handler) {
       return response
     }
 
-    const { dataCid } = ctx
-    const accounting = ctx.ACCOUNTING_SERVICE ?? Accounting.create({
-      serviceURL: env.ACCOUNTING_SERVICE_URL
-    })
-
     const responseBody = response.body.pipeThrough(
       createByteCountStream((totalBytesServed) => {
         // Non-blocking call to the accounting service to record egress
         if (totalBytesServed > 0) {
+          const { space, dataCid: resource } = ctx
           ctx.waitUntil(
-            accounting.record(dataCid, totalBytesServed, new Date().toISOString())
+            ctx.accountingService.record(space, resource, totalBytesServed, new Date().toISOString())
           )
         }
       })

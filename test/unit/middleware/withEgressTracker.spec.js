@@ -30,41 +30,38 @@ const env =
   /** @satisfies {import('../../../src/middleware/withEgressTracker.types.js').Environment} */
   ({
     DEBUG: 'true',
-    ACCOUNTING_SERVICE_URL: 'http://example.com',
     FF_EGRESS_TRACKER_ENABLED: 'true'
   })
 
 const accountingRecordMethodStub = sinon.stub()
   .returns(
-    /** @type {import('../../../src/bindings.js').AccountingService['record']} */
-    async (cid, bytes, servedAt) => {
-      console.log(`[mock] record called with cid: ${cid}, bytes: ${bytes}, servedAt: ${servedAt}`)
+    /** @type {import('../../../src/middleware/withAccountingService.types.js').AccountingService['record']} */
+    async (space, resource, bytes, servedAt) => {
+      console.log(`[mock] record called with space: ${space}, resource: ${resource}, bytes: ${bytes}, servedAt: ${servedAt}`)
     })
 
 /**
  * Mock implementation of the AccountingService.
  *
- * @param {Object} options
- * @param {string} options.serviceURL - The URL of the accounting service.
- * @returns {import('../../../src/bindings.js').AccountingService}
+ * @returns {import('../../../src/middleware/withAccountingService.types.js').AccountingService}
  */
-const AccountingService = ({ serviceURL }) => {
-  console.log(`[mock] Accounting.create called with serviceURL: ${serviceURL}`)
+const AccountingService = () => {
+  console.log('[mock] Accounting.create called')
 
   return {
-    record: accountingRecordMethodStub,
-    getTokenMetadata: sinon.stub().resolves(undefined)
+    record: accountingRecordMethodStub
   }
 }
 
 const ctx =
-  /** @satisfies {import('../../../src/middleware/withEgressTracker.js').EgressTrackerContext} */
+  /** @satisfies {import('../../../src/middleware/withEgressTracker.types.js').Context} */
   ({
+    space: 'did:key:z6MkknBAHEGCWvBzAi4amdH5FXEXrdKoWF1UJuvc8Psm2Mda',
     dataCid: CID.parse('bafybeibv7vzycdcnydl5n5lbws6lul2omkm6a6b5wmqt77sicrwnhesy7y'),
     waitUntil: sinon.stub().returns(undefined),
     path: '',
     searchParams: new URLSearchParams(),
-    ACCOUNTING_SERVICE: AccountingService({ serviceURL: env.ACCOUNTING_SERVICE_URL })
+    accountingService: AccountingService()
   })
 
 describe('withEgressTracker', async () => {
@@ -119,8 +116,9 @@ describe('withEgressTracker', async () => {
       expect(response.status).to.equal(200)
       expect(responseBody).to.equal('Hello, world!')
       expect(accountingRecordMethodStub.calledOnce, 'record should be called once').to.be.true
-      expect(accountingRecordMethodStub.args[0][0], 'first argument should be the cid').to.equal(ctx.dataCid)
-      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the total bytes').to.equal(totalBytes)
+      expect(accountingRecordMethodStub.args[0][0], 'first argument should be the space').to.equal(ctx.space)
+      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the cid').to.equal(ctx.dataCid)
+      expect(accountingRecordMethodStub.args[0][2], 'third argument should be the total bytes').to.equal(totalBytes)
     }).timeout(10_000)
 
     it('should record egress for a large file', async () => {
@@ -142,8 +140,9 @@ describe('withEgressTracker', async () => {
 
       expect(response.status).to.equal(200)
       expect(accountingRecordMethodStub.calledOnce, 'record should be called once').to.be.true
-      expect(accountingRecordMethodStub.args[0][0], 'first argument should be the cid').to.equal(ctx.dataCid)
-      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the total bytes').to.equal(totalBytes)
+      expect(accountingRecordMethodStub.args[0][0], 'first argument should be the space').to.equal(ctx.space)
+      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the cid').to.equal(ctx.dataCid)
+      expect(accountingRecordMethodStub.args[0][2], 'third argument should be the total bytes').to.equal(totalBytes)
     })
 
     it('should correctly track egress for responses with chunked transfer encoding', async () => {
@@ -169,7 +168,9 @@ describe('withEgressTracker', async () => {
       expect(response.status).to.equal(200)
       expect(responseBody).to.equal('Hello, world!')
       expect(accountingRecordMethodStub.calledOnce, 'record should be called once').to.be.true
-      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the total bytes').to.equal(totalBytes)
+      expect(accountingRecordMethodStub.args[0][0], 'first argument should be the space').to.equal(ctx.space)
+      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the cid').to.equal(ctx.dataCid)
+      expect(accountingRecordMethodStub.args[0][2], 'third argument should be the total bytes').to.equal(totalBytes)
     })
 
     it('should record egress bytes for a CAR file request', async () => {
@@ -216,7 +217,9 @@ describe('withEgressTracker', async () => {
 
       // expect(blocks[0].bytes).to.deep.equal(carBytes) - FIXME (fforbeck): how to get the correct byte count?
       expect(accountingRecordMethodStub.calledOnce, 'record should be called once').to.be.true
-      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the total bytes').to.equal(expectedTotalBytes)
+      expect(accountingRecordMethodStub.args[0][0], 'first argument should be the space').to.equal(ctx.space)
+      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the cid').to.equal(ctx.dataCid)
+      expect(accountingRecordMethodStub.args[0][2], 'third argument should be the total bytes').to.equal(expectedTotalBytes)
     })
 
     it('should correctly track egress for delayed responses', async () => {
@@ -242,7 +245,9 @@ describe('withEgressTracker', async () => {
       expect(response.status).to.equal(200)
       expect(responseBody).to.equal('Delayed response content')
       expect(accountingRecordMethodStub.calledOnce, 'record should be called once').to.be.true
-      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the total bytes').to.equal(totalBytes)
+      expect(accountingRecordMethodStub.args[0][0], 'first argument should be the space').to.equal(ctx.space)
+      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the cid').to.equal(ctx.dataCid)
+      expect(accountingRecordMethodStub.args[0][2], 'third argument should be the total bytes').to.equal(totalBytes)
     }).timeout(5000)
   })
 
@@ -330,8 +335,13 @@ describe('withEgressTracker', async () => {
       expect(responseBody2).to.equal('Goodbye, world!')
 
       expect(accountingRecordMethodStub.calledTwice, 'record should be called twice').to.be.true
-      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the total bytes for first request').to.equal(totalBytes1)
-      expect(accountingRecordMethodStub.args[1][1], 'second argument should be the total bytes for second request').to.equal(totalBytes2)
+      expect(accountingRecordMethodStub.args[0][0], 'first argument should be the space').to.equal(ctx.space)
+      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the cid for first request').to.equal(ctx.dataCid)
+      expect(accountingRecordMethodStub.args[0][2], 'third argument should be the total bytes for first request').to.equal(totalBytes1)
+
+      expect(accountingRecordMethodStub.args[1][0], 'first argument should be the space').to.equal(ctx.space)
+      expect(accountingRecordMethodStub.args[1][1], 'second argument should be the cid for second request').to.equal(ctx.dataCid)
+      expect(accountingRecordMethodStub.args[1][2], 'third argument should be the total bytes for second request').to.equal(totalBytes2)
     }).timeout(10_000)
   })
 
@@ -356,7 +366,9 @@ describe('withEgressTracker', async () => {
       expect(response.status).to.equal(200)
       expect(responseBody).to.deep.equal({ message: 'Hello, JSON!' })
       expect(accountingRecordMethodStub.calledOnce, 'record should be called once').to.be.true
-      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the total bytes').to.equal(totalBytes)
+      expect(accountingRecordMethodStub.args[0][0], 'first argument should be the space').to.equal(ctx.space)
+      expect(accountingRecordMethodStub.args[0][1], 'second argument should be the cid').to.equal(ctx.dataCid)
+      expect(accountingRecordMethodStub.args[0][2], 'third argument should be the total bytes').to.equal(totalBytes)
     }).timeout(10_000)
   })
 
@@ -449,7 +461,7 @@ describe('withEgressTracker', async () => {
       const request = await createRequest()
 
       // Simulate an error in the accounting service record method
-      ctx.ACCOUNTING_SERVICE.record = sinon.stub().rejects(new Error('Accounting service error'))
+      ctx.accountingService.record = sinon.stub().rejects(new Error('Accounting service error'))
 
       const response = await handler(request, env, ctx)
       const responseBody = await response.text()
