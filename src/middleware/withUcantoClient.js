@@ -1,7 +1,7 @@
 import * as UCantoClient from '@ucanto/client'
 import * as CAR from '@ucanto/transport/car'
 import { SpaceDID } from '@web3-storage/capabilities/utils'
-import { ed25519 } from '@ucanto/principal'
+import { Verifier, Signer } from '@ucanto/principal/ed25519'
 import { HTTP } from '@ucanto/transport'
 import { Usage } from './withUcantoClient.capabilities.js'
 
@@ -25,40 +25,28 @@ export function withUcantoClient (handler) {
 }
 
 /**
- * Creates a UCantoClient instance with the given environment.
+ * Creates a UCantoClient instance with the given environment and establishes a connection to the UCanto Server.
  *
  * @param {Environment} env
  * @returns {Promise<import('./withUcantoClient.types.ts').UCantoClient>}
  */
 async function create (env) {
-  const service = ed25519.Verifier.parse(env.SERVICE_ID)
-  const principal = ed25519.Signer.parse(env.SIGNER_PRINCIPAL_KEY)
-
-  const { connection } = await connectUcantoClient(env.UPLOAD_API_URL, principal)
+  const service = Verifier.parse(env.SERVICE_ID)
+  const principal = Signer.parse(env.SIGNER_PRINCIPAL_KEY)
+  const { connection } = await connect(env.UPLOAD_API_URL, principal)
 
   return {
     /**
+     * Records the egress bytes for the given resource.
+     *
      * @param {import('@ucanto/principal/ed25519').DIDKey} space - The Space DID where the content was served
      * @param {import('@ucanto/principal/ed25519').UnknownLink} resource - The link to the resource that was served
      * @param {number} bytes - The number of bytes served
      * @param {Date} servedAt - The timestamp of when the content was served
+     * @returns {Promise<void>}
      */
-    record: async (space, resource, bytes, servedAt) => {
-      const res = await Usage.record.invoke({
-        issuer: principal,
-        audience: service,
-        with: SpaceDID.from(space),
-        nb: {
-          resource,
-          bytes,
-          servedAt: Math.floor(servedAt.getTime() / 1000)
-        }
-      }).execute(connection)
-
-      if (res.out.error) {
-        console.error('Failed to record egress', res.out.error)
-      }
-    },
+    record: async (space, resource, bytes, servedAt) =>
+      recordEgress(space, resource, bytes, servedAt, principal, service, connection),
 
     /**
      * TODO: implement this function
@@ -81,7 +69,7 @@ async function create (env) {
  * @param {import('@ucanto/principal/ed25519').EdSigner} principal
  *
  */
-async function connectUcantoClient (serverUrl, principal) {
+async function connect (serverUrl, principal) {
   const connection = await UCantoClient.connect({
     id: principal,
     codec: CAR.outbound,
@@ -89,4 +77,33 @@ async function connectUcantoClient (serverUrl, principal) {
   })
 
   return { connection }
+}
+
+/**
+ * Records the egress bytes in the UCanto Server by invoking the `Usage.record` capability.
+ *
+ * @param {import('@ucanto/principal/ed25519').DIDKey} space - The Space DID where the content was served
+ * @param {import('@ucanto/principal/ed25519').UnknownLink} resource - The link to the resource that was served
+ * @param {number} bytes - The number of bytes served
+ * @param {Date} servedAt - The timestamp of when the content was served
+ * @param {import('@ucanto/principal/ed25519').EdSigner} principal - The principal signer
+ * @param {Signer.Verifier} service - The service verifier
+ * @param {any} connection - The connection to execute the command
+ * @returns {Promise<void>}
+ */
+async function recordEgress (space, resource, bytes, servedAt, principal, service, connection) {
+  const res = await Usage.record.invoke({
+    issuer: principal,
+    audience: service,
+    with: SpaceDID.from(space),
+    nb: {
+      resource,
+      bytes,
+      servedAt: Math.floor(servedAt.getTime() / 1000)
+    }
+  }).execute(connection)
+
+  if (res.out.error) {
+    console.error('Failed to record egress', res.out.error)
+  }
 }
