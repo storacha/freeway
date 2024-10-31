@@ -45,6 +45,7 @@ MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
 CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
+CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
 
 # Staging!
 [env.staging]
@@ -62,6 +63,7 @@ MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
 
 # Test!
 [env.test]
@@ -117,6 +119,21 @@ simple = { limit = 5, period = 60 }
 binding = "AUTH_TOKEN_METADATA"
 id = "f848730e45d94f17bcaf3b6d0915da40"
 
+
+[env.hannahhoward]
+name = "freeway-hannahhoward"
+workers_dev = true
+account_id = "fffa4b4363a7e5250af8357087263b3a"
+r2_buckets = [
+  { binding = "CARPARK", bucket_name = "carpark-prod-0", preview_bucket_name = "carpark-prod-0" }
+]
+
+[env.hannahhoward.vars]
+DEBUG = "true"
+FF_RATE_LIMITER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "false"
+CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
+CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
 
 ### Integration Tests Configuration
 [env.integration]

@@ -35,7 +35,7 @@
   "author": "Alan Shaw",
   "license": "Apache-2.0 OR MIT",
   "dependencies": {
-    "@web3-storage/blob-fetcher": "^2.2.0",
+    "@web3-storage/blob-fetcher": "^2.3.1",
     "@web3-storage/gateway-lib": "^5.1.2",
     "dagula": "^8.0.0",
     "http-range-parse": "^1.0.0",

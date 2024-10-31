@@ -10,9 +10,11 @@ import { Map as LinkMap } from 'lnmap'
 import { CARReaderStream } from 'carstream'
 import { MultipartByteRangeDecoder, decodePartHeader, getBoundary } from 'multipart-byte-range/decoder'
 import { Builder, toBlobKey } from '../helpers/builder.js'
-import { generateBlockLocationClaims, mockClaimsService, generateLocationClaim } from '../helpers/content-claims.js'
+import { generateBlockLocationClaims, mockClaimsService, generateLocationClaim, generateIndexClaim } from '../helpers/content-claims.js'
 import { mockBucketService } from '../helpers/bucket.js'
-
+import { fromShardArchives } from '@web3-storage/blob-index/util'
+import { CAR_CODE } from '../../src/constants.js'
+import http from 'node:http'
 /** @import { Block, Position } from 'carstream' */
 
 /**
@@ -31,15 +33,25 @@ describe('freeway', () => {
   let builder
   /** @type {import('../helpers/content-claims.js').MockClaimsService} */
   let claimsService
+  /** @type {import('miniflare').ReplaceWorkersTypes<import('@cloudflare/workers-types/experimental').R2Bucket>} */
+  let bucket
+  /** @type {http.Server} */
+  let server
   /** @type {import('../helpers/bucket.js').MockBucketService} */
   let bucketService
-
+  /** @type {URL} */
+  let url
   before(async () => {
     claimsService = await mockClaimsService()
-
+    server = http.createServer()
+    await new Promise((resolve) => server.listen(resolve))
+    // @ts-expect-error
+    const { port } = server.address()
+    url = new URL(`http://127.0.0.1:${port}`)
     miniflare = new Miniflare({
       bindings: {
-        CONTENT_CLAIMS_SERVICE_URL: claimsService.url.toString()
+        CONTENT_CLAIMS_SERVICE_URL: claimsService.url.toString(),
+        CARPARK_PUBLIC_BUCKET_URL: url.toString()
       },
       scriptPath: 'dist/worker.mjs',
       modules: true,
@@ -47,10 +59,10 @@ describe('freeway', () => {
       r2Buckets: ['CARPARK']
     })
 
-    const bucket = await miniflare.getR2Bucket('CARPARK')
+    bucket = await miniflare.getR2Bucket('CARPARK')
     bucketService = await mockBucketService(
       /** @type {import('@web3-storage/public-bucket').Bucket} */
-      (bucket)
+      (bucket), server
     )
     builder = new Builder(bucket)
   })
@@ -63,7 +75,8 @@ describe('freeway', () => {
 
   after(() => {
     claimsService.close()
-    bucketService.close()
+    server.closeAllConnections()
+    server.close()
     miniflare.dispose()
   })
 
@@ -72,12 +85,97 @@ describe('freeway', () => {
     const { root, shards } = await builder.add(input)
 
     for (const shard of shards) {
-      const location = new URL(toBlobKey(shard.multihash), bucketService.url)
+      const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
       const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
       claimsService.addClaims(claims)
     }
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}`)
+    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
+
+    assertBlobEqual(input, await res.blob())
+  })
+
+  it('should get a file through a sharded dag index', async () => {
+    const input = new Blob([randomBytes(256)])
+    const { root, shards } = await builder.add(input)
+    /** @type {Uint8Array[]} */
+    const archives = []
+    /** @type {import('../helpers/content-claims.js').Claims} */
+    const claims = new LinkMap()
+    // get all archives and build location claims for them
+    for (const shard of shards) {
+      const location = new URL(toBlobKey(shard.multihash), url)
+      const res = await fetch(location)
+      assert(res.body)
+      const shardContents = new Uint8Array(await res.arrayBuffer())
+      archives.push(shardContents)
+      const blocks = claims.get(shard) || []
+      blocks.push(await generateLocationClaim(claimsService.signer, shard, location, 0, shardContents.length))
+      claims.set(shard, blocks)
+    }
+    // build sharded dag index
+    const index = await fromShardArchives(root, archives)
+    const indexArchive = await index.archive()
+    assert(indexArchive.ok)
+    const digest = await sha256.digest(indexArchive.ok)
+    const indexLink = Link.create(CAR_CODE, digest)
+
+    // store sharded dag index
+    await bucket.put(toBlobKey(digest), indexArchive.ok)
+
+    // generate location claim for the index
+    const blocks = claims.get(indexLink) || []
+    const location = new URL(toBlobKey(indexLink.multihash), url)
+    blocks.push(await generateLocationClaim(claimsService.signer, indexLink, location, 0, indexArchive.ok.length))
+    claims.set(indexLink, blocks)
+
+    // generate index claim
+    const indexBlocks = claims.get(root) || []
+    indexBlocks.push(await generateIndexClaim(claimsService.signer, root, indexLink))
+    claims.set(root, indexBlocks)
+
+    claimsService.addClaims(claims)
+
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}`)
+    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
+
+    assertBlobEqual(input, await res.blob())
+  })
+
+  it('should get a file through a sharded dag index, even without location claims for shards', async () => {
+    const input = new Blob([randomBytes(256)])
+    const { root, shards } = await builder.add(input)
+    /** @type {Uint8Array[]} */
+    const archives = []
+    /** @type {import('../helpers/content-claims.js').Claims} */
+    const claims = new LinkMap()
+    // get all archives and build location claims for them
+    for (const shard of shards) {
+      const location = new URL(toBlobKey(shard.multihash), url)
+      const res = await fetch(location)
+      assert(res.body)
+      const shardContents = new Uint8Array(await res.arrayBuffer())
+      archives.push(shardContents)
+    }
+    // build sharded dag index
+    const index = await fromShardArchives(root, archives)
+    const indexArchive = await index.archive()
+    assert(indexArchive.ok)
+    const digest = await sha256.digest(indexArchive.ok)
+    const indexLink = Link.create(CAR_CODE, digest)
+
+    // store sharded dag index
+    await bucket.put(toBlobKey(digest), indexArchive.ok)
+
+    // generate index claim
+    const indexBlocks = claims.get(root) || []
+    indexBlocks.push(await generateIndexClaim(claimsService.signer, root, indexLink))
+    claims.set(root, indexBlocks)
+
+    claimsService.addClaims(claims)
 
     const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}`)
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
@@ -93,7 +191,7 @@ describe('freeway', () => {
     const { root, shards } = await builder.add(input)
 
     for (const shard of shards) {
-      const location = new URL(toBlobKey(shard.multihash), bucketService.url)
+      const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
       const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
@@ -111,7 +209,7 @@ describe('freeway', () => {
     const { root, shards } = await builder.add(input)
 
     for (const shard of shards) {
-      const location = new URL(toBlobKey(shard.multihash), bucketService.url)
+      const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
       const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
@@ -129,7 +227,7 @@ describe('freeway', () => {
     const { root, shards } = await builder.add(input)
 
     for (const shard of shards) {
-      const location = new URL(toBlobKey(shard.multihash), bucketService.url)
+      const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
       const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
@@ -261,7 +359,7 @@ describe('freeway', () => {
     const blobKey = toBlobKey(root.multihash)
     await carpark.put(blobKey, input)
 
-    const location = new URL(blobKey, bucketService.url)
+    const location = new URL(blobKey, url)
     const claim = await generateLocationClaim(claimsService.signer, root, location, 0, input.length)
     claimsService.addClaims(new LinkMap([[root, [claim]]]))
 
@@ -286,7 +384,7 @@ describe('freeway', () => {
     const blobKey = toBlobKey(cid.multihash)
     await carpark.put(blobKey, input)
 
-    const location = new URL(blobKey, bucketService.url)
+    const location = new URL(blobKey, url)
     const claim = await generateLocationClaim(claimsService.signer, cid, location, 0, input.length)
     claimsService.addClaims(new LinkMap([[cid, [claim]]]))
 
@@ -307,7 +405,7 @@ describe('freeway', () => {
     const input = [new File([randomBytes(1024 * 1024 * 5)], 'sargo.tar.xz')]
     const { shards } = await builder.add(input)
 
-    const location = new URL(toBlobKey(shards[0].multihash), bucketService.url)
+    const location = new URL(toBlobKey(shards[0].multihash), url)
     const claim = await generateLocationClaim(claimsService.signer, shards[0], location, 0, input[0].size)
     claimsService.addClaims(new LinkMap([[shards[0], [claim]]]))
 
@@ -341,7 +439,7 @@ describe('freeway', () => {
     const input = [new File([randomBytes(1024 * 1024 * 5)], 'sargo.tar.xz')]
     const { shards } = await builder.add(input)
 
-    const location = new URL(toBlobKey(shards[0].multihash), bucketService.url)
+    const location = new URL(toBlobKey(shards[0].multihash), url)
     const claim = await generateLocationClaim(claimsService.signer, shards[0], location, 0, input[0].size)
     claimsService.addClaims(new LinkMap([[shards[0], [claim]]]))
 
