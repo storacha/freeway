@@ -112,7 +112,7 @@ describe('withEgressTracker', async () => {
       const largeContent = new Uint8Array(100 * 1024 * 1024) // 100 MB
       const totalBytes = largeContent.byteLength
       const mockResponse = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           controller.enqueue(largeContent)
           controller.close()
         }
@@ -138,7 +138,7 @@ describe('withEgressTracker', async () => {
       const totalBytes = Buffer.byteLength(chunk1) + Buffer.byteLength(chunk2)
 
       const mockResponse = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           controller.enqueue(chunk1)
           controller.enqueue(chunk2)
           controller.close()
@@ -175,7 +175,7 @@ describe('withEgressTracker', async () => {
 
       // Mock a response with the CAR file content
       const mockResponse = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           controller.enqueue(carBytes)
           controller.close()
         }
@@ -214,7 +214,7 @@ describe('withEgressTracker', async () => {
       const totalBytes = Buffer.byteLength(content)
 
       const mockResponse = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           setTimeout(() => {
             controller.enqueue(content)
             controller.close()
@@ -286,14 +286,14 @@ describe('withEgressTracker', async () => {
       const totalBytes2 = Buffer.byteLength(content2)
 
       const mockResponse1 = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           controller.enqueue(content1)
           controller.close()
         }
       }), { status: 200 })
 
       const mockResponse2 = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           controller.enqueue(content2)
           controller.close()
         }
@@ -335,7 +335,7 @@ describe('withEgressTracker', async () => {
   describe('-> Zero-byte Responses', () => {
     it('should not record egress for zero-byte responses', async () => {
       const mockResponse = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           // Do not enqueue any data, simulating a zero-byte response
           controller.close()
         }
@@ -357,7 +357,7 @@ describe('withEgressTracker', async () => {
   describe('-> Interrupted Connection', () => {
     it('should not record egress if there is a stream error while downloading', async () => {
       const mockResponse = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           controller.error(new Error('Stream error'))
         }
       }), { status: 200 })
@@ -381,7 +381,7 @@ describe('withEgressTracker', async () => {
     it('should not record egress if the connection is interrupted during a large file download', async () => {
       const largeContent = new Uint8Array(100 * 1024 * 1024) // 100 MB
       const mockResponse = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           // Stream a portion of the content
           controller.enqueue(largeContent.subarray(0, 10 * 1024 * 1024)) // 10 MB
           // Simulate connection interruption by raising an error
@@ -410,7 +410,7 @@ describe('withEgressTracker', async () => {
     it('should log an error and continue serving the response if the ucanto client fails', async () => {
       const content = new TextEncoder().encode('Hello, world!')
       const mockResponse = new Response(new ReadableStream({
-        start(controller) {
+        start (controller) {
           controller.enqueue(content)
           controller.close()
         }
