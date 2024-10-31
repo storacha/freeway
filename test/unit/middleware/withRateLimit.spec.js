@@ -69,7 +69,7 @@ const createContext = async ({ authToken } = {}) => ({
   authToken: authToken ?? null,
   ucantoClient: {
     record: strictStub(sandbox, 'record'),
-    getTokenMetadata: strictStub(sandbox, 'getTokenMetadata')
+    getTokenMetadata: strictStub(sandbox, 'getTokenMetadata').returns(null)
   }
 })
 
