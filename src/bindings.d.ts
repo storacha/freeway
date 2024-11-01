@@ -12,6 +12,7 @@ export interface Environment
   VERSION: string
   CONTENT_CLAIMS_SERVICE_URL?: string
   ACCOUNTING_SERVICE_URL: string
+  HONEYCOMB_API_KEY: string
 }
 
 export interface AccountingService {
