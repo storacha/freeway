@@ -22,6 +22,10 @@ export function withLocator (handler) {
     const locator = ContentClaimsLocator.create({
       serviceURL: env.CONTENT_CLAIMS_SERVICE_URL
         ? new URL(env.CONTENT_CLAIMS_SERVICE_URL)
+        : undefined,
+      carpark: env.CARPARK,
+      carparkPublicBucketURL: env.CARPARK_PUBLIC_BUCKET_URL
+        ? new URL(env.CARPARK_PUBLIC_BUCKET_URL)
         : undefined
     })
     return handler(request, env, { ...ctx, locator })

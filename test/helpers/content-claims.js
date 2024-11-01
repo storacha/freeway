@@ -74,6 +74,24 @@ export const generateLocationClaim = async (signer, content, location, offset, l
 }
 
 /**
+ * @param {import('@ucanto/interface').Signer} signer
+ * @param {import('multiformats').UnknownLink} content
+ * @param {import('multiformats').Link} index
+ */
+export const generateIndexClaim = async (signer, content, index) => {
+  const invocation = Assert.index.invoke({
+    issuer: signer,
+    audience: signer,
+    with: signer.did(),
+    nb: {
+      content,
+      index
+    }
+  })
+  return await encode(invocation)
+}
+
+/**
  * Encode a claim to a block.
  * @param {import('@ucanto/interface').IPLDViewBuilder<import('@ucanto/interface').Delegation>} invocation
  */
