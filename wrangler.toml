@@ -1,6 +1,7 @@
 name = "freeway"
 main = "./dist/worker.mjs"
-compatibility_date = "2023-06-17"
+compatibility_flags = [ "nodejs_compat" ]
+compatibility_date = "2024-09-23"
 r2_buckets = [
   { binding = "CARPARK", bucket_name = "carpark-dev-0" }
 ]

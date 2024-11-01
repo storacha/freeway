@@ -25,6 +25,8 @@ import {
   withLocator,
   withEgressTracker
 } from './middleware/index.js'
+import { instrument } from '@microlabs/otel-cf-workers'
+import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
 
 /**
  * @import {
@@ -39,7 +41,7 @@ import {
  * @import { Environment } from './bindings.js'
  */
 
-export default {
+const handler = {
   /** @type {Handler<Context, Environment>} */
   fetch (request, env, ctx) {
     console.log(request.method, request.url)
@@ -75,6 +77,29 @@ export default {
     return middleware(handleUnixfs)(request, env, ctx)
   }
 }
+
+/**
+ *
+ * @param {Environment} env
+ * @param {*} _trigger
+ */
+function config (env, _trigger) {
+  if (env.HONEYCOMB_API_KEY) {
+    return {
+      exporter: {
+        url: 'https://api.honeycomb.io/v1/traces',
+        headers: { 'x-honeycomb-team': env.HONEYCOMB_API_KEY }
+      },
+      service: { name: 'freeway' }
+    }
+  }
+  return {
+    spanProcessors: new NoopSpanProcessor(),
+    service: { name: 'freeway' }
+  }
+}
+
+export default instrument(handler, config)
 
 /**
  * @type {Middleware<BlockContext & UnixfsContext & IpfsUrlContext, BlockContext & UnixfsContext & IpfsUrlContext, Environment>}
