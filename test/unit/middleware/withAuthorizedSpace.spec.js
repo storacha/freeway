@@ -20,6 +20,7 @@ import { createTestCID } from './util/createTestCID.js'
 
 /**
  * @import { MultihashDigest } from 'multiformats'
+ * @import * as Ucanto from '@ucanto/interface'
  * @import { Locator } from '@web3-storage/blob-fetcher'
  * @import {
  *   Handler,
@@ -78,8 +79,6 @@ const createLocator = (expectedDigest, locateResponse) => ({
     }
   }
 })
-
-/** @import * as Ucanto from '@ucanto/interface' */
 
 const gatewayIdentity = (await ed25519.Signer.generate()).withDID(
   'did:web:test.w3s.link'
