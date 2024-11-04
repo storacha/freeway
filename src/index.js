@@ -23,7 +23,8 @@ import {
   withRateLimit,
   withEgressTracker
   withAuthorizedSpace,
-  withLocator
+  withLocator,
+  withDelegationStubs
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
@@ -56,6 +57,7 @@ const handler = {
       createWithHttpMethod('GET', 'HEAD'),
       withAuthToken,
       withLocator,
+      withDelegationStubs,
 
       // Rate-limit requests
       withRateLimit,
