@@ -1,15 +1,7 @@
 import { Verifier } from '@ucanto/principal'
-import {
-  capability,
-  Schema,
-  DID,
-  nullable,
-  string,
-  ok,
-  access,
-  Unauthorized
-} from '@ucanto/validator'
+import { ok, access, Unauthorized } from '@ucanto/validator'
 import { HttpError } from '@web3-storage/gateway-lib/util'
+import * as serve from '../capabilities/serve.js'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
@@ -19,36 +11,6 @@ import { HttpError } from '@web3-storage/gateway-lib/util'
  * @import { AuthTokenContext } from './withAuthToken.types.js'
  * @import { SpaceContext, DelegationsStorageContext } from './withAuthorizedSpace.types.js'
  */
-
-/**
- * "Serve content owned by the subject Space."
- *
- * A Principal who may `space/content/serve` is permitted to serve any
- * content owned by the Space, in the manner of an [IPFS Gateway]. The
- * content may be a Blob stored by a Storage Node, or indexed content stored
- * within such Blobs (ie, Shards).
- *
- * Note that the args do not currently specify *what* content should be
- * served. Invoking this command does not currently *serve* the content in
- * any way, but merely validates the authority to do so. Currently, the
- * entirety of a Space must use the same authorization, thus the content does
- * not need to be identified. In the future, this command may refer directly
- * to a piece of content by CID.
- *
- * [IPFS Gateway]: https://specs.ipfs.tech/http-gateways/path-gateway/
- */
-export const serve = capability({
-  can: 'space/content/serve',
-  /**
-   * The Space which contains the content. This Space will be charged egress
-   * fees if content is actually retrieved by way of this invocation.
-   */
-  with: DID,
-  nb: Schema.struct({
-    /** The authorization token, if any, used for this request. */
-    token: nullable(string())
-  })
-})
 
 /**
  * Attempts to locate the {@link IpfsUrlContext.dataCid}. If it's able to,
@@ -134,14 +96,14 @@ const authorize = async (space, ctx) => {
   // Look up delegations that might authorize us to serve the content.
   const relevantDelegationsResult = await ctx.delegationsStorage.find({
     audience: ctx.gatewayIdentity.did(),
-    can: 'space/content/serve',
+    can: serve.transportHttp.can,
     with: space
   })
 
   if (relevantDelegationsResult.error) return relevantDelegationsResult
 
   // Create an invocation of the serve capability.
-  const invocation = await serve
+  const invocation = await serve.transportHttp
     .invoke({
       issuer: ctx.gatewayIdentity,
       audience: ctx.gatewayIdentity,
@@ -155,7 +117,7 @@ const authorize = async (space, ctx) => {
 
   // Validate the invocation.
   const accessResult = await access(invocation, {
-    capability: serve,
+    capability: serve.transportHttp,
     authority: ctx.gatewayIdentity,
     principal: Verifier,
     validateAuthorization: () => ok({})

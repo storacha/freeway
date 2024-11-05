@@ -1,6 +1,6 @@
-
 {
-  "include": ["src", "test"],
+  "include": ["src", "test", "scripts"],
+  "exclude": ["scripts/r2-put.js"],
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,

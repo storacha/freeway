@@ -7,16 +7,14 @@ import { describe, it } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
 import * as ed25519 from '@ucanto/principal/ed25519'
-import {
-  serve,
-  withAuthorizedSpace
-} from '../../../src/middleware/withAuthorizedSpace.js'
+import { withAuthorizedSpace } from '../../../src/middleware/withAuthorizedSpace.js'
 import * as Digest from 'multiformats/hashes/digest'
 import { base64 } from 'multiformats/bases/base64'
 import { rejection } from './util/rejection.js'
 import { expectToBeInstanceOf } from './util/expectToBeInstanceOf.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import { createTestCID } from './util/createTestCID.js'
+import * as serve from '../../../src/capabilities/serve.js'
 
 /**
  * @import { MultihashDigest } from 'multiformats'
@@ -129,7 +127,7 @@ describe('withAuthorizedSpace', async () => {
           error: undefined
         }),
         delegationsStorage: createDelegationStorage([
-          await serve.delegate({
+          await serve.transportHttp.delegate({
             issuer: space,
             audience: gatewayIdentity,
             with: space.did(),
@@ -173,7 +171,7 @@ describe('withAuthorizedSpace', async () => {
           error: undefined
         }),
         delegationsStorage: createDelegationStorage([
-          await serve.delegate({
+          await serve.transportHttp.delegate({
             issuer: space,
             audience: gatewayIdentity,
             with: space.did(),
@@ -219,7 +217,7 @@ describe('withAuthorizedSpace', async () => {
             error: undefined
           }),
           delegationsStorage: createDelegationStorage([
-            await serve.delegate({
+            await serve.transportHttp.delegate({
               issuer: space,
               audience: gatewayIdentity,
               with: space.did(),
@@ -270,14 +268,14 @@ describe('withAuthorizedSpace', async () => {
         error: undefined
       }),
       delegationsStorage: createDelegationStorage([
-        await serve.delegate({
+        await serve.transportHttp.delegate({
           issuer: space1,
           audience: gatewayIdentity,
           with: space1.did(),
           nb: { token: 'space1-token' }
         }),
         // No authorization for space2
-        await serve.delegate({
+        await serve.transportHttp.delegate({
           issuer: space3,
           audience: gatewayIdentity,
           with: space3.did(),
@@ -395,7 +393,7 @@ describe('withAuthorizedSpace', async () => {
             }
           }),
           delegationsStorage: createDelegationStorage([
-            await serve.delegate({
+            await serve.transportHttp.delegate({
               issuer: space,
               audience: gatewayIdentity,
               with: space.did(),
@@ -439,7 +437,7 @@ describe('withAuthorizedSpace', async () => {
             }
           }),
           delegationsStorage: createDelegationStorage([
-            await serve.delegate({
+            await serve.transportHttp.delegate({
               issuer: space,
               audience: gatewayIdentity,
               with: space.did(),
@@ -482,7 +480,7 @@ describe('withAuthorizedSpace', async () => {
             }
           }),
           delegationsStorage: createDelegationStorage([
-            await serve.delegate({
+            await serve.transportHttp.delegate({
               issuer: space,
               audience: gatewayIdentity,
               with: space.did(),
