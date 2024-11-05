@@ -35,9 +35,14 @@ export const withDelegationStubs = (handler) => async (request, env, ctx) => {
   const stubDelegations = await Promise.all(
     new URL(request.url).searchParams
       .getAll('stub_delegation')
-      .map(async (delegationBase64) => {
+      .map(async (delegationBase64url) => {
+        // atob() only supports base64, not base64url. Buffer supports
+        // base64url, but isn't available in the worker.
+        const delegationBase64 = delegationBase64url
+          .replaceAll('-', '+')
+          .replaceAll('_', '/')
         const res = await Delegation.extract(
-          Buffer.from(delegationBase64, 'base64url')
+          Uint8Array.from(atob(delegationBase64), (c) => c.charCodeAt(0))
         )
         if (res.error) throw res.error
         return res.ok
