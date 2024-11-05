@@ -21,7 +21,7 @@ import {
   withAuthToken,
   withCarBlockHandler,
   withRateLimit,
-  withEgressTracker
+  withEgressTracker,
   withAuthorizedSpace,
   withLocator,
   withDelegationStubs
