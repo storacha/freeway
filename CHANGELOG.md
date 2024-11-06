@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.21.0](https://github.com/storacha/freeway/compare/v2.20.2...v2.21.0) (2024-11-06)
+
+
+### Features
+
+* **blob-fetcher:** use updated blob fetcher ([#124](https://github.com/storacha/freeway/issues/124)) ([90bb605](https://github.com/storacha/freeway/commit/90bb60554bd6a96332a2fcebed597be07cc5b85d))
+* egress tracker middleware ([#120](https://github.com/storacha/freeway/issues/120)) ([847829b](https://github.com/storacha/freeway/commit/847829ba1d07585227fae0ebde6823485d9d0a17))
+* rate limiter + unit tests + readme ([#115](https://github.com/storacha/freeway/issues/115)) ([7bc4c6d](https://github.com/storacha/freeway/commit/7bc4c6d7c5f96c5a7f5071901fe61c622f16adea))
+
+
+### Bug Fixes
+
+* **test:** enable nodejs compat for miniflare ([#127](https://github.com/storacha/freeway/issues/127)) ([0165521](https://github.com/storacha/freeway/commit/01655215f8d50e1dbf181912e2793a0aa5882192))
+
 ## [2.20.2](https://github.com/storacha/freeway/compare/v2.20.1...v2.20.2) (2024-09-10)
 
 
