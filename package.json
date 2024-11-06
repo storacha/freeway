@@ -2,28 +2,6 @@
   "name": "freeway",
   "version": "2.21.0",
   "description": "An IPFS gateway for accessing UnixFS data via CAR CIDs",
-  "main": "src/index.js",
-  "types": "dist/src/index.d.ts",
-  "type": "module",
-  "exports": {
-    ".": {
-      "import": "./src/index.js",
-      "types": "./dist/src/index.d.ts"
-    }
-  },
-  "scripts": {
-    "prepare": "npm run build",
-    "start": "npm run dev",
-    "dev": "npm run build:debug && miniflare dist/worker.mjs --watch --debug -m --r2-persist --global-async-io --global-timers",
-    "build": "esbuild --bundle src/index.js --format=esm --external:node:buffer --external:node:events --external:node:async_hooks --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
-    "build:debug": "esbuild --bundle src/index.js --format=esm --external:node:buffer --external:node:events --external:node:async_hooks --outfile=dist/worker.mjs",
-    "build:tsc": "tsc --build",
-    "test:miniflare": "npm run build:debug && mocha --experimental-vm-modules --recursive test/miniflare/**/*.spec.js",
-    "test:unit": "npm run build:debug && mocha --experimental-vm-modules --recursive test/unit/**/*.spec.js",
-    "test:integration": "npm run build:debug && mocha --experimental-vm-modules --recursive test/integration/**/*.spec.js --require test/fixtures/worker-fixture.js",
-    "lint": "standard",
-    "lint:fix": "standard --fix"
-  },
   "keywords": [
     "IPFS",
     "gateway",
@@ -32,17 +10,40 @@
     "IPLD",
     "UnixFS"
   ],
-  "author": "Alan Shaw",
   "license": "Apache-2.0 OR MIT",
+  "author": "Alan Shaw",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "main": "src/index.js",
+  "types": "dist/src/index.d.ts",
+  "scripts": {
+    "build": "esbuild --bundle src/index.js --format=esm --external:node:buffer --external:node:events --external:node:async_hooks --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
+    "build:debug": "esbuild --bundle src/index.js --format=esm --external:node:buffer --external:node:events --external:node:async_hooks --outfile=dist/worker.mjs",
+    "build:tsc": "tsc --build",
+    "dev": "npm run build:debug && miniflare dist/worker.mjs --watch --debug -m --r2-persist --global-async-io --global-timers",
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "prepare": "npm run build",
+    "start": "npm run dev",
+    "test:integration": "npm run build:debug && mocha --experimental-vm-modules --recursive test/integration/**/*.spec.js --require test/fixtures/worker-fixture.js",
+    "test:miniflare": "npm run build:debug && mocha --experimental-vm-modules --recursive test/miniflare/**/*.spec.js",
+    "test:unit": "npm run build:debug && mocha --experimental-vm-modules --recursive test/unit/**/*.spec.js"
+  },
   "dependencies": {
     "@microlabs/otel-cf-workers": "^1.0.0-rc.48",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^1.27.0",
-    "@web3-storage/blob-fetcher": "^2.3.1",
-    "@web3-storage/gateway-lib": "^5.1.2",
     "@ucanto/client": "^9.0.1",
     "@ucanto/principal": "^9.0.1",
     "@ucanto/transport": "^9.1.1",
+    "@web3-storage/blob-fetcher": "^2.3.1",
+    "@web3-storage/capabilities": "^17.4.1",
+    "@web3-storage/gateway-lib": "^5.1.2",
     "dagula": "^8.0.0",
     "http-range-parse": "^1.0.0",
     "lnmap": "^2.0.0",

@@ -3,7 +3,7 @@ import * as CAR from '@ucanto/transport/car'
 import { SpaceDID } from '@web3-storage/capabilities/utils'
 import { Verifier, Signer } from '@ucanto/principal/ed25519'
 import { HTTP } from '@ucanto/transport'
-import { Usage } from './withUcantoClient.capabilities.js'
+import { Space } from '@web3-storage/capabilities'
 
 /**
  * @import { Middleware } from '@web3-storage/gateway-lib'
@@ -46,7 +46,7 @@ async function create (env) {
      * @returns {Promise<void>}
      */
     record: async (space, resource, bytes, servedAt) =>
-      recordEgress(space, resource, bytes, servedAt, principal, service, connection),
+      egressRecord(space, resource, bytes, servedAt, principal, service, connection),
 
     /**
      * TODO: implement this function
@@ -91,17 +91,19 @@ async function connect (serverUrl, principal) {
  * @param {any} connection - The connection to execute the command
  * @returns {Promise<void>}
  */
-async function recordEgress (space, resource, bytes, servedAt, principal, service, connection) {
-  const res = await Usage.record.invoke({
-    issuer: principal,
-    audience: service,
-    with: SpaceDID.from(space),
-    nb: {
-      resource,
-      bytes,
-      servedAt: Math.floor(servedAt.getTime() / 1000)
-    }
-  }).execute(connection)
+async function egressRecord (space, resource, bytes, servedAt, principal, service, connection) {
+  const res = await Space.egressRecord
+    .invoke({
+      issuer: principal,
+      audience: service,
+      with: SpaceDID.from(space),
+      nb: {
+        resource,
+        bytes,
+        servedAt: Math.floor(servedAt.getTime() / 1000)
+      }
+    })
+    .execute(connection)
 
   if (res.out.error) {
     console.error('Failed to record egress', res.out.error)
