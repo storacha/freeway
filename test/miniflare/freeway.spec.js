@@ -55,7 +55,8 @@ describe('freeway', () => {
       },
       scriptPath: 'dist/worker.mjs',
       modules: true,
-      compatibilityDate: '2023-06-17',
+      compatibilityFlags: ['nodejs_compat'],
+      compatibilityDate: '2024-09-23',
       r2Buckets: ['CARPARK']
     })
 
