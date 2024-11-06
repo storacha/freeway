@@ -13,26 +13,20 @@ runs:
       shell: bash
     - run: npm run lint
       shell: bash
-    - run: |
-        npm run test:unit
-        if [ $? -ne 0 ]; then
-          echo "Unit Tests failed"
-          exit 1
-        fi
+    - run: npm run test:unit
       name: Unit Tests
       shell: bash
-    - run: |
-        npm run test:integration
-        if [ $? -ne 0 ]; then
-          echo "Integration Tests failed"
-          exit 1
-        fi
+    - run: npm run test:integration
       name: Integration Tests
       shell: bash
     - run: |
-        npm run test:miniflare
-        if [ $? -ne 0 ]; then
-          echo "Miniflare Tests failed"
+        # If the Miniflare tests fail we need to capture the output and check for the error,
+        # because the error is not bubbled up from miniflare and the tests will pass.
+        npm run test:miniflare | tee test-output.log
+
+        # Check for the error in the output to fail the test action
+        if grep -q 'ERR_TEST_FAILURE' test-output.log; then
+          echo "Test failure detected: ERR_TEST_FAILURE"
           exit 1
         fi
       name: Miniflare Tests
