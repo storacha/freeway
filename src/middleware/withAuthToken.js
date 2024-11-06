@@ -5,8 +5,7 @@
  *  } from '@web3-storage/gateway-lib'
  * @import {
  *   Environment,
- *   InContext,
- *   OutContext,
+ *   AuthTokenContext,
  * } from './withAuthToken.types.js'
  */
 
@@ -14,7 +13,7 @@
  * Finds an authentication token in the URL query parameters or the
  * `Authorization` header and adds it to the context as `authToken`.
  *
- * @type {Middleware<OutContext<MiddlewareContext>, InContext, Environment>}
+ * @type {Middleware<AuthTokenContext, MiddlewareContext, Environment>}
  */
 export function withAuthToken (handler) {
   return async (req, env, ctx) => {

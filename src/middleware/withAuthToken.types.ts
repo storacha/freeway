@@ -5,8 +5,8 @@ import {
 
 export interface Environment extends MiddlewareEnvironment {}
 
-export interface InContext extends MiddlewareContext {}
+export interface AuthTokenContextIn extends MiddlewareContext {}
 
-export type OutContext<IncomingContext> = IncomingContext & {
+export interface AuthTokenContext extends MiddlewareContext {
   authToken: string | null
 }
