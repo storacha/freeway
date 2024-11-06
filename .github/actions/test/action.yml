@@ -13,12 +13,27 @@ runs:
       shell: bash
     - run: npm run lint
       shell: bash
-    - run: npm run test:unit
+    - run: |
+        npm run test:unit
+        if [ $? -ne 0 ]; then
+          echo "Unit Tests failed"
+          exit 1
+        fi
       name: Unit Tests
       shell: bash
-    - run: npm run test:miniflare
-      name: Miniflare Tests
-      shell: bash
-    - run: npm run test:integration
+    - run: |
+        npm run test:integration
+        if [ $? -ne 0 ]; then
+          echo "Integration Tests failed"
+          exit 1
+        fi
       name: Integration Tests
+      shell: bash
+    - run: |
+        npm run test:miniflare
+        if [ $? -ne 0 ]; then
+          echo "Miniflare Tests failed"
+          exit 1
+        fi
+      name: Miniflare Tests
       shell: bash
