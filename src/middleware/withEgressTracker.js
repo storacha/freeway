@@ -5,10 +5,10 @@
  */
 
 /**
- * The egress tracking handler must be enabled after the rate limiting handler,
- * and before any handler that serves the response body. It uses the CID of the
- * served content to record the egress in the accounting service, and it counts
- * the bytes served with a TransformStream to determine the egress amount.
+ * The egress tracking handler must be enabled after the rate limiting, authorized space, 
+ * and egress client handlers, and before any handler that serves the response body. 
+ * It uses the Space & Data CID of the served content to record the egress in the egress client, 
+ * and it counts the bytes served with a TransformStream to determine the egress amount.
  *
  * @type {Middleware<EgressTrackerContext, EgressTrackerContext, Environment>}
  */

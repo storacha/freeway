@@ -61,9 +61,12 @@ const handler = {
       withLocator,
       withGatewayIdentity,
       withDelegationStubs,
-
+      
       // Rate-limit requests
       withRateLimit,
+
+      // Authorize requests
+      withAuthorizedSpace,
 
       // Track Egress
       withEgressClient,
@@ -71,7 +74,6 @@ const handler = {
 
       // Fetch data
       withCarBlockHandler,
-      withAuthorizedSpace,
       withContentClaimsDagula,
       withFormatRawHandler,
       withFormatCarHandler,
