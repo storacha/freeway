@@ -19,7 +19,7 @@ import { Space } from '@web3-storage/capabilities'
 export function withEgressClient(handler) {
   return async (req, env, ctx) => {
     const egressClient = await create(env, ctx)
-
+    debugger
     return handler(req, env, { ...ctx, egressClient })
   }
 }
@@ -46,7 +46,7 @@ async function create(env, ctx) {
      * @returns {Promise<void>}
      */
     record: async (space, resource, bytes, servedAt) =>
-      egressRecord(space, resource, bytes, servedAt, connection, ctx),
+      record(space, resource, bytes, servedAt, connection, ctx),
 
   }
 }
@@ -79,21 +79,21 @@ async function connect(serverUrl, principal) {
  * @param {import('./withEgressClient.types.js').EgressClientContext} ctx - The egress client context
  * @returns {Promise<void>}
  */
-async function egressRecord(space, resource, bytes, servedAt, connection, ctx) {
-  debugger
-  const res = await Space.egressRecord
-    .invoke({
-      issuer: ctx.gatewayIdentity,
-      audience: ctx.gatewayIdentity, // TODO should it be the upload service DID?
-      with: SpaceDID.from(space),
-      nb: {
-        resource,
-        bytes,
-        servedAt: Math.floor(servedAt.getTime() / 1000)
-      },
-      proofs: ctx.delegationProofs ? ctx.delegationProofs : []
-    })
-    .execute(connection)
+async function record(space, resource, bytes, servedAt, connection, ctx) {
+  const egressRecord = Space.egressRecord
+  const invoke = egressRecord.invoke.bind(egressRecord)
+
+  const res = await invoke({
+    issuer: ctx.gatewayIdentity,
+    audience: ctx.gatewayIdentity, // TODO should it be the upload service DID?
+    with: SpaceDID.from(space),
+    nb: {
+      resource,
+      bytes,
+      servedAt: Math.floor(servedAt.getTime() / 1000)
+    },
+    proofs: ctx.delegationProofs ? ctx.delegationProofs : []
+  }).execute(connection)
 
   if (res.out.error) {
     console.error(`Failed to record egress for space ${space}`, res.out.error)

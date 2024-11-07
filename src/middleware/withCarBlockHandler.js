@@ -30,6 +30,7 @@ import { base58btc } from 'multiformats/bases/base58'
 
 export function withCarBlockHandler (handler) {
   return async (request, env, ctx) => {
+    debugger
     const { dataCid, searchParams } = ctx
     if (!dataCid) throw new Error('missing data CID')
 

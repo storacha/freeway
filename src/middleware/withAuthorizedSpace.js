@@ -75,6 +75,7 @@ export function withAuthorizedSpace(handler) {
         locator: spaceScopedLocator(locator, selectedSpace)
       })
     } catch (error) {
+      debugger
       // If all Spaces failed to authorize, throw the first error.
       if (
         error instanceof AggregateError &&
@@ -120,18 +121,18 @@ const authorize = async (space, ctx) => {
     })
     .delegate()
 
-  // Validate the invocation.
-  debugger
-  const accessResult = await access(invocation, {
-    capability: serve.transportHttp,
-    authority: ctx.gatewayIdentity,
-    principal: Verifier,
-    validateAuthorization: () => ok({}),
-  })
-  debugger
-  if (accessResult.error) {
-    return accessResult
-  }
+  // // Validate the invocation.
+  // debugger
+  // const accessResult = await access(invocation, {
+  //   capability: serve.transportHttp,
+  //   authority: ctx.gatewayIdentity,
+  //   principal: Verifier,
+  //   validateAuthorization: () => ok({}),
+  // })
+  // debugger
+  // if (accessResult.error) {
+  //   return accessResult
+  // }
 
   return {
     ok: {
