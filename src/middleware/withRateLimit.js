@@ -21,7 +21,7 @@ import { RATE_LIMIT_EXCEEDED } from '../constants.js'
  *
  * @type {Middleware<RateLimiterContext, RateLimiterContext, Environment>}
  */
-export function withRateLimit (handler) {
+export function withRateLimit(handler) {
   return async (req, env, ctx) => {
     if (env.FF_RATE_LIMITER_ENABLED !== 'true') {
       return handler(req, env, ctx)
@@ -42,7 +42,7 @@ export function withRateLimit (handler) {
  * @param {RateLimiterContext} ctx
  * @returns {RateLimitService}
  */
-function create (env, ctx) {
+function create(env, ctx) {
   return {
     /**
      * @param {import('multiformats/cid').CID} cid
@@ -82,7 +82,7 @@ function create (env, ctx) {
  * @returns {Promise<import('../constants.js').RATE_LIMIT_EXCEEDED>}
  * @throws {Error} if no rate limit API is found
  */
-async function isRateLimited (rateLimitAPI, cid) {
+async function isRateLimited(rateLimitAPI, cid) {
   if (!rateLimitAPI) {
     throw new Error('no rate limit API found')
   }
@@ -99,9 +99,9 @@ async function isRateLimited (rateLimitAPI, cid) {
  * @param {Environment} env
  * @param {string} authToken
  * @param {RateLimiterContext} ctx
- * @returns {Promise<import('./withUcantoClient.types.ts').TokenMetadata | null>}
+ * @returns {Promise<import('./withRateLimit.types.js').TokenMetadata | null>}
  */
-async function getTokenMetadata (env, authToken, ctx) {
+async function getTokenMetadata(env, authToken, ctx) {
   const cachedValue = await env.AUTH_TOKEN_METADATA.get(authToken)
   // TODO: we should implement an SWR pattern here - record an expiry in the metadata and if the expiry has passed, re-validate the cache after
   // returning the value
@@ -109,7 +109,7 @@ async function getTokenMetadata (env, authToken, ctx) {
     return decode(cachedValue)
   }
 
-  const tokenMetadata = await ctx.ucantoClient.getTokenMetadata(authToken)
+  const tokenMetadata = await locateTokenMetadata(authToken)
   if (tokenMetadata) {
     // NOTE: non-blocking call to the auth token metadata cache
     ctx.waitUntil(env.AUTH_TOKEN_METADATA.put(authToken, encode(tokenMetadata)))
@@ -121,18 +121,31 @@ async function getTokenMetadata (env, authToken, ctx) {
 
 /**
  * @param {string} s
- * @returns {import('./withUcantoClient.types.ts').TokenMetadata}
+ * @returns {import('./withRateLimit.types.js').TokenMetadata}
  */
-function decode (s) {
+function decode(s) {
   // TODO should this be dag-json?
   return JSON.parse(s)
 }
 
 /**
- * @param {import('./withUcantoClient.types.ts').TokenMetadata} m
+ * @param {import('./withRateLimit.types.js').TokenMetadata} m
  * @returns {string}
  */
-function encode (m) {
+function encode(m) {
   // TODO should this be dag-json?
   return JSON.stringify(m)
+}
+
+
+/**
+ * TODO: implement this function
+ *
+ * @param {string} authToken
+ * @returns {Promise<import('./withRateLimit.types.js').TokenMetadata | undefined>}
+ */
+async function locateTokenMetadata(authToken) {
+  // TODO I think this needs to check the content claims service (?) for any claims relevant to this token
+  // TODO do we have a plan for this? need to ask Hannah if the indexing service covers this?
+  return undefined
 }

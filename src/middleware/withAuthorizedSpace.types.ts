@@ -1,10 +1,12 @@
 import * as Ucanto from '@ucanto/interface'
 import { Context as MiddlewareContext } from '@web3-storage/gateway-lib'
+import { GatewayIdentityContext as GatewayIdentityContext } from './withGatewayIdentity.types.js'
 
-export interface DelegationsStorageContext extends MiddlewareContext {
-  /** The identity of the gateway itself */
-  gatewayIdentity: Ucanto.Signer
+export interface DelegationsStorageContext
+  extends MiddlewareContext,
+    GatewayIdentityContext {
   delegationsStorage: DelegationsStorage
+  delegationProofs?: Ucanto.Delegation[]
 }
 
 export interface SpaceContext extends MiddlewareContext {

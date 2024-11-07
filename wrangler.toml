@@ -96,6 +96,7 @@ CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
 [env.fforbeck]
 name = "freeway-fforbeck"
 workers_dev = true
+upload_source_maps = true
 # Personal Account
 # account_id = "9e46c5ddfefedb9bae5d81a0dd911e5a"
 # Company Account
@@ -107,8 +108,10 @@ r2_buckets = [
 [env.fforbeck.vars]
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
-FF_EGRESS_TRACKER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "true"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+GATEWAY_PRINCIPAL_KEY = "MgCaNpGXCEX0+BxxE4SjSStrxU9Ru/Im+HGNQ/JJx3lDoI+0B3NWjWW3G8OzjbazZjanjM3kgfcZbvpyxv20jHtmcTtg="
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"

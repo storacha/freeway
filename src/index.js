@@ -28,6 +28,8 @@ import {
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { withEgressClient } from './middleware/withEgressClient.js'
+import { withGatewayIdentity } from './middleware/withGatewayIdentity.js'
 
 /**
  * @import {
@@ -57,12 +59,14 @@ const handler = {
       createWithHttpMethod('GET', 'HEAD'),
       withAuthToken,
       withLocator,
+      withGatewayIdentity,
       withDelegationStubs,
 
       // Rate-limit requests
       withRateLimit,
 
-      // Track egress bytes
+      // Track Egress
+      withEgressClient,
       withEgressTracker,
 
       // Fetch data

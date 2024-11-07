@@ -1,12 +1,10 @@
 import { IpfsUrlContext, Environment as MiddlewareEnvironment } from '@web3-storage/gateway-lib'
-import { UCantoClient } from './withUcantoClient.types.js'
-import { DIDKey } from '@ucanto/principal/ed25519'
+import { EgressClientContext } from './withEgressClient.types.js'
+import { SpaceContext } from './withAuthorizedSpace.types.js'
 
 export interface Environment extends MiddlewareEnvironment {
   FF_EGRESS_TRACKER_ENABLED: string
 }
 
-export interface Context extends IpfsUrlContext {
-  space: DIDKey
-  ucantoClient: UCantoClient
+export interface Context extends IpfsUrlContext, SpaceContext, EgressClientContext {
 }

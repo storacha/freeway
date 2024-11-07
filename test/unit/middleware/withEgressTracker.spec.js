@@ -29,7 +29,7 @@ const recordEgressMock = sinon.fake()
 /**
  * Mock implementation of the AccountingService.
  *
- * @returns {import('../../../src/middleware/withUcantoClient.types.js').UCantoClient}
+ * @returns {import('../../../src/middleware/withEgressClient.types.js').EgressClient}
  */
 const UCantoClient = () => {
   if (process.env.DEBUG) {
@@ -50,7 +50,7 @@ const ctx =
     waitUntil: sinon.stub().returns(undefined),
     path: '',
     searchParams: new URLSearchParams(),
-    ucantoClient: UCantoClient()
+    egressClient: UCantoClient()
   })
 
 describe('withEgressTracker', async () => {
@@ -421,8 +421,8 @@ describe('withEgressTracker', async () => {
       const request = new Request('http://doesnt-matter.com/')
       const response = await handler(request, env, {
         ...ctx,
-        ucantoClient: {
-          ...ctx.ucantoClient,
+        egressClient: {
+          ...ctx.egressClient,
           // Simulate an error in the ucanto client record method
           record: async () => { throw new Error('ucanto client error') }
         }

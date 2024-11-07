@@ -12,9 +12,20 @@
  *
  * @type {Middleware<EgressTrackerContext, EgressTrackerContext, Environment>}
  */
-export function withEgressTracker (handler) {
+export function withEgressTracker(handler) {
   return async (req, env, ctx) => {
     if (env.FF_EGRESS_TRACKER_ENABLED !== 'true') {
+      return handler(req, env, ctx)
+    }
+
+    // If the space is not defined, it is a legacy request and we can't track egress
+    const space = ctx.space
+    if (!space) {
+      return handler(req, env, ctx)
+    }
+
+    if (!ctx.egressClient) {
+      console.error('EgressClient is not defined')
       return handler(req, env, ctx)
     }
 
@@ -25,10 +36,15 @@ export function withEgressTracker (handler) {
 
     const responseBody = response.body.pipeThrough(
       createByteCountStream((totalBytesServed) => {
-        // Non-blocking call to the accounting service to record egress
         if (totalBytesServed > 0) {
+          // Non-blocking call to the accounting service to record egress
           ctx.waitUntil(
-            ctx.ucantoClient.record(ctx.space, ctx.dataCid, totalBytesServed, new Date())
+            ctx.egressClient.record(
+              /** @type {import('@ucanto/principal/ed25519').DIDKey} */(space),
+              ctx.dataCid,
+              totalBytesServed,
+              new Date()
+            )
           )
         }
       })
@@ -49,7 +65,7 @@ export function withEgressTracker (handler) {
  * @template {Uint8Array} T
  * @returns {TransformStream<T, T>} - The created TransformStream.
  */
-function createByteCountStream (onClose) {
+function createByteCountStream(onClose) {
   let totalBytes = 0
 
   return new TransformStream({
@@ -59,7 +75,7 @@ function createByteCountStream (onClose) {
      * If an error occurs, it signals an error to the controller and logs it.
      * The bytes are not counted in case of enqueuing an error.
      */
-    async transform (chunk, controller) {
+    async transform(chunk, controller) {
       try {
         controller.enqueue(chunk)
         totalBytes += chunk.byteLength
@@ -76,7 +92,7 @@ function createByteCountStream (onClose) {
      * If an error occurs, the egress is not recorded.
      * NOTE: The flush function is NOT called in case of a stream error.
      */
-    async flush () {
+    async flush() {
       onClose(totalBytes)
     }
   })

@@ -2,6 +2,7 @@ import { Verifier } from '@ucanto/principal'
 import { ok, access, Unauthorized } from '@ucanto/validator'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as serve from '../capabilities/serve.js'
+import { Schema } from '@ucanto/client'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
@@ -27,7 +28,7 @@ import * as serve from '../capabilities/serve.js'
  *   >
  * )}
  */
-export function withAuthorizedSpace (handler) {
+export function withAuthorizedSpace(handler) {
   return async (request, env, ctx) => {
     const { locator, dataCid } = ctx
     const locRes = await locator.locate(dataCid.multihash)
@@ -57,17 +58,19 @@ export function withAuthorizedSpace (handler) {
 
     try {
       // First space to successfully authorize is the one we'll use.
-      const space = await Promise.any(
+      const { space: selectedSpace, delegationProofs } = await Promise.any(
         spaces.map(async (space) => {
           const result = await authorize(space, ctx)
           if (result.error) throw result.error
-          return space
+          return result.ok
         })
       )
+      debugger
       return handler(request, env, {
         ...ctx,
-        space,
-        locator: spaceScopedLocator(locator, space)
+        space: selectedSpace,
+        delegationProofs,
+        locator: spaceScopedLocator(locator, selectedSpace)
       })
     } catch (error) {
       // If all Spaces failed to authorize, throw the first error.
@@ -90,7 +93,7 @@ export function withAuthorizedSpace (handler) {
  *
  * @param {Ucanto.DID} space
  * @param {AuthTokenContext & DelegationsStorageContext} ctx
- * @returns {Promise<Ucanto.Result<{}, Ucanto.Failure>>}
+ * @returns {Promise<Ucanto.Result<{space: Ucanto.DID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
  */
 const authorize = async (space, ctx) => {
   // Look up delegations that might authorize us to serve the content.
@@ -101,7 +104,7 @@ const authorize = async (space, ctx) => {
   })
 
   if (relevantDelegationsResult.error) return relevantDelegationsResult
-
+  
   // Create an invocation of the serve capability.
   const invocation = await serve.transportHttp
     .invoke({
@@ -111,23 +114,30 @@ const authorize = async (space, ctx) => {
       nb: {
         token: ctx.authToken
       },
-      proofs: relevantDelegationsResult.ok
+      proofs: relevantDelegationsResult.ok,
     })
     .delegate()
 
   // Validate the invocation.
+  debugger
   const accessResult = await access(invocation, {
     capability: serve.transportHttp,
     authority: ctx.gatewayIdentity,
     principal: Verifier,
-    validateAuthorization: () => ok({})
+    validateAuthorization: () => ok({}),
+    resolveDIDKey: () => Schema.ok(ctx.gatewayIdentity.toDIDKey()),
   })
-
+  debugger
   if (accessResult.error) {
     return accessResult
   }
 
-  return { ok: {} }
+  return {
+    ok: {
+      space,
+      delegationProofs: relevantDelegationsResult.ok
+    }
+  }
 }
 
 /**

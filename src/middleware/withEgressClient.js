@@ -7,33 +7,33 @@ import { Space } from '@web3-storage/capabilities'
 
 /**
  * @import { Middleware } from '@web3-storage/gateway-lib'
- * @typedef {import('./withUcantoClient.types.ts').UcantoClientContext} UcantoClientContext
- * @typedef {import('./withUcantoClient.types.ts').Environment} Environment
+ * @typedef {import('./withEgressClient.types.js').EgressClientContext} EgressClientContext
+ * @typedef {import('./withEgressClient.types.js').Environment} Environment
  */
 
 /**
- * The UCantoClient handler exposes the methods to invoke capabilities on the Upload API.
+ * The EgressClient handler exposes the methods to invoke capabilities on the Upload API.
  *
- * @type {Middleware<UcantoClientContext, UcantoClientContext, Environment>}
+ * @type {Middleware<EgressClientContext, EgressClientContext, Environment>}
  */
-export function withUcantoClient (handler) {
+export function withEgressClient(handler) {
   return async (req, env, ctx) => {
-    const ucantoClient = await create(env)
+    const egressClient = await create(env, ctx)
 
-    return handler(req, env, { ...ctx, ucantoClient })
+    return handler(req, env, { ...ctx, egressClient })
   }
 }
 
 /**
- * Creates a UCantoClient instance with the given environment and establishes a connection to the UCanto Server.
+ * Creates a EgressClient instance with the given environment and establishes a connection to the UCanto Server.
  *
  * @param {Environment} env
- * @returns {Promise<import('./withUcantoClient.types.ts').UCantoClient>}
+ * @param {import('./withEgressClient.types.js').EgressClientContext} ctx 
+ * @returns {Promise<import('./withEgressClient.types.js').EgressClient>}
  */
-async function create (env) {
-  const service = Verifier.parse(env.SERVICE_ID)
-  const principal = Signer.parse(env.SIGNER_PRINCIPAL_KEY)
-  const { connection } = await connect(env.UPLOAD_API_URL, principal)
+async function create(env, ctx) {
+  const principalSigner = ctx.gatewaySigner
+  const { connection } = await connect(env.UPLOAD_API_URL, principalSigner)
 
   return {
     /**
@@ -46,19 +46,8 @@ async function create (env) {
      * @returns {Promise<void>}
      */
     record: async (space, resource, bytes, servedAt) =>
-      egressRecord(space, resource, bytes, servedAt, principal, service, connection),
+      egressRecord(space, resource, bytes, servedAt, connection, ctx),
 
-    /**
-     * TODO: implement this function
-     *
-     * @param {string} authToken
-     * @returns {Promise<import('./withUcantoClient.types.ts').TokenMetadata | undefined>}
-     */
-    getTokenMetadata: async (authToken) => {
-      // TODO I think this needs to check the content claims service (?) for any claims relevant to this token
-      // TODO do we have a plan for this? need to ask Hannah if the indexing service covers this?
-      return undefined
-    }
   }
 }
 
@@ -69,7 +58,7 @@ async function create (env) {
  * @param {import('@ucanto/principal/ed25519').EdSigner} principal
  *
  */
-async function connect (serverUrl, principal) {
+async function connect(serverUrl, principal) {
   const connection = await UCantoClient.connect({
     id: principal,
     codec: CAR.outbound,
@@ -80,32 +69,33 @@ async function connect (serverUrl, principal) {
 }
 
 /**
- * Records the egress bytes in the UCanto Server by invoking the `Usage.record` capability.
+ * Records the egress bytes in the UCanto Server by invoking the `Space.egressRecord` capability.
  *
  * @param {import('@ucanto/principal/ed25519').DIDKey} space - The Space DID where the content was served
  * @param {import('@ucanto/principal/ed25519').UnknownLink} resource - The link to the resource that was served
  * @param {number} bytes - The number of bytes served
  * @param {Date} servedAt - The timestamp of when the content was served
- * @param {import('@ucanto/principal/ed25519').EdSigner} principal - The principal signer
- * @param {Signer.Verifier} service - The service verifier
  * @param {any} connection - The connection to execute the command
+ * @param {import('./withEgressClient.types.js').EgressClientContext} ctx - The egress client context
  * @returns {Promise<void>}
  */
-async function egressRecord (space, resource, bytes, servedAt, principal, service, connection) {
+async function egressRecord(space, resource, bytes, servedAt, connection, ctx) {
+  debugger
   const res = await Space.egressRecord
     .invoke({
-      issuer: principal,
-      audience: service,
+      issuer: ctx.gatewayIdentity,
+      audience: ctx.gatewayIdentity, // TODO should it be the upload service DID?
       with: SpaceDID.from(space),
       nb: {
         resource,
         bytes,
         servedAt: Math.floor(servedAt.getTime() / 1000)
-      }
+      },
+      proofs: ctx.delegationProofs ? ctx.delegationProofs : []
     })
     .execute(connection)
 
   if (res.out.error) {
-    console.error('Failed to record egress', res.out.error)
+    console.error(`Failed to record egress for space ${space}`, res.out.error)
   }
 }
