@@ -123,10 +123,6 @@ const authorize = async (space, ctx) => {
     authority: ctx.gatewayIdentity,
     principal: Verifier,
     validateAuthorization: () => ok({}),
-    // resolveDIDKey: async (did) => {
-    //   if (did === ctx.gatewayIdentity.did()) return ok(ctx.gatewayIdentity.toDIDKey())
-    //   throw new Error(`Unknown DID: ${did}`)
-    // }
   })
   if (accessResult.error) {
     return accessResult

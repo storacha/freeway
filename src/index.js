@@ -27,7 +27,7 @@ import {
   withDelegationStubs
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
-import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
+// import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { withEgressClient } from './middleware/withEgressClient.js'
 import { withGatewayIdentity } from './middleware/withGatewayIdentity.js'
 
@@ -102,12 +102,12 @@ function config (env, _trigger) {
     }
   }
   return {
-    spanProcessors: new NoopSpanProcessor(),
-    service: { name: 'freeway' }
+    // spanProcessors: new NoopSpanProcessor(),
+    service: { name: 'freeway' },
   }
 }
 
-export default instrument(handler, config)
+export default handler //instrument(handler, config)
 
 /**
  * @type {Middleware<BlockContext & UnixfsContext & IpfsUrlContext, BlockContext & UnixfsContext & IpfsUrlContext, Environment>}

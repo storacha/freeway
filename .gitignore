@@ -2,5 +2,5 @@ node_modules
 dist
 .mf
 .env
-.dev.vars
+.dev.vars*
 .wrangler

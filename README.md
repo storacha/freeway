@@ -101,7 +101,7 @@ npm run test:unit
 
 **Integration Tests**
 ```sh
-TBD
+npm run test:integration
 ```
 
 ## Deployment

@@ -107,10 +107,14 @@ r2_buckets = [
 
 [env.fforbeck.vars]
 DEBUG = "true"
+# Feature Flags
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "true"
+# DIDs
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
+# SERVICE URLs
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
-GATEWAY_PRINCIPAL_KEY = "MgCaNpGXCEX0+BxxE4SjSStrxU9Ru/Im+HGNQ/JJx3lDoI+0B3NWjWW3G8OzjbazZjanjM3kgfcZbvpyxv20jHtmcTtg="
 UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [[env.fforbeck.unsafe.bindings]]
