@@ -121,18 +121,23 @@ const authorize = async (space, ctx) => {
     })
     .delegate()
 
-  // // Validate the invocation.
-  // debugger
-  // const accessResult = await access(invocation, {
-  //   capability: serve.transportHttp,
-  //   authority: ctx.gatewayIdentity,
-  //   principal: Verifier,
-  //   validateAuthorization: () => ok({}),
-  // })
-  // debugger
-  // if (accessResult.error) {
-  //   return accessResult
-  // }
+  // Validate the invocation.
+  debugger
+  const accessResult = await access(invocation, {
+    capability: serve.transportHttp,
+    authority: ctx.gatewayIdentity,
+    principal: Verifier,
+    validateAuthorization: () => ok({}),
+    resolveDIDKey: async (did) => {
+      debugger
+      if (did === ctx.gatewayIdentity.did()) return ok(ctx.gatewayIdentity.toDIDKey())
+      throw new Error(`Unknown DID: ${did}`)
+    }
+  })
+  debugger
+  if (accessResult.error) {
+    return accessResult
+  }
 
   return {
     ok: {

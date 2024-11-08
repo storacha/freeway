@@ -83,7 +83,7 @@ async function record(space, resource, bytes, servedAt, connection, ctx) {
   const egressRecord = Space.egressRecord
   const invoke = egressRecord.invoke.bind(egressRecord)
 
-  const res = await invoke({
+  const invocation = invoke({
     issuer: ctx.gatewayIdentity,
     audience: ctx.gatewayIdentity, // TODO should it be the upload service DID?
     with: SpaceDID.from(space),
@@ -93,8 +93,9 @@ async function record(space, resource, bytes, servedAt, connection, ctx) {
       servedAt: Math.floor(servedAt.getTime() / 1000)
     },
     proofs: ctx.delegationProofs ? ctx.delegationProofs : []
-  }).execute(connection)
-
+  })
+  
+  const res = await invocation.execute(connection)
   if (res.out.error) {
     console.error(`Failed to record egress for space ${space}`, res.out.error)
   }
