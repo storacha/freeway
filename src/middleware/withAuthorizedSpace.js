@@ -30,7 +30,6 @@ import { Schema } from '@ucanto/client'
  */
 export function withAuthorizedSpace(handler) {
   return async (request, env, ctx) => {
-    debugger
     const { locator, dataCid } = ctx
     const locRes = await locator.locate(dataCid.multihash)
     if (locRes.error) {
@@ -58,7 +57,6 @@ export function withAuthorizedSpace(handler) {
       .filter((s) => s !== undefined)
 
     try {
-      debugger
       // First space to successfully authorize is the one we'll use.
       const { space: selectedSpace, delegationProofs } = await Promise.any(
         spaces.map(async (space) => {
@@ -67,7 +65,6 @@ export function withAuthorizedSpace(handler) {
           return result.ok
         })
       )
-      debugger
       return handler(request, env, {
         ...ctx,
         space: selectedSpace,
@@ -75,7 +72,6 @@ export function withAuthorizedSpace(handler) {
         locator: spaceScopedLocator(locator, selectedSpace)
       })
     } catch (error) {
-      debugger
       // If all Spaces failed to authorize, throw the first error.
       if (
         error instanceof AggregateError &&
@@ -122,19 +118,16 @@ const authorize = async (space, ctx) => {
     .delegate()
 
   // Validate the invocation.
-  debugger
   const accessResult = await access(invocation, {
     capability: serve.transportHttp,
     authority: ctx.gatewayIdentity,
     principal: Verifier,
     validateAuthorization: () => ok({}),
-    resolveDIDKey: async (did) => {
-      debugger
-      if (did === ctx.gatewayIdentity.did()) return ok(ctx.gatewayIdentity.toDIDKey())
-      throw new Error(`Unknown DID: ${did}`)
-    }
+    // resolveDIDKey: async (did) => {
+    //   if (did === ctx.gatewayIdentity.did()) return ok(ctx.gatewayIdentity.toDIDKey())
+    //   throw new Error(`Unknown DID: ${did}`)
+    // }
   })
-  debugger
   if (accessResult.error) {
     return accessResult
   }

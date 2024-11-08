@@ -19,7 +19,6 @@ import { Space } from '@web3-storage/capabilities'
 export function withEgressClient(handler) {
   return async (req, env, ctx) => {
     const egressClient = await create(env, ctx)
-    debugger
     return handler(req, env, { ...ctx, egressClient })
   }
 }
@@ -82,10 +81,10 @@ async function connect(serverUrl, principal) {
 async function record(space, resource, bytes, servedAt, connection, ctx) {
   const egressRecord = Space.egressRecord
   const invoke = egressRecord.invoke.bind(egressRecord)
-
+  debugger
   const invocation = invoke({
     issuer: ctx.gatewayIdentity,
-    audience: ctx.gatewayIdentity, // TODO should it be the upload service DID?
+    audience: ctx.gatewayIdentity,
     with: SpaceDID.from(space),
     nb: {
       resource,
@@ -94,7 +93,7 @@ async function record(space, resource, bytes, servedAt, connection, ctx) {
     },
     proofs: ctx.delegationProofs ? ctx.delegationProofs : []
   })
-  
+  debugger
   const res = await invocation.execute(connection)
   if (res.out.error) {
     console.error(`Failed to record egress for space ${space}`, res.out.error)

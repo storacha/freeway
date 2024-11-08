@@ -14,7 +14,6 @@
  */
 export function withEgressTracker(handler) {
   return async (req, env, ctx) => {
-    debugger
     if (env.FF_EGRESS_TRACKER_ENABLED !== 'true') {
       return handler(req, env, ctx)
     }
