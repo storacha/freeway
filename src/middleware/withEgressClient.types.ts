@@ -6,6 +6,7 @@ import { DelegationsStorageContext } from './withAuthorizedSpace.types.js'
 export interface Environment extends MiddlewareEnvironment {
   GATEWAY_PRINCIPAL_KEY: string
   UPLOAD_API_URL: string
+  UPLOAD_SERVICE_DID: string
 }
 
 export interface EgressClientContext

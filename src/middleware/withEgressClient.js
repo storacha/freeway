@@ -76,7 +76,7 @@ async function connect(serverUrl, principal) {
  * @returns {Promise<void>}
  */
 async function record(space, resource, bytes, servedAt, env, ctx) {
-  const uploadServicePrincipal = DID.parse('did:web:staging.web3.storage') // TODO move to env var
+  const uploadServicePrincipal = DID.parse(env.UPLOAD_SERVICE_DID)
   const connection = await connect(env.UPLOAD_API_URL, uploadServicePrincipal)
 
   const invocation = Space.egressRecord.invoke({

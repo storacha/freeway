@@ -1,5 +1,3 @@
-import { Signer } from '@ucanto/principal/ed25519'
-import { GATEWAY_DID } from './index.js'
 import { ed25519 } from '@ucanto/principal'
 
 /**
@@ -17,6 +15,10 @@ export function withGatewayIdentity(handler) {
     const gatewaySigner = env.GATEWAY_PRINCIPAL_KEY
       ? ed25519.Signer.parse(env.GATEWAY_PRINCIPAL_KEY)
       : await ed25519.Signer.generate()
-    return handler(req, env, { ...ctx, gatewaySigner, gatewayIdentity: gatewaySigner.withDID(GATEWAY_DID) })
+    
+    const gatewayIdentity = gatewaySigner.withDID(
+      /** @type {`did:${string}:${string}`} */ (env.GATEWAY_SERVICE_DID)
+    )
+    return handler(req, env, { ...ctx, gatewaySigner, gatewayIdentity })
   }
 }

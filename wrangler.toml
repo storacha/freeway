@@ -8,6 +8,9 @@ r2_buckets = [
 
 [vars]
 CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [build]
 command = "npm run build:debug"
@@ -46,8 +49,11 @@ MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
 FF_TELEMETRY_ENABLED = "true"
+GATEWAY_SERVICE_DID = "did:web:w3s.link"
+UPLOAD_SERVICE_DID = "did:web:web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
+UPLOAD_API_URL = "https://up.web3.storage"
 
 # Staging!
 [env.staging]
@@ -65,7 +71,10 @@ MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
 FF_TELEMETRY_ENABLED = "false"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
 
 # Test!
@@ -81,7 +90,10 @@ FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
 FF_TELEMETRY_ENABLED = "true"
 MAX_SHARDS = "120"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://test.claims.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [env.alanshaw]
 workers_dev = true
@@ -95,7 +107,10 @@ DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
 FF_TELEMETRY_ENABLED = "true"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [env.fforbeck]
 name = "freeway-fforbeck"
@@ -114,17 +129,13 @@ r2_buckets = [
 
 [env.fforbeck.vars]
 DEBUG = "true"
-# Feature Flags
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "true"
 FF_TELEMETRY_ENABLED = "false"
-# DIDs
 GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
 UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
-# SERVICE URLs
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
 UPLOAD_API_URL = "https://staging.up.web3.storage"
-#UPLOAD_API_URL = "https://pr435.up.storacha.network"
 
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"
@@ -150,8 +161,11 @@ DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
 FF_TELEMETRY_ENABLED = "true"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 ### Integration Tests Configuration
 [env.integration]
@@ -167,7 +181,10 @@ DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "true"
 FF_EGRESS_TRACKER_ENABLED = "true"
 FF_TELEMETRY_ENABLED = "true"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [[env.integration.unsafe.bindings]]
 name = "RATE_LIMITER"

@@ -4,6 +4,7 @@ import { EdSigner } from '@ucanto/principal/ed25519'
 
 export interface Environment extends MiddlewareEnvironment {
   GATEWAY_PRINCIPAL_KEY: string
+  GATEWAY_SERVICE_DID: string
 }
 
 export interface GatewayIdentityContext extends MiddlewareContext {
