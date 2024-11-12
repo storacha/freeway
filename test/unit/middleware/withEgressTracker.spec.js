@@ -11,6 +11,8 @@ import { CID } from 'multiformats'
 import { withEgressTracker } from '../../../src/middleware/withEgressTracker.js'
 import { Builder, toBlobKey } from '../../helpers/builder.js'
 import { CARReaderStream } from 'carstream'
+import { SpaceDID } from '@web3-storage/capabilities/utils'
+import { ed25519 } from '@ucanto/principal'
 
 /**
  * @typedef {import('../../../src/middleware/withEgressTracker.types.js').Environment} EgressTrackerEnvironment
@@ -21,7 +23,7 @@ const env =
   /** @satisfies {EgressTrackerEnvironment} */
   ({
     DEBUG: 'true',
-    FF_EGRESS_TRACKER_ENABLED: 'true'
+    FF_EGRESS_TRACKER_ENABLED: 'true',
   })
 
 const recordEgressMock = sinon.fake()
@@ -31,26 +33,33 @@ const recordEgressMock = sinon.fake()
  *
  * @returns {import('../../../src/middleware/withEgressClient.types.js').EgressClient}
  */
-const UCantoClient = () => {
-  if (process.env.DEBUG) {
-    console.log('[mock] UCantoClient created')
+const EgressClient = () => {
+  if (process.env.DEBUG === 'true') {
+    console.log('[mock] EgressClient created')
   }
 
   return {
     record: recordEgressMock,
-    getTokenMetadata: sinon.fake()
   }
 }
+const gatewaySigner = (await ed25519.Signer.generate()).signer
+const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
+/** @type {import('@ucanto/interface').Delegation<import('@ucanto/interface').Capabilities>[]} */
+const stubDelegations = []
 
 const ctx =
   /** @satisfies {EgressTrackerContext} */
   ({
-    space: 'did:key:z6MkknBAHEGCWvBzAi4amdH5FXEXrdKoWF1UJuvc8Psm2Mda',
+    space: SpaceDID.from('did:key:z6MkknBAHEGCWvBzAi4amdH5FXEXrdKoWF1UJuvc8Psm2Mda'),
     dataCid: CID.parse('bafybeibv7vzycdcnydl5n5lbws6lul2omkm6a6b5wmqt77sicrwnhesy7y'),
+    gatewaySigner,
+    gatewayIdentity,
+    delegationsStorage: { find: async () => ({ ok: stubDelegations }) },
+    delegationProofs: [],
     waitUntil: sinon.stub().returns(undefined),
     path: '',
     searchParams: new URLSearchParams(),
-    egressClient: UCantoClient()
+    egressClient: EgressClient()
   })
 
 describe('withEgressTracker', async () => {
