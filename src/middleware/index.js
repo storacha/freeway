@@ -9,5 +9,5 @@ export { withEgressTracker } from './withEgressTracker.js'
 export { withEgressClient } from './withEgressClient.js'
 export { withDelegationStubs } from './withDelegationStubs.js'
 
-export const GATEWAY_DID = 'did:web:w3s.link'
-export const UPLOAD_DID = 'did:web:web3.storage'
+export const GATEWAY_DID = 'did:web:staging.w3s.link'
+export const UPLOAD_DID = 'did:web:staging.web3.storage'

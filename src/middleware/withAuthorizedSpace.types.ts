@@ -6,7 +6,13 @@ export interface DelegationsStorageContext
   extends MiddlewareContext,
     GatewayIdentityContext {
   delegationsStorage: DelegationsStorage
-  delegationProofs?: Ucanto.Delegation[]
+  /**
+   * The delegation proofs to use for the egress record
+   * The proofs must be valid for the space and the owner of the space
+   * must have delegated the right to the Gateway to serve content and record egress traffic.
+   * The `space/content/serve/*` capability must be granted to the Gateway Web DID.
+   */
+  delegationProofs: Ucanto.Delegation[]
 }
 
 export interface SpaceContext extends MiddlewareContext {

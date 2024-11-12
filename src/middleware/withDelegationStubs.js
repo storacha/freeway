@@ -50,6 +50,7 @@ export const withDelegationStubs = (handler) => async (request, env, ctx) => {
   return handler(request, env, {
     ...ctx,
     delegationsStorage: { find: async () => ({ ok: stubDelegations }) },
+    delegationProofs: [], // Delegation proofs are set by withAuthorizedSpace handler
     locator:
       stubSpace && isDIDKey(stubSpace)
         ? {

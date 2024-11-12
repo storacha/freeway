@@ -31,7 +31,7 @@ export function withEgressClient(handler) {
  * @returns {Promise<import('./withEgressClient.types.js').EgressClient>}
  */
 async function create(env, ctx) {
-    return {
+  return {
     /**
      * Records the egress bytes for the given resource.
      *
@@ -58,7 +58,7 @@ async function connect(serverUrl, principal) {
   const connection = await UCantoClient.connect({
     id: principal,
     codec: CAR.outbound,
-    channel: HTTP.open({ url: new URL(serverUrl)}),
+    channel: HTTP.open({ url: new URL(serverUrl) }),
   })
 
   return connection
@@ -76,7 +76,7 @@ async function connect(serverUrl, principal) {
  * @returns {Promise<void>}
  */
 async function record(space, resource, bytes, servedAt, env, ctx) {
-  const uploadServicePrincipal = DID.parse('did:web:staging.web3.storage')
+  const uploadServicePrincipal = DID.parse('did:web:staging.web3.storage') // TODO move to env var
   const connection = await connect(env.UPLOAD_API_URL, uploadServicePrincipal)
 
   const invocation = Space.egressRecord.invoke({
@@ -88,8 +88,7 @@ async function record(space, resource, bytes, servedAt, env, ctx) {
       bytes,
       servedAt: Math.floor(servedAt.getTime() / 1000)
     },
-    proofs: ctx.delegationProofs ? ctx.delegationProofs : [],
-
+    proofs: ctx.delegationProofs,
   })
   const res = await invocation.execute(connection)
   if (res.out.error) {
