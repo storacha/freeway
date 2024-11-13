@@ -23,7 +23,7 @@ const env =
   /** @satisfies {EgressTrackerEnvironment} */
   ({
     DEBUG: 'true',
-    FF_EGRESS_TRACKER_ENABLED: 'true',
+    FF_EGRESS_TRACKER_ENABLED: 'true'
   })
 
 const recordEgressMock = sinon.fake()
@@ -39,7 +39,7 @@ const EgressClient = () => {
   }
 
   return {
-    record: recordEgressMock,
+    record: recordEgressMock
   }
 }
 const gatewaySigner = (await ed25519.Signer.generate()).signer

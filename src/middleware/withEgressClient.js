@@ -16,7 +16,7 @@ import { DID } from '@ucanto/core'
  *
  * @type {Middleware<EgressClientContext, EgressClientContext, Environment>}
  */
-export function withEgressClient(handler) {
+export function withEgressClient (handler) {
   return async (req, env, ctx) => {
     if (env.FF_EGRESS_TRACKER_ENABLED !== 'true') {
       return handler(req, env, ctx)
@@ -30,10 +30,10 @@ export function withEgressClient(handler) {
  * Creates a EgressClient instance with the given environment and establishes a connection to the UCanto Server.
  *
  * @param {Environment} env
- * @param {import('./withEgressClient.types.js').EgressClientContext} ctx 
+ * @param {import('./withEgressClient.types.js').EgressClientContext} ctx
  * @returns {Promise<import('./withEgressClient.types.js').EgressClient>}
  */
-async function create(env, ctx) {
+async function create (env, ctx) {
   return {
     /**
      * Records the egress bytes for the given resource.
@@ -45,7 +45,7 @@ async function create(env, ctx) {
      * @returns {Promise<void>}
      */
     record: async (space, resource, bytes, servedAt) =>
-      record(space, resource, bytes, servedAt, env, ctx),
+      record(space, resource, bytes, servedAt, env, ctx)
 
   }
 }
@@ -57,11 +57,11 @@ async function create(env, ctx) {
  * @param {import('@ucanto/client').Principal<`did:${string}:${string}`>} principal
  *
  */
-async function connect(serverUrl, principal) {
+async function connect (serverUrl, principal) {
   const connection = await UCantoClient.connect({
     id: principal,
     codec: CAR.outbound,
-    channel: HTTP.open({ url: new URL(serverUrl) }),
+    channel: HTTP.open({ url: new URL(serverUrl) })
   })
 
   return connection
@@ -78,7 +78,7 @@ async function connect(serverUrl, principal) {
  * @param {import('./withEgressClient.types.js').EgressClientContext} ctx - The egress client context
  * @returns {Promise<void>}
  */
-async function record(space, resource, bytes, servedAt, env, ctx) {
+async function record (space, resource, bytes, servedAt, env, ctx) {
   const uploadServicePrincipal = DID.parse(env.UPLOAD_SERVICE_DID)
   const connection = await connect(env.UPLOAD_API_URL, uploadServicePrincipal)
 
@@ -91,7 +91,7 @@ async function record(space, resource, bytes, servedAt, env, ctx) {
       bytes,
       servedAt: Math.floor(servedAt.getTime() / 1000)
     },
-    proofs: ctx.delegationProofs,
+    proofs: ctx.delegationProofs
   })
   const res = await invocation.execute(connection)
   if (res.out.error) {

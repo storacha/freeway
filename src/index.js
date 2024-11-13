@@ -46,7 +46,7 @@ import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
 
 const handler = {
   /** @type {Handler<Context, Environment>} */
-  fetch(request, env, ctx) {
+  fetch (request, env, ctx) {
     console.log(request.method, request.url)
     const middleware = composeMiddleware(
       // Prepare the Context
@@ -60,10 +60,14 @@ const handler = {
       withAuthToken,
       withLocator,
       withGatewayIdentity,
+      // TODO: replace this with a handler to fetch the real delegations
       withDelegationStubs,
 
       // Rate-limit requests
       withRateLimit,
+
+      // Fetch CAR data - Double-check why this can't be placed after the authorized space middleware
+      withCarBlockHandler,
 
       // Authorize requests
       withAuthorizedSpace,
@@ -73,7 +77,6 @@ const handler = {
       withEgressTracker,
 
       // Fetch data
-      withCarBlockHandler,
       withContentClaimsDagula,
       withFormatRawHandler,
       withFormatCarHandler,
@@ -91,7 +94,7 @@ const handler = {
  * @param {Environment} env
  * @param {*} _trigger
  */
-function config(env, _trigger) {
+function config (env, _trigger) {
   if (env.HONEYCOMB_API_KEY) {
     return {
       exporter: {
@@ -103,7 +106,7 @@ function config(env, _trigger) {
   }
   return {
     spanProcessors: new NoopSpanProcessor(),
-    service: { name: 'freeway' },
+    service: { name: 'freeway' }
   }
 }
 export default process.env.FF_TELEMETRY_ENABLED === 'true'
@@ -113,7 +116,7 @@ export default process.env.FF_TELEMETRY_ENABLED === 'true'
 /**
  * @type {Middleware<BlockContext & UnixfsContext & IpfsUrlContext, BlockContext & UnixfsContext & IpfsUrlContext, Environment>}
  */
-export function withFormatRawHandler(handler) {
+export function withFormatRawHandler (handler) {
   return async (request, env, ctx) => {
     const { headers } = request
     const { searchParams } = ctx
@@ -131,7 +134,7 @@ export function withFormatRawHandler(handler) {
 /**
  * @type {Middleware<DagContext & IpfsUrlContext, DagContext & IpfsUrlContext, Environment>}
  */
-export function withFormatCarHandler(handler) {
+export function withFormatCarHandler (handler) {
   return async (request, env, ctx) => {
     const { headers } = request
     const { searchParams } = ctx

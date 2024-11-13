@@ -38,24 +38,24 @@ cli
       proofs = client.proofs([
         {
           can: Space.contentServe.can,
-          with: spaceDID,
+          with: spaceDID
         }
       ])
     }
 
     /** @type {import('@ucanto/client').Principal<`did:${string}:${string}`>} */
     const gatewayIdentity = {
-      did: () => gatewayDID,
+      did: () => gatewayDID
     }
 
     // @ts-expect-error - The client still needs to be updated to support the capability type
     const delegation = await client.createDelegation(gatewayIdentity, [Space.contentServe.can], {
       expiration: Infinity,
-      proofs,
+      proofs
     })
 
     await client.capability.access.delegate({
-      delegations: [delegation],
+      delegations: [delegation]
     })
 
     const carResult = await delegation.archive()

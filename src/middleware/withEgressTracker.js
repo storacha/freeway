@@ -5,14 +5,14 @@
  */
 
 /**
- * The egress tracking handler must be enabled after the rate limiting, authorized space, 
- * and egress client handlers, and before any handler that serves the response body. 
- * It uses the Space & Data CID of the served content to record the egress in the egress client, 
+ * The egress tracking handler must be enabled after the rate limiting, authorized space,
+ * and egress client handlers, and before any handler that serves the response body.
+ * It uses the Space & Data CID of the served content to record the egress in the egress client,
  * and it counts the bytes served with a TransformStream to determine the egress amount.
  *
  * @type {Middleware<EgressTrackerContext, EgressTrackerContext, Environment>}
  */
-export function withEgressTracker(handler) {
+export function withEgressTracker (handler) {
   return async (req, env, ctx) => {
     if (env.FF_EGRESS_TRACKER_ENABLED !== 'true') {
       return handler(req, env, ctx)
@@ -65,7 +65,7 @@ export function withEgressTracker(handler) {
  * @template {Uint8Array} T
  * @returns {TransformStream<T, T>} - The created TransformStream.
  */
-function createByteCountStream(onClose) {
+function createByteCountStream (onClose) {
   let totalBytes = 0
 
   return new TransformStream({
@@ -75,7 +75,7 @@ function createByteCountStream(onClose) {
      * If an error occurs, it signals an error to the controller and logs it.
      * The bytes are not counted in case of enqueuing an error.
      */
-    async transform(chunk, controller) {
+    async transform (chunk, controller) {
       try {
         controller.enqueue(chunk)
         totalBytes += chunk.byteLength
@@ -92,7 +92,7 @@ function createByteCountStream(onClose) {
      * If an error occurs, the egress is not recorded.
      * NOTE: The flush function is NOT called in case of a stream error.
      */
-    async flush() {
+    async flush () {
       onClose(totalBytes)
     }
   })

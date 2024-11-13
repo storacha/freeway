@@ -137,7 +137,7 @@ describe('withAuthorizedSpace', async () => {
         ]),
         delegationProofs: [],
         gatewaySigner,
-        gatewayIdentity,
+        gatewayIdentity
       }
     )
 

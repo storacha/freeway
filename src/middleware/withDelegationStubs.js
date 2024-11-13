@@ -54,20 +54,20 @@ export const withDelegationStubs = (handler) => async (request, env, ctx) => {
     locator:
       stubSpace && isDIDKey(stubSpace)
         ? {
-          locate: async (digest, options) => {
-            const locateResult = await ctx.locator.locate(digest, options)
-            if (locateResult.error) return locateResult
-            return {
-              ok: {
-                ...locateResult.ok,
-                site: locateResult.ok.site.map((site) => ({
-                  ...site,
-                  space: stubSpace
-                }))
+            locate: async (digest, options) => {
+              const locateResult = await ctx.locator.locate(digest, options)
+              if (locateResult.error) return locateResult
+              return {
+                ok: {
+                  ...locateResult.ok,
+                  site: locateResult.ok.site.map((site) => ({
+                    ...site,
+                    space: stubSpace
+                  }))
+                }
               }
             }
           }
-        }
         : ctx.locator
   })
 }

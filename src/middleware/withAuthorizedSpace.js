@@ -2,7 +2,6 @@ import { Verifier } from '@ucanto/principal'
 import { ok, access, Unauthorized } from '@ucanto/validator'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as serve from '../capabilities/serve.js'
-import { Schema } from '@ucanto/client'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
@@ -103,7 +102,7 @@ const authorize = async (space, ctx) => {
   })
 
   if (relevantDelegationsResult.error) return relevantDelegationsResult
-  
+
   // Create an invocation of the serve capability.
   const invocation = await serve.transportHttp
     .invoke({
@@ -113,7 +112,7 @@ const authorize = async (space, ctx) => {
       nb: {
         token: ctx.authToken
       },
-      proofs: relevantDelegationsResult.ok,
+      proofs: relevantDelegationsResult.ok
     })
     .delegate()
 
@@ -122,7 +121,7 @@ const authorize = async (space, ctx) => {
     capability: serve.transportHttp,
     authority: ctx.gatewayIdentity,
     principal: Verifier,
-    validateAuthorization: () => ok({}),
+    validateAuthorization: () => ok({})
   })
   if (accessResult.error) {
     return accessResult
