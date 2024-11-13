@@ -1,17 +1,14 @@
-import { Accounting } from '../services/accounting.js'
-
 /**
- * @import { Context, IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
+ * @import { Middleware } from '@web3-storage/gateway-lib'
  * @import { Environment } from './withEgressTracker.types.js'
- * @import { AccountingService } from '../bindings.js'
- * @typedef {IpfsUrlContext & { ACCOUNTING_SERVICE?: AccountingService }} EgressTrackerContext
+ * @typedef {import('./withEgressTracker.types.js').Context} EgressTrackerContext
  */
 
 /**
- * The egress tracking handler must be enabled after the rate limiting handler,
- * and before any handler that serves the response body. It uses the CID of the
- * served content to record the egress in the accounting service, and it counts
- * the bytes served with a TransformStream to determine the egress amount.
+ * The egress tracking handler must be enabled after the rate limiting, authorized space,
+ * and egress client handlers, and before any handler that serves the response body.
+ * It uses the Space & Data CID of the served content to record the egress in the egress client,
+ * and it counts the bytes served with a TransformStream to determine the egress amount.
  *
  * @type {Middleware<EgressTrackerContext, EgressTrackerContext, Environment>}
  */
@@ -21,22 +18,33 @@ export function withEgressTracker (handler) {
       return handler(req, env, ctx)
     }
 
+    // If the space is not defined, it is a legacy request and we can't track egress
+    const space = ctx.space
+    if (!space) {
+      return handler(req, env, ctx)
+    }
+
+    if (!ctx.egressClient) {
+      console.error('EgressClient is not defined')
+      return handler(req, env, ctx)
+    }
+
     const response = await handler(req, env, ctx)
     if (!response.ok || !response.body) {
       return response
     }
 
-    const { dataCid } = ctx
-    const accounting = ctx.ACCOUNTING_SERVICE ?? Accounting.create({
-      serviceURL: env.ACCOUNTING_SERVICE_URL
-    })
-
     const responseBody = response.body.pipeThrough(
       createByteCountStream((totalBytesServed) => {
-        // Non-blocking call to the accounting service to record egress
         if (totalBytesServed > 0) {
+          // Non-blocking call to the accounting service to record egress
           ctx.waitUntil(
-            accounting.record(dataCid, totalBytesServed, new Date().toISOString())
+            ctx.egressClient.record(
+              /** @type {import('@ucanto/principal/ed25519').DIDKey} */(space),
+              ctx.dataCid,
+              totalBytesServed,
+              new Date()
+            )
           )
         }
       })
@@ -51,15 +59,14 @@ export function withEgressTracker (handler) {
 }
 
 /**
- * Creates a TransformStream to count bytes served to the client.
- * It records egress when the stream is finalized without an error.
+ * Creates a TransformStream to count bytes in the response body.
  *
- * @param {(totalBytesServed: number) => void} onClose
+ * @param {(totalBytes: number) => void} onClose
  * @template {Uint8Array} T
  * @returns {TransformStream<T, T>} - The created TransformStream.
  */
 function createByteCountStream (onClose) {
-  let totalBytesServed = 0
+  let totalBytes = 0
 
   return new TransformStream({
     /**
@@ -71,7 +78,7 @@ function createByteCountStream (onClose) {
     async transform (chunk, controller) {
       try {
         controller.enqueue(chunk)
-        totalBytesServed += chunk.byteLength
+        totalBytes += chunk.byteLength
       } catch (error) {
         console.error('Error while counting bytes:', error)
         controller.error(error)
@@ -86,7 +93,7 @@ function createByteCountStream (onClose) {
      * NOTE: The flush function is NOT called in case of a stream error.
      */
     async flush () {
-      onClose(totalBytesServed)
+      onClose(totalBytes)
     }
   })
 }

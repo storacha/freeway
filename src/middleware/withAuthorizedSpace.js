@@ -57,17 +57,18 @@ export function withAuthorizedSpace (handler) {
 
     try {
       // First space to successfully authorize is the one we'll use.
-      const space = await Promise.any(
+      const { space: selectedSpace, delegationProofs } = await Promise.any(
         spaces.map(async (space) => {
           const result = await authorize(space, ctx)
           if (result.error) throw result.error
-          return space
+          return result.ok
         })
       )
       return handler(request, env, {
         ...ctx,
-        space,
-        locator: spaceScopedLocator(locator, space)
+        space: selectedSpace,
+        delegationProofs,
+        locator: spaceScopedLocator(locator, selectedSpace)
       })
     } catch (error) {
       // If all Spaces failed to authorize, throw the first error.
@@ -90,7 +91,7 @@ export function withAuthorizedSpace (handler) {
  *
  * @param {Ucanto.DID} space
  * @param {AuthTokenContext & DelegationsStorageContext} ctx
- * @returns {Promise<Ucanto.Result<{}, Ucanto.Failure>>}
+ * @returns {Promise<Ucanto.Result<{space: Ucanto.DID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
  */
 const authorize = async (space, ctx) => {
   // Look up delegations that might authorize us to serve the content.
@@ -122,12 +123,16 @@ const authorize = async (space, ctx) => {
     principal: Verifier,
     validateAuthorization: () => ok({})
   })
-
   if (accessResult.error) {
     return accessResult
   }
 
-  return { ok: {} }
+  return {
+    ok: {
+      space,
+      delegationProofs: relevantDelegationsResult.ok
+    }
+  }
 }
 
 /**

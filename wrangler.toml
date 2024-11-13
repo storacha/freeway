@@ -8,6 +8,9 @@ r2_buckets = [
 
 [vars]
 CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [build]
 command = "npm run build:debug"
@@ -45,8 +48,12 @@ command = "npm run build"
 MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
+FF_TELEMETRY_ENABLED = "true"
+GATEWAY_SERVICE_DID = "did:web:w3s.link"
+UPLOAD_SERVICE_DID = "did:web:web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
+UPLOAD_API_URL = "https://up.web3.storage"
 
 # Staging!
 [env.staging]
@@ -62,8 +69,12 @@ command = "npm run build"
 [env.staging.vars]
 MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
-FF_EGRESS_TRACKER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "true"
+FF_TELEMETRY_ENABLED = "false"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
 
 # Test!
@@ -77,8 +88,12 @@ r2_buckets = [
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
+FF_TELEMETRY_ENABLED = "true"
 MAX_SHARDS = "120"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://test.claims.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [env.alanshaw]
 workers_dev = true
@@ -91,24 +106,36 @@ r2_buckets = [
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
+FF_TELEMETRY_ENABLED = "true"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://dev.claims.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [env.fforbeck]
 name = "freeway-fforbeck"
 workers_dev = true
+upload_source_maps = true
 # Personal Account
 # account_id = "9e46c5ddfefedb9bae5d81a0dd911e5a"
 # Company Account
 account_id = "fffa4b4363a7e5250af8357087263b3a"
+# r2_buckets = [
+#  { binding = "CARPARK", bucket_name = "carpark-fforbeck-0", preview_bucket_name = "carpark-fforbeck-preview-0" }
+# ]
 r2_buckets = [
-  { binding = "CARPARK", bucket_name = "carpark-fforbeck-0", preview_bucket_name = "carpark-fforbeck-preview-0" }
+  { binding = "CARPARK", bucket_name = "carpark-staging-0" }
 ]
 
 [env.fforbeck.vars]
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
-FF_EGRESS_TRACKER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "true"
+FF_TELEMETRY_ENABLED = "false"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"
@@ -133,8 +160,12 @@ r2_buckets = [
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "false"
+FF_TELEMETRY_ENABLED = "true"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 ### Integration Tests Configuration
 [env.integration]
@@ -149,8 +180,11 @@ r2_buckets = [
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "true"
 FF_EGRESS_TRACKER_ENABLED = "true"
+FF_TELEMETRY_ENABLED = "true"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
-ACCOUNTING_SERVICE_URL = "https://example.com/service"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 
 [[env.integration.unsafe.bindings]]
 name = "RATE_LIMITER"

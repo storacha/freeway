@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "lib": ["ES2022", "DOM"],
-    "target": "ES2022"
+    "target": "ES2022",
+    "sourceMap": true
   }
 }

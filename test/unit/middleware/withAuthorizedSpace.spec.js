@@ -78,7 +78,8 @@ const createLocator = (expectedDigest, locateResponse) => ({
   }
 })
 
-const gatewayIdentity = (await ed25519.Signer.generate()).withDID(
+const gatewaySigner = (await ed25519.Signer.generate()).signer
+const gatewayIdentity = gatewaySigner.withDID(
   'did:web:test.w3s.link'
 )
 
@@ -134,6 +135,8 @@ describe('withAuthorizedSpace', async () => {
             nb: { token: 'a1b2c3' }
           })
         ]),
+        delegationProofs: [],
+        gatewaySigner,
         gatewayIdentity
       }
     )
@@ -178,6 +181,8 @@ describe('withAuthorizedSpace', async () => {
             nb: { token: null }
           })
         ]),
+        delegationProofs: [],
+        gatewaySigner,
         gatewayIdentity
       }
     )
@@ -224,6 +229,8 @@ describe('withAuthorizedSpace', async () => {
               nb: { token: 'a1b2c3' }
             })
           ]),
+          delegationProofs: [],
+          gatewaySigner,
           gatewayIdentity
         }
       )
@@ -288,7 +295,7 @@ describe('withAuthorizedSpace', async () => {
     const response1 = await withAuthorizedSpace(innerHandler)(
       request,
       {},
-      { ...ctx, authToken: 'space1-token' }
+      { ...ctx, authToken: 'space1-token', delegationProofs: [], gatewaySigner }
     )
 
     expect(await response1.json()).to.deep.equal({
@@ -302,7 +309,7 @@ describe('withAuthorizedSpace', async () => {
       withAuthorizedSpace(sinon.fake(innerHandler))(
         request,
         {},
-        { ...ctx, authToken: 'space2-token' }
+        { ...ctx, authToken: 'space2-token', delegationProofs: [], gatewaySigner }
       )
     )
 
@@ -314,7 +321,7 @@ describe('withAuthorizedSpace', async () => {
     const response3 = await withAuthorizedSpace(innerHandler)(
       request,
       {},
-      { ...ctx, authToken: 'space3-token' }
+      { ...ctx, authToken: 'space3-token', delegationProofs: [], gatewaySigner }
     )
 
     expect(await response3.json()).to.deep.equal({
@@ -351,7 +358,7 @@ describe('withAuthorizedSpace', async () => {
     const responseWithoutToken = await withAuthorizedSpace(innerHandler)(
       request,
       {},
-      { ...ctx, authToken: null }
+      { ...ctx, authToken: null, delegationProofs: [], gatewaySigner }
     )
 
     expect(await responseWithoutToken.json()).to.deep.equal({
@@ -363,7 +370,7 @@ describe('withAuthorizedSpace', async () => {
 
     const ih = sinon.fake(innerHandler)
     const errorWithToken = await rejection(
-      withAuthorizedSpace(ih)(request, {}, { ...ctx, authToken: 'a1b2c3' })
+      withAuthorizedSpace(ih)(request, {}, { ...ctx, authToken: 'a1b2c3', delegationProofs: [], gatewaySigner })
     )
 
     expect(ih.notCalled).to.be.true
@@ -400,6 +407,8 @@ describe('withAuthorizedSpace', async () => {
               nb: { token: 'a1b2c3' }
             })
           ]),
+          delegationProofs: [],
+          gatewaySigner,
           gatewayIdentity
         }
       )
@@ -444,6 +453,8 @@ describe('withAuthorizedSpace', async () => {
               nb: { token: 'a1b2c3' }
             })
           ]),
+          delegationProofs: [],
+          gatewaySigner,
           gatewayIdentity
         }
       )
@@ -487,6 +498,8 @@ describe('withAuthorizedSpace', async () => {
               nb: { token: 'a1b2c3' }
             })
           ]),
+          delegationProofs: [],
+          gatewaySigner,
           gatewayIdentity
         }
       )
@@ -532,7 +545,7 @@ describe('withAuthorizedSpace', async () => {
 
     const ih = sinon.fake(innerHandler)
     const error = await rejection(
-      withAuthorizedSpace(ih)(request, {}, { ...ctx, authToken: 'a1b2c3' })
+      withAuthorizedSpace(ih)(request, {}, { ...ctx, authToken: 'a1b2c3', delegationProofs: [], gatewaySigner })
     )
 
     expect(ih.notCalled).to.be.true

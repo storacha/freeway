@@ -53,6 +53,7 @@ describe('freeway', () => {
         CONTENT_CLAIMS_SERVICE_URL: claimsService.url.toString(),
         CARPARK_PUBLIC_BUCKET_URL: url.toString()
       },
+      inspectorPort: 9898,
       scriptPath: 'dist/worker.mjs',
       modules: true,
       compatibilityFlags: ['nodejs_compat'],
