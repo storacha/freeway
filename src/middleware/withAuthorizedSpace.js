@@ -28,7 +28,7 @@ import { Schema } from '@ucanto/client'
  *   >
  * )}
  */
-export function withAuthorizedSpace(handler) {
+export function withAuthorizedSpace (handler) {
   return async (request, env, ctx) => {
     const { locator, dataCid } = ctx
     const locRes = await locator.locate(dataCid.multihash)

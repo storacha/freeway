@@ -18,6 +18,9 @@ import { DID } from '@ucanto/core'
  */
 export function withEgressClient(handler) {
   return async (req, env, ctx) => {
+    if (env.FF_EGRESS_TRACKER_ENABLED !== 'true') {
+      return handler(req, env, ctx)
+    }
     const egressClient = await create(env, ctx)
     return handler(req, env, { ...ctx, egressClient })
   }

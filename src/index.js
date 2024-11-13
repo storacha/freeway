@@ -20,16 +20,16 @@ import {
   withVersionHeader,
   withAuthToken,
   withCarBlockHandler,
+  withGatewayIdentity,
   withRateLimit,
   withEgressTracker,
+  withEgressClient,
   withAuthorizedSpace,
   withLocator,
   withDelegationStubs
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { withEgressClient } from './middleware/withEgressClient.js'
-import { withGatewayIdentity } from './middleware/withGatewayIdentity.js'
 
 /**
  * @import {
@@ -106,7 +106,6 @@ function config(env, _trigger) {
     service: { name: 'freeway' },
   }
 }
-
 export default process.env.FF_TELEMETRY_ENABLED === 'true'
   ? instrument(handler, config)
   : handler
