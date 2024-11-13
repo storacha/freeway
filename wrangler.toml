@@ -69,7 +69,7 @@ command = "npm run build"
 [env.staging.vars]
 MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
-FF_EGRESS_TRACKER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "true"
 FF_TELEMETRY_ENABLED = "false"
 GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
 UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
