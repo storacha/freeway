@@ -44,52 +44,49 @@ import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
  * @import { Environment } from './bindings.js'
  */
 
-const handler = {
-  /** @type {Handler<Context, Environment>} */
-  fetch (request, env, ctx) {
-    console.log(request.method, request.url)
-    const middleware = composeMiddleware(
-      // Prepare the Context
-      withCdnCache,
-      withContext,
-      withCorsHeaders,
-      withVersionHeader,
-      withErrorHandler,
-      withParsedIpfsUrl,
-      createWithHttpMethod('GET', 'HEAD'),
-      withAuthToken,
-      withLocator,
-      withGatewayIdentity,
-      // TODO: replace this with a handler to fetch the real delegations
-      withDelegationStubs,
+/**
+ * The middleware stack
+ */
+const middleware = composeMiddleware(
+  // Prepare the Context
+  withCdnCache,
+  withContext,
+  withCorsHeaders,
+  withVersionHeader,
+  withErrorHandler,
+  withParsedIpfsUrl,
+  createWithHttpMethod('GET', 'HEAD'),
+  withAuthToken,
+  withLocator,
+  withGatewayIdentity,
+  // TODO: replace this with a handler to fetch the real delegations
+  withDelegationStubs,
 
-      // Rate-limit requests
-      withRateLimit,
+  // Rate-limit requests
+  withRateLimit,
 
-      // Fetch CAR data - Double-check why this can't be placed after the authorized space middleware
-      withCarBlockHandler,
+  // Fetch CAR data - Double-check why this can't be placed after the authorized space middleware
+  withCarBlockHandler,
 
-      // Authorize requests
-      withAuthorizedSpace,
+  // Authorize requests
+  withAuthorizedSpace,
 
-      // Track Egress
-      withEgressClient,
-      withEgressTracker,
+  // Track Egress
+  withEgressClient,
+  withEgressTracker,
 
-      // Fetch data
-      withContentClaimsDagula,
-      withFormatRawHandler,
-      withFormatCarHandler,
+  // Fetch data
+  withContentClaimsDagula,
+  withFormatRawHandler,
+  withFormatCarHandler,
 
-      // Prepare the Response
-      withContentDispositionHeader,
-      withFixedLengthStream
-    )
-    return middleware(handleUnixfs)(request, env, ctx)
-  }
-}
+  // Prepare the Response
+  withContentDispositionHeader,
+  withFixedLengthStream
+)
 
 /**
+ * Configure the OpenTelemetry exporter based on the environment
  *
  * @param {Environment} env
  * @param {*} _trigger
@@ -109,9 +106,42 @@ function config (env, _trigger) {
     service: { name: 'freeway' }
   }
 }
-export default process.env.FF_TELEMETRY_ENABLED === 'true'
-  ? instrument(handler, config)
-  : handler
+
+/**
+ * The promise to the pre-configured handler
+ *
+ * @type {Promise<Handler<Context, Environment>> | null}
+ */
+let handlerPromise = null
+
+/**
+ * Pre-configure the handler based on the environment.
+ *
+ * @param {Environment} env
+ * @returns {Promise<Handler<Context, Environment>>}
+ */
+async function initializeHandler (env) {
+  const baseHandler = middleware(handleUnixfs)
+  const finalHandler = env.FF_TELEMETRY_ENABLED === 'true'
+    ? instrument(baseHandler, config)
+    : baseHandler
+  return finalHandler
+}
+
+const handler = {
+  /** @type {Handler<Context, Environment>} */
+  async fetch (request, env, ctx) {
+    console.log(request.method, request.url)
+    // Initialize the handler only once and reuse the promise
+    if (!handlerPromise) {
+      handlerPromise = initializeHandler(env)
+    }
+    const handler = await handlerPromise
+    return handler(request, env, ctx)
+  }
+}
+
+export default handler
 
 /**
  * @type {Middleware<BlockContext & UnixfsContext & IpfsUrlContext, BlockContext & UnixfsContext & IpfsUrlContext, Environment>}
