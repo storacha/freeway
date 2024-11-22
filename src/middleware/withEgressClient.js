@@ -89,8 +89,10 @@ async function record (space, resource, bytes, servedAt, env, ctx) {
     nb: {
       resource,
       bytes,
-      servedAt: Math.floor(servedAt.getTime() / 1000)
+      servedAt: servedAt.getTime()
     },
+    expiration: Infinity, // Don't expire the invocation, so we can record egress any time
+    nonce: process.hrtime().toString(),
     proofs: ctx.delegationProofs
   })
   const res = await invocation.execute(connection)
