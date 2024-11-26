@@ -5,7 +5,6 @@ import * as serve from '../capabilities/serve.js'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
- * @import { Locator } from '@web3-storage/blob-fetcher'
  * @import { IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
  * @import { LocatorContext } from './withLocator.types.js'
  * @import { AuthTokenContext } from './withAuthToken.types.js'
@@ -27,7 +26,7 @@ import * as serve from '../capabilities/serve.js'
  *   >
  * )}
  */
-export function withAuthorizedSpace (handler) {
+export function withAuthorizedSpace(handler) {
   return async (request, env, ctx) => {
     const { locator, dataCid } = ctx
     const locRes = await locator.locate(dataCid.multihash)
@@ -68,7 +67,7 @@ export function withAuthorizedSpace (handler) {
         ...ctx,
         space: selectedSpace,
         delegationProofs,
-        locator: spaceScopedLocator(locator, selectedSpace)
+        locator: locator.scopeToSpaces([selectedSpace]),
       })
     } catch (error) {
       // If all Spaces failed to authorize, throw the first error.
@@ -98,7 +97,7 @@ const authorize = async (space, ctx) => {
   const relevantDelegationsResult = await ctx.delegationsStorage.find({
     audience: ctx.gatewayIdentity.did(),
     can: serve.transportHttp.can,
-    with: space
+    with: space,
   })
 
   if (relevantDelegationsResult.error) return relevantDelegationsResult
@@ -110,9 +109,9 @@ const authorize = async (space, ctx) => {
       audience: ctx.gatewayIdentity,
       with: space,
       nb: {
-        token: ctx.authToken
+        token: ctx.authToken,
       },
-      proofs: relevantDelegationsResult.ok
+      proofs: relevantDelegationsResult.ok,
     })
     .delegate()
 
@@ -121,7 +120,7 @@ const authorize = async (space, ctx) => {
     capability: serve.transportHttp,
     authority: ctx.gatewayIdentity,
     principal: Verifier,
-    validateAuthorization: () => ok({})
+    validateAuthorization: () => ok({}),
   })
   if (accessResult.error) {
     return accessResult
@@ -130,30 +129,7 @@ const authorize = async (space, ctx) => {
   return {
     ok: {
       space,
-      delegationProofs: relevantDelegationsResult.ok
-    }
+      delegationProofs: relevantDelegationsResult.ok,
+    },
   }
 }
-
-/**
- * Wraps a {@link Locator} and locates content only from a specific Space.
- *
- * @param {Locator} locator
- * @param {Ucanto.DID} space
- * @returns {Locator}
- */
-const spaceScopedLocator = (locator, space) => ({
-  locate: async (digest) => {
-    const locateResult = await locator.locate(digest)
-    if (locateResult.error) {
-      return locateResult
-    } else {
-      return {
-        ok: {
-          ...locateResult.ok,
-          site: locateResult.ok.site.filter((site) => site.space === space)
-        }
-      }
-    }
-  }
-})

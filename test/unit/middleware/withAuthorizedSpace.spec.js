@@ -15,6 +15,7 @@ import { expectToBeInstanceOf } from './util/expectToBeInstanceOf.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import { createTestCID } from './util/createTestCID.js'
 import * as serve from '../../../src/capabilities/serve.js'
+import { spaceScopedLocator } from '../../../src/util.js'
 
 /**
  * @import { MultihashDigest } from 'multiformats'
@@ -65,7 +66,7 @@ const context = {
  * @returns {Locator}
  * */
 const createLocator = (expectedDigest, locateResponse) => ({
-  locate: async (digest) => {
+  async locate (digest) {
     if (Digest.equals(digest, expectedDigest)) {
       return locateResponse
     } else {
@@ -75,6 +76,9 @@ const createLocator = (expectedDigest, locateResponse) => ({
         )}`
       )
     }
+  },
+  scopeToSpaces (spaces) {
+    return spaceScopedLocator(this, spaces)
   }
 })
 
