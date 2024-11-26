@@ -1,5 +1,6 @@
 import * as ed25519 from '@ucanto/principal/ed25519'
 import { Delegation } from '@ucanto/core'
+import { spaceScopedLocator } from '../util.js'
 
 const GATEWAY_DID = 'did:web:w3s.link'
 
@@ -57,21 +58,7 @@ export const withDelegationStubs = (handler) => async (request, env, ctx) => {
     gatewayIdentity: (await ed25519.Signer.generate()).withDID(GATEWAY_DID),
     locator:
       stubSpace && isDIDKey(stubSpace)
-        ? {
-            locate: async (digest, options) => {
-              const locateResult = await ctx.locator.locate(digest, options)
-              if (locateResult.error) return locateResult
-              return {
-                ok: {
-                  ...locateResult.ok,
-                  site: locateResult.ok.site.map((site) => ({
-                    ...site,
-                    space: stubSpace
-                  }))
-                }
-              }
-            }
-          }
+        ? spaceScopedLocator(ctx.locator, [stubSpace])
         : ctx.locator
   })
 }

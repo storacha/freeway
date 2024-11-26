@@ -67,7 +67,7 @@ export function withAuthorizedSpace (handler) {
       return handler(request, env, {
         ...ctx,
         space,
-        locator: spaceScopedLocator(locator, space)
+        locator: locator.scopeToSpaces([space])
       })
     } catch (error) {
       // If all Spaces failed to authorize, throw the first error.
@@ -129,26 +129,3 @@ const authorize = async (space, ctx) => {
 
   return { ok: {} }
 }
-
-/**
- * Wraps a {@link Locator} and locates content only from a specific Space.
- *
- * @param {Locator} locator
- * @param {Ucanto.DID} space
- * @returns {Locator}
- */
-const spaceScopedLocator = (locator, space) => ({
-  locate: async (digest) => {
-    const locateResult = await locator.locate(digest)
-    if (locateResult.error) {
-      return locateResult
-    } else {
-      return {
-        ok: {
-          ...locateResult.ok,
-          site: locateResult.ok.site.filter((site) => site.space === space)
-        }
-      }
-    }
-  }
-})
