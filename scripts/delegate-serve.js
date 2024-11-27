@@ -1,25 +1,13 @@
 import sade from 'sade'
+import { Schema } from '@ucanto/core'
 import { getClient } from '@storacha/cli/lib.js'
 import { Space } from '@web3-storage/capabilities'
 import * as serve from '../src/capabilities/serve.js'
-/**
- * @import * as Ucanto from '@ucanto/interface'
- */
 
-/**
- * @template {string} Method
- * @param {string} str
- * @param {Method} [method]
- * @returns {str is Ucanto.DID<Method>}
- */
-const isDID = (str, method) =>
-  str.startsWith(`did:${method ? `${method}:` : ''}`)
-
-/**
- * @param {string} str
- * @returns {str is `did:mailto:${string}:${string}`}
- */
-const isMailtoDID = (str) => /^did:mailto:.*:.*$/.test(str)
+const MailtoDID =
+  /** @type {import('@ucanto/validator').StringSchema<`did:mailto:${string}:${string}`, unknown>} */ (
+    Schema.text({ pattern: /^did:mailto:.*:.*$/ })
+  )
 
 sade('delegate-serve.js [space]')
   .option(
@@ -50,7 +38,7 @@ sade('delegate-serve.js [space]')
 
       space ??= await createSpace(client, accountDID)
 
-      if (!isDID(space)) {
+      if (!Schema.did({}).is(space)) {
         throw new Error(`Invalid space DID: ${space}`)
       }
 
@@ -67,7 +55,7 @@ sade('delegate-serve.js [space]')
         )
       }
 
-      if (!isDID(gatewayDID)) {
+      if (!Schema.did({}).is(gatewayDID)) {
         throw new Error(`Invalid gateway DID: ${gatewayDID}`)
       }
 
@@ -128,13 +116,14 @@ sade('delegate-serve.js [space]')
  */
 async function createSpace(client, accountDID) {
   const provider = client.defaultProvider()
-  if (!isDID(provider, 'web')) {
+  if (!Schema.did({ method: 'web' }).is(provider)) {
     throw new Error(`Invalid provider DID: ${provider}`)
   }
   if (!accountDID) {
     throw new Error('Must provide an account DID to create a space')
   }
-  if (!isMailtoDID(accountDID)) {
+
+  if (!MailtoDID.is(accountDID)) {
     throw new Error(`Invalid account DID: ${accountDID}`)
   }
   const account = client.accounts()[accountDID]

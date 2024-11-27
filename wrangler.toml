@@ -185,7 +185,12 @@ compatibility_date = "2024-11-26"
 [env.peeja.vars]
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "true"
+FF_TELEMETRY_ENABLED = "false"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
 INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
 
 [[env.peeja.unsafe.bindings]]
