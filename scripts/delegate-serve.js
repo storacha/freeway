@@ -70,6 +70,7 @@ sade('delegate-serve.js [space]')
       // multiple packages.
       const ability = /** @type {"*"} */ (Space.contentServe.can)
 
+      client.setCurrentSpace(space)
       const delegation = await client.createDelegation(
         gatewayIdentity,
         [ability],
