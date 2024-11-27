@@ -56,7 +56,13 @@ const ctx =
     gatewayIdentity,
     delegationsStorage: { find: async () => ({ ok: stubDelegations }) },
     delegationProofs: [],
-    waitUntil: sinon.stub().returns(undefined),
+    waitUntil: async (promise) => {
+      try {
+        await promise
+      } catch (error) {
+        // Ignore errors.
+      }
+    },
     path: '',
     searchParams: new URLSearchParams(),
     egressClient: EgressClient()
