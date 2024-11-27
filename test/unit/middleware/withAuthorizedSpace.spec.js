@@ -35,7 +35,7 @@ const innerHandler = async (_req, _env, ctx) => {
   const locateResult = await ctx.locator.locate(ctx.dataCid.multihash)
   if (locateResult.error) {
     throw new Error(`Failed to locate: ${ctx.dataCid}`, {
-      cause: locateResult.error,
+      cause: locateResult.error
     })
   }
 
@@ -46,7 +46,7 @@ const innerHandler = async (_req, _env, ctx) => {
       CID: ctx.dataCid.toString(),
       Space: ctx.space,
       Token: ctx.authToken,
-      URLs: blobLocations,
+      URLs: blobLocations
     })
   )
 }
@@ -56,7 +56,7 @@ const request = new Request('http://example.com/')
 const context = {
   waitUntil: () => {},
   path: '',
-  searchParams: new URLSearchParams(),
+  searchParams: new URLSearchParams()
 }
 
 /**
@@ -78,14 +78,14 @@ export const spaceScopedLocator = (locator, spaces) => ({
           ...locateResult.ok,
           site: locateResult.ok.site.filter(
             (site) => site.space && spaces.includes(site.space)
-          ),
-        },
+          )
+        }
       }
     }
   },
-  scopeToSpaces(newSpaces) {
+  scopeToSpaces (newSpaces) {
     return spaceScopedLocator(locator, newSpaces)
-  },
+  }
 })
 
 /**
@@ -94,7 +94,7 @@ export const spaceScopedLocator = (locator, spaces) => ({
  * @returns {Locator}
  * */
 const createLocator = (expectedDigest, locateResponse) => ({
-  async locate(digest) {
+  async locate (digest) {
     if (Digest.equals(digest, expectedDigest)) {
       return locateResponse
     } else {
@@ -105,9 +105,9 @@ const createLocator = (expectedDigest, locateResponse) => ({
       )
     }
   },
-  scopeToSpaces(spaces) {
+  scopeToSpaces (spaces) {
     return spaceScopedLocator(this, spaces)
-  },
+  }
 })
 
 const gatewaySigner = (await ed25519.Signer.generate()).signer
@@ -128,8 +128,8 @@ const createDelegationStorage = (delegations) => ({
             (!query.with || cap.with === query.with)
         )
       )
-    }),
-  }),
+    })
+  })
 })
 
 describe('withAuthorizedSpace', async () => {
@@ -151,23 +151,23 @@ describe('withAuthorizedSpace', async () => {
               {
                 location: [new URL('http://example.com/blob')],
                 range: { offset: 0, length: 100 },
-                space: space.did(),
-              },
-            ],
+                space: space.did()
+              }
+            ]
           },
-          error: undefined,
+          error: undefined
         }),
         delegationsStorage: createDelegationStorage([
           await serve.transportHttp.delegate({
             issuer: space,
             audience: gatewayIdentity,
             with: space.did(),
-            nb: { token: 'a1b2c3' },
-          }),
+            nb: { token: 'a1b2c3' }
+          })
         ]),
         delegationProofs: [],
         gatewaySigner,
-        gatewayIdentity,
+        gatewayIdentity
       }
     )
 
@@ -175,7 +175,7 @@ describe('withAuthorizedSpace', async () => {
       CID: cid.toString(),
       Space: space.did(),
       Token: 'a1b2c3',
-      URLs: ['http://example.com/blob'],
+      URLs: ['http://example.com/blob']
     })
   })
 
@@ -197,23 +197,23 @@ describe('withAuthorizedSpace', async () => {
               {
                 location: [new URL('http://example.com/blob')],
                 range: { offset: 0, length: 100 },
-                space: space.did(),
-              },
-            ],
+                space: space.did()
+              }
+            ]
           },
-          error: undefined,
+          error: undefined
         }),
         delegationsStorage: createDelegationStorage([
           await serve.transportHttp.delegate({
             issuer: space,
             audience: gatewayIdentity,
             with: space.did(),
-            nb: { token: null },
-          }),
+            nb: { token: null }
+          })
         ]),
         delegationProofs: [],
         gatewaySigner,
-        gatewayIdentity,
+        gatewayIdentity
       }
     )
 
@@ -221,7 +221,7 @@ describe('withAuthorizedSpace', async () => {
       CID: cid.toString(),
       Space: space.did(),
       Token: null,
-      URLs: ['http://example.com/blob'],
+      URLs: ['http://example.com/blob']
     })
   })
 
@@ -245,23 +245,23 @@ describe('withAuthorizedSpace', async () => {
                 {
                   location: [new URL('http://example.com/blob')],
                   range: { offset: 0, length: 100 },
-                  space: space.did(),
-                },
-              ],
+                  space: space.did()
+                }
+              ]
             },
-            error: undefined,
+            error: undefined
           }),
           delegationsStorage: createDelegationStorage([
             await serve.transportHttp.delegate({
               issuer: space,
               audience: gatewayIdentity,
               with: space.did(),
-              nb: { token: 'a1b2c3' },
-            }),
+              nb: { token: 'a1b2c3' }
+            })
           ]),
           delegationProofs: [],
           gatewaySigner,
-          gatewayIdentity,
+          gatewayIdentity
         }
       )
     )
@@ -288,38 +288,38 @@ describe('withAuthorizedSpace', async () => {
             {
               location: [new URL('http://example.com/1/blob')],
               range: { offset: 0, length: 100 },
-              space: space1.did(),
+              space: space1.did()
             },
             {
               location: [new URL('http://example.com/2/blob')],
               range: { offset: 0, length: 100 },
-              space: space2.did(),
+              space: space2.did()
             },
             {
               location: [new URL('http://example.com/3/blob')],
               range: { offset: 0, length: 100 },
-              space: space3.did(),
-            },
-          ],
+              space: space3.did()
+            }
+          ]
         },
-        error: undefined,
+        error: undefined
       }),
       delegationsStorage: createDelegationStorage([
         await serve.transportHttp.delegate({
           issuer: space1,
           audience: gatewayIdentity,
           with: space1.did(),
-          nb: { token: 'space1-token' },
+          nb: { token: 'space1-token' }
         }),
         // No authorization for space2
         await serve.transportHttp.delegate({
           issuer: space3,
           audience: gatewayIdentity,
           with: space3.did(),
-          nb: { token: 'space3-token' },
-        }),
+          nb: { token: 'space3-token' }
+        })
       ]),
-      gatewayIdentity,
+      gatewayIdentity
     }
 
     const response1 = await withAuthorizedSpace(innerHandler)(
@@ -332,7 +332,7 @@ describe('withAuthorizedSpace', async () => {
       CID: cid.toString(),
       Space: space1.did(),
       Token: 'space1-token',
-      URLs: ['http://example.com/1/blob'],
+      URLs: ['http://example.com/1/blob']
     })
 
     const error2 = await rejection(
@@ -343,7 +343,7 @@ describe('withAuthorizedSpace', async () => {
           ...ctx,
           authToken: 'space2-token',
           delegationProofs: [],
-          gatewaySigner,
+          gatewaySigner
         }
       )
     )
@@ -363,7 +363,7 @@ describe('withAuthorizedSpace', async () => {
       CID: cid.toString(),
       Space: space3.did(),
       Token: 'space3-token',
-      URLs: ['http://example.com/3/blob'],
+      URLs: ['http://example.com/3/blob']
     })
   })
 
@@ -379,15 +379,15 @@ describe('withAuthorizedSpace', async () => {
           site: [
             {
               location: [new URL('http://example.com/blob')],
-              range: { offset: 0, length: 100 },
+              range: { offset: 0, length: 100 }
               // No `space` value means it's legacy
-            },
-          ],
+            }
+          ]
         },
-        error: undefined,
+        error: undefined
       }),
       delegationsStorage: createDelegationStorage([]),
-      gatewayIdentity,
+      gatewayIdentity
     }
 
     const responseWithoutToken = await withAuthorizedSpace(innerHandler)(
@@ -400,7 +400,7 @@ describe('withAuthorizedSpace', async () => {
       CID: cid.toString(),
       Space: null,
       Token: null,
-      URLs: ['http://example.com/blob'],
+      URLs: ['http://example.com/blob']
     })
 
     const ih = sinon.fake(innerHandler)
@@ -435,20 +435,20 @@ describe('withAuthorizedSpace', async () => {
             error: {
               name: 'NotFound',
               message: 'Not found',
-              digest: cid.multihash.bytes,
-            },
+              digest: cid.multihash.bytes
+            }
           }),
           delegationsStorage: createDelegationStorage([
             await serve.transportHttp.delegate({
               issuer: space,
               audience: gatewayIdentity,
               with: space.did(),
-              nb: { token: 'a1b2c3' },
-            }),
+              nb: { token: 'a1b2c3' }
+            })
           ]),
           delegationProofs: [],
           gatewaySigner,
-          gatewayIdentity,
+          gatewayIdentity
         }
       )
     )
@@ -460,7 +460,7 @@ describe('withAuthorizedSpace', async () => {
     expect(error.cause).to.deep.equal({
       name: 'NotFound',
       message: 'Not found',
-      digest: cid.multihash.bytes,
+      digest: cid.multihash.bytes
     })
   })
 
@@ -481,20 +481,20 @@ describe('withAuthorizedSpace', async () => {
             error: {
               name: 'Aborted',
               message: 'Aborted',
-              digest: cid.multihash.bytes,
-            },
+              digest: cid.multihash.bytes
+            }
           }),
           delegationsStorage: createDelegationStorage([
             await serve.transportHttp.delegate({
               issuer: space,
               audience: gatewayIdentity,
               with: space.did(),
-              nb: { token: 'a1b2c3' },
-            }),
+              nb: { token: 'a1b2c3' }
+            })
           ]),
           delegationProofs: [],
           gatewaySigner,
-          gatewayIdentity,
+          gatewayIdentity
         }
       )
     )
@@ -505,7 +505,7 @@ describe('withAuthorizedSpace', async () => {
     expect(error.cause).to.deep.equal({
       name: 'Aborted',
       message: 'Aborted',
-      digest: cid.multihash.bytes,
+      digest: cid.multihash.bytes
     })
   })
 
@@ -526,20 +526,20 @@ describe('withAuthorizedSpace', async () => {
             error: {
               name: 'NetworkError',
               message: 'Network error',
-              url: 'http://example.com/blob',
-            },
+              url: 'http://example.com/blob'
+            }
           }),
           delegationsStorage: createDelegationStorage([
             await serve.transportHttp.delegate({
               issuer: space,
               audience: gatewayIdentity,
               with: space.did(),
-              nb: { token: 'a1b2c3' },
-            }),
+              nb: { token: 'a1b2c3' }
+            })
           ]),
           delegationProofs: [],
           gatewaySigner,
-          gatewayIdentity,
+          gatewayIdentity
         }
       )
     )
@@ -550,7 +550,7 @@ describe('withAuthorizedSpace', async () => {
     expect(error.cause).to.deep.equal({
       name: 'NetworkError',
       message: 'Network error',
-      url: 'http://example.com/blob',
+      url: 'http://example.com/blob'
     })
   })
 
@@ -568,18 +568,18 @@ describe('withAuthorizedSpace', async () => {
             {
               location: [new URL('http://example.com/1/blob')],
               range: { offset: 0, length: 100 },
-              space: space.did(),
-            },
-          ],
+              space: space.did()
+            }
+          ]
         },
-        error: undefined,
+        error: undefined
       }),
       delegationsStorage: {
         find: async () => ({
-          error: { name: 'Weirdness', message: 'Something weird happened.' },
-        }),
+          error: { name: 'Weirdness', message: 'Something weird happened.' }
+        })
       },
-      gatewayIdentity,
+      gatewayIdentity
     }
 
     const ih = sinon.fake(innerHandler)

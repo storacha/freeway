@@ -21,7 +21,7 @@ import { Delegation, Schema } from '@ucanto/core'
  *
  * @type {(
  *   Middleware<
- *     MiddlewareContext & LocatorContext & DelegationsStorageContext,
+ *     MiddlewareContext & LocatorContext & GatewayIdentityContext & DelegationsStorageContext,
  *     MiddlewareContext & LocatorContext & GatewayIdentityContext,
  *     {}
  *   >
@@ -49,10 +49,9 @@ export const withDelegationStubs = (handler) => async (request, env, ctx) => {
   return handler(request, env, {
     ...ctx,
     delegationsStorage: { find: async () => ({ ok: stubDelegations }) },
-    delegationProofs: [], // Delegation proofs are set by withAuthorizedSpace handler
     locator:
       stubSpace && Schema.did({ method: 'key' }).is(stubSpace)
         ? ctx.locator.scopeToSpaces([stubSpace])
-        : ctx.locator,
+        : ctx.locator
   })
 }

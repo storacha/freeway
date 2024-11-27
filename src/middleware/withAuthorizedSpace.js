@@ -8,7 +8,8 @@ import * as serve from '../capabilities/serve.js'
  * @import { IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
  * @import { LocatorContext } from './withLocator.types.js'
  * @import { AuthTokenContext } from './withAuthToken.types.js'
- * @import { SpaceContext, DelegationsStorageContext } from './withAuthorizedSpace.types.js'
+ * @import { SpaceContext, DelegationsStorageContext, DelegationProofsContext } from './withAuthorizedSpace.types.js'
+ * @import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
  */
 
 /**
@@ -20,13 +21,12 @@ import * as serve from '../capabilities/serve.js'
  * @throws {Error} If the locator fails in any other way.
  * @type {(
  *   Middleware<
- *     LocatorContext & IpfsUrlContext & AuthTokenContext & DelegationsStorageContext & SpaceContext,
- *     LocatorContext & IpfsUrlContext & AuthTokenContext & DelegationsStorageContext,
- *     {}
+ *     LocatorContext & IpfsUrlContext & AuthTokenContext & GatewayIdentityContext & DelegationProofsContext & DelegationsStorageContext & SpaceContext,
+ *     LocatorContext & IpfsUrlContext & AuthTokenContext & GatewayIdentityContext & DelegationProofsContext & DelegationsStorageContext
  *   >
  * )}
  */
-export function withAuthorizedSpace(handler) {
+export function withAuthorizedSpace (handler) {
   return async (request, env, ctx) => {
     const { locator, dataCid } = ctx
     const locRes = await locator.locate(dataCid.multihash)
@@ -67,7 +67,7 @@ export function withAuthorizedSpace(handler) {
         ...ctx,
         space: selectedSpace,
         delegationProofs,
-        locator: locator.scopeToSpaces([selectedSpace]),
+        locator: locator.scopeToSpaces([selectedSpace])
       })
     } catch (error) {
       // If all Spaces failed to authorize, throw the first error.
@@ -75,6 +75,15 @@ export function withAuthorizedSpace(handler) {
         error instanceof AggregateError &&
         error.errors.every((e) => e instanceof Unauthorized)
       ) {
+        if (env.DEBUG === 'true') {
+          console.log(
+            [
+              'Authorization Failures:',
+              ...error.errors.map((e) => e.message)
+            ].join('\n\n')
+          )
+        }
+
         throw new HttpError('Not Found', { status: 404, cause: error })
       } else {
         throw error
@@ -89,7 +98,7 @@ export function withAuthorizedSpace(handler) {
  * {@link DelegationsStorageContext.delegationsStorage}.
  *
  * @param {Ucanto.DID} space
- * @param {AuthTokenContext & DelegationsStorageContext} ctx
+ * @param {AuthTokenContext & DelegationsStorageContext & GatewayIdentityContext} ctx
  * @returns {Promise<Ucanto.Result<{space: Ucanto.DID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
  */
 const authorize = async (space, ctx) => {
@@ -97,7 +106,7 @@ const authorize = async (space, ctx) => {
   const relevantDelegationsResult = await ctx.delegationsStorage.find({
     audience: ctx.gatewayIdentity.did(),
     can: serve.transportHttp.can,
-    with: space,
+    with: space
   })
 
   if (relevantDelegationsResult.error) return relevantDelegationsResult
@@ -109,9 +118,9 @@ const authorize = async (space, ctx) => {
       audience: ctx.gatewayIdentity,
       with: space,
       nb: {
-        token: ctx.authToken,
+        token: ctx.authToken
       },
-      proofs: relevantDelegationsResult.ok,
+      proofs: relevantDelegationsResult.ok
     })
     .delegate()
 
@@ -120,7 +129,7 @@ const authorize = async (space, ctx) => {
     capability: serve.transportHttp,
     authority: ctx.gatewayIdentity,
     principal: Verifier,
-    validateAuthorization: () => ok({}),
+    validateAuthorization: () => ok({})
   })
   if (accessResult.error) {
     return accessResult
@@ -129,7 +138,7 @@ const authorize = async (space, ctx) => {
   return {
     ok: {
       space,
-      delegationProofs: relevantDelegationsResult.ok,
-    },
+      delegationProofs: relevantDelegationsResult.ok
+    }
   }
 }
