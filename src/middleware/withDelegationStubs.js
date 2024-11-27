@@ -1,5 +1,4 @@
 import { Delegation } from '@ucanto/core'
-import { spaceScopedLocator } from '../util.js'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
@@ -54,8 +53,8 @@ export const withDelegationStubs = (handler) => async (request, env, ctx) => {
     delegationProofs: [], // Delegation proofs are set by withAuthorizedSpace handler
     locator:
       stubSpace && isDIDKey(stubSpace)
-        ? spaceScopedLocator(ctx.locator, [stubSpace])
-        : ctx.locator
+        ? ctx.locator.scopeToSpaces([stubSpace])
+        : ctx.locator,
   })
 }
 
