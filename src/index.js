@@ -52,9 +52,10 @@ const middleware = composeMiddleware(
   // Prepare the Context for all types of requests
   withCdnCache,
   withContext,
-  withCorsHeaders,
+  withCorsHeaders, // TODO: do we need Cors preflight?
   withVersionHeader,
   withErrorHandler,
+  withGatewayIdentity,
   withHttpMethods('GET', 'HEAD', 'POST'),
 
   // Handle POST requests for UCAN invocations
@@ -64,7 +65,7 @@ const middleware = composeMiddleware(
   withParsedIpfsUrl,
   withAuthToken,
   withLocator,
-  withGatewayIdentity,
+  
   // TODO: replace this with a handler to fetch the real delegations
   withDelegationStubs,
 
