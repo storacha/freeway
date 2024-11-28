@@ -4,7 +4,7 @@ import {
   withCorsHeaders,
   withContentDispositionHeader,
   withErrorHandler,
-  createWithHttpMethod,
+  createWithHttpMethod as withHttpMethods,
   withCdnCache,
   withParsedIpfsUrl,
   withFixedLengthStream,
@@ -26,7 +26,8 @@ import {
   withEgressClient,
   withAuthorizedSpace,
   withLocator,
-  withDelegationStubs
+  withDelegationStubs,
+  withUcanInvocationHandler
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
@@ -48,14 +49,19 @@ import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
  * The middleware stack
  */
 const middleware = composeMiddleware(
-  // Prepare the Context
+  // Prepare the Context for all types of requests
   withCdnCache,
   withContext,
   withCorsHeaders,
   withVersionHeader,
   withErrorHandler,
+  withHttpMethods('GET', 'HEAD', 'POST'),
+
+  // Handle POST requests for UCAN invocations
+  withUcanInvocationHandler,
+
+  // Prepare the Context for other types of requests
   withParsedIpfsUrl,
-  createWithHttpMethod('GET', 'HEAD'),
   withAuthToken,
   withLocator,
   withGatewayIdentity,
