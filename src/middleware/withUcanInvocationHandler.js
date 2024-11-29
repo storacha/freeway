@@ -24,7 +24,7 @@ export function withUcanInvocationHandler(handler) {
 
     const { headers, body } = await server.request({
       body: new Uint8Array(await request.arrayBuffer()),
-      headers: Object.fromEntries(request.headers)
+      headers: Object.fromEntries(request.headers.entries())
     })
 
     return new Response(body, { headers })

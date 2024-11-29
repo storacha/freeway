@@ -6,7 +6,7 @@ import { access, Schema, Failure } from '@ucanto/validator'
 /**
  * @template T
  * @param {import('@ucanto/interface').Signer} signer
- * @param {import('./api.js').Service<T>} service
+ * @param {import('./api.types.js').Service<T>} service
  */
 export function createServer(signer, service) {
   return Server.create({

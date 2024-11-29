@@ -1,11 +1,11 @@
-import { API } from '@ucanto/core'
 import { Access as AccessCapabilities } from '@web3-storage/capabilities'
-import { Server } from '@web3-storage/public-bucket'
 import { provide } from '../server/index.js'
+import { Failure } from '@ucanto/core'
 export { createServer } from '../server/index.js'
 
 /**
- * @returns {import('./api.js').Service<T>}
+ * @template T
+ * @returns {import('./api.types.js').Service<T>}
  */
 export function createService() {
   return {
@@ -40,9 +40,9 @@ export function createService() {
 }
 
 /**
- * @param {API.InferInvokedCapability<typeof AccessCapabilities.delegate>} capability
- * @param {API.Proof[]} proofs
- * @returns {API.Result<API.Delegation<API.Capabilities>[], API.DelegationNotFound>}
+ * @param {import('@ucanto/interface').InferInvokedCapability<typeof AccessCapabilities.delegate>} capability
+ * @param {import('@ucanto/interface').Proof[]} proofs
+ * @returns {import('@ucanto/interface').Result<import('@ucanto/interface').Delegation<import('@ucanto/interface').Capabilities>[], import('@ucanto/interface').Failure>}
  */
 const extractProvenDelegations = (capability, proofs) => {
   const nbDelegations = new Set(Object.values(capability.nb.delegations))
@@ -80,7 +80,7 @@ const extractProvenDelegations = (capability, proofs) => {
   return { ok: delegations }
 }
 
-class DelegationNotFound extends Server.Failure {
+class DelegationNotFound extends Failure {
   get name() {
     return /** @type {const} */ ('DelegationNotFound')
   }
