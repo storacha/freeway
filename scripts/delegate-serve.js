@@ -45,8 +45,8 @@ sade('delegate-serve.js [space]')
       const proofs = client.proofs([
         {
           can: Space.contentServe.can,
-          with: space,
-        },
+          with: space
+        }
       ])
 
       if (proofs.length === 0) {
@@ -60,7 +60,7 @@ sade('delegate-serve.js [space]')
       }
 
       const gatewayIdentity = {
-        did: () => gatewayDID,
+        did: () => gatewayDID
       }
 
       // NOTE: This type assertion is wrong. It's a hack to let us use this
@@ -76,12 +76,12 @@ sade('delegate-serve.js [space]')
         [ability],
         {
           expiration: Infinity,
-          proofs,
+          proofs
         }
       )
 
       await client.capability.access.delegate({
-        delegations: [delegation],
+        delegations: [delegation]
       })
 
       const carResult = await delegation.archive()
@@ -115,7 +115,7 @@ sade('delegate-serve.js [space]')
  * @param {import('@storacha/client').Client} client
  * @param {string} [accountDID]
  */
-async function createSpace(client, accountDID) {
+async function createSpace (client, accountDID) {
   const provider = client.defaultProvider()
   if (!Schema.did({ method: 'web' }).is(provider)) {
     throw new Error(`Invalid provider DID: ${provider}`)
