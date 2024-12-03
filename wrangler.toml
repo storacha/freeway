@@ -29,9 +29,9 @@ namespace_id = "0"
 simple = { limit = 100, period = 60 }
 
 [[kv_namespaces]]
-# TODO BEFORE MERGE - update this to work in all environments - useful to do it like this for now
 binding = "AUTH_TOKEN_METADATA"
-id = "f848730e45d94f17bcaf3b6d0915da40"
+# KV From Staging Environment
+id = "b618bb05deb8493f944ef4a0f538030c"
 
 # PROD!
 [env.production]
@@ -39,6 +39,10 @@ account_id = "fffa4b4363a7e5250af8357087263b3a"
 route = { pattern = "https://freeway.dag.haus/*", zone_id = "f2f8a5b1c557202c6e3d0ce0e98e4c8e" }
 r2_buckets = [
   { binding = "CARPARK", bucket_name = "carpark-prod-0" }
+]
+kv_namespaces = [
+  { binding = "AUTH_TOKEN_METADATA", id = "f848730e45d94f17bcaf3b6d0915da40" },
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "b2984f16c21e4991a644683c00d80033" }
 ]
 
 [env.production.build]
@@ -76,6 +80,10 @@ UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
 UPLOAD_API_URL = "https://staging.up.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
+kv_namespaces = [
+  { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "99ae45f8b5b3478a9df09302c27e81a3" }
+]
 
 # Test!
 [env.test]
@@ -116,15 +124,16 @@ UPLOAD_API_URL = "https://staging.up.web3.storage"
 name = "freeway-fforbeck"
 workers_dev = true
 upload_source_maps = true
-# Personal Account
-# account_id = "9e46c5ddfefedb9bae5d81a0dd911e5a"
-# Company Account
 account_id = "fffa4b4363a7e5250af8357087263b3a"
 # r2_buckets = [
 #  { binding = "CARPARK", bucket_name = "carpark-fforbeck-0", preview_bucket_name = "carpark-fforbeck-preview-0" }
 # ]
 r2_buckets = [
   { binding = "CARPARK", bucket_name = "carpark-staging-0" }
+]
+kv_namespaces = [
+  { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "26cc47fec09749bb9ee42bc6407f9a9d" }
 ]
 
 [env.fforbeck.vars]
@@ -143,11 +152,6 @@ name = "RATE_LIMITER"
 type = "ratelimit"
 namespace_id = "0"
 simple = { limit = 5, period = 60 }
-
-[[env.fforbeck.kv_namespaces]]
-binding = "AUTH_TOKEN_METADATA"
-id = "f848730e45d94f17bcaf3b6d0915da40"
-
 
 [env.hannahhoward]
 name = "freeway-hannahhoward"

@@ -2,16 +2,19 @@ import { createServer } from '../server/index.js'
 import { createService } from '../server/service.js'
 
 /**
- * Handles UCAN invocation requests. Middleware that only allows POST requests, any 
- * other requests are passed through.
+ * @import { Middleware } from '@web3-storage/gateway-lib'
+ * @import {
+ *   Environment,
+ *   Context,
+ * } from './withUcanInvocationHandler.types.js'
+ * @typedef {Context} UcanInvocationContext
+ */
+
+/**
+ * The withUcanInvocationHandler middleware is used to handle UCAN invocation requests.
+ * It supports only POST requests. Any other requests are passed through.
  *
- * @type {(
- *   import('@web3-storage/gateway-lib').Middleware<
- *     import('./withLocator.types.js').LocatorContext,
- *     import('./withLocator.types.js').LocatorContext & import('./withAuthorizedSpace.types.js').DelegationsStorageContext,
- *     {}
- *   >
- * )}
+ * @type {Middleware<UcanInvocationContext, UcanInvocationContext, Environment>}
  */
 export function withUcanInvocationHandler(handler) {
   return async (request, env, ctx) => {
@@ -19,8 +22,8 @@ export function withUcanInvocationHandler(handler) {
       return handler(request, env, ctx)
     }
 
-    const service = createService()
-    const server = createServer(ctx.gatewaySigner, service)
+    const service = createService(ctx, env)
+    const server = createServer(ctx, service)
 
     const { headers, body } = await server.request({
       body: new Uint8Array(await request.arrayBuffer()),

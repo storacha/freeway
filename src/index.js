@@ -58,7 +58,7 @@ const middleware = composeMiddleware(
   withGatewayIdentity,
   withHttpMethods('GET', 'HEAD', 'POST'),
 
-  // Handle POST requests for UCAN invocations
+  // Handle UCAN invocations (POST requests only)
   withUcanInvocationHandler,
 
   // Prepare the Context for other types of requests
