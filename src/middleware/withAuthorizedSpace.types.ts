@@ -1,11 +1,11 @@
 import * as Ucanto from '@ucanto/interface'
 import { Context as MiddlewareContext } from '@web3-storage/gateway-lib'
-import { GatewayIdentityContext as GatewayIdentityContext } from './withGatewayIdentity.types.js'
 
-export interface DelegationsStorageContext
-  extends MiddlewareContext,
-    GatewayIdentityContext {
+export interface DelegationsStorageContext extends MiddlewareContext {
   delegationsStorage: DelegationsStorage
+}
+
+export interface DelegationProofsContext extends MiddlewareContext {
   /**
    * The delegation proofs to use for the egress record
    * The proofs must be valid for the space and the owner of the space

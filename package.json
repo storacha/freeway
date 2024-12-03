@@ -38,10 +38,11 @@
     "@microlabs/otel-cf-workers": "^1.0.0-rc.48",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^1.27.0",
+    "@storacha/indexing-service-client": "^2.0.0",
     "@ucanto/client": "^9.0.1",
     "@ucanto/principal": "^9.0.1",
     "@ucanto/transport": "^9.1.1",
-    "@web3-storage/blob-fetcher": "^2.3.1",
+    "@web3-storage/blob-fetcher": "^2.4.3",
     "@web3-storage/capabilities": "^17.4.1",
     "@web3-storage/gateway-lib": "^5.1.2",
     "dagula": "^8.0.0",
@@ -51,6 +52,8 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
+    "@storacha/cli": "^1.0.1",
+    "@storacha/client": "^1.0.5",
     "@types/chai": "^5.0.0",
     "@types/mocha": "^10.0.9",
     "@types/node-fetch": "^2.6.11",
@@ -58,10 +61,9 @@
     "@web3-storage/content-claims": "^5.0.0",
     "@web3-storage/public-bucket": "^1.1.0",
     "@web3-storage/upload-client": "^16.1.1",
-    "@web3-storage/w3cli": "^7.8.2",
     "carstream": "^2.1.0",
     "chai": "^5.1.1",
-    "esbuild": "^0.18.20",
+    "esbuild": "^0.24.0",
     "files-from-path": "^0.2.6",
     "miniflare": "^3.20240909.5",
     "mocha": "^10.7.3",
@@ -70,7 +72,7 @@
     "standard": "^17.1.0",
     "tree-kill": "^1.2.2",
     "typescript": "^5.6.3",
-    "wrangler": "^3.86.1"
+    "wrangler": "^3.90.0"
   },
   "standard": {
     "ignore": [

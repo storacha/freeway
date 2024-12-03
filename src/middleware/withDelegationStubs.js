@@ -1,7 +1,6 @@
-import { Delegation } from '@ucanto/core'
+import { Delegation, Schema } from '@ucanto/core'
 
 /**
- * @import * as Ucanto from '@ucanto/interface'
  * @import {
  *   Middleware,
  *   Context as MiddlewareContext
@@ -22,7 +21,7 @@ import { Delegation } from '@ucanto/core'
  *
  * @type {(
  *   Middleware<
- *     MiddlewareContext & LocatorContext & DelegationsStorageContext,
+ *     MiddlewareContext & LocatorContext & GatewayIdentityContext & DelegationsStorageContext,
  *     MiddlewareContext & LocatorContext & GatewayIdentityContext,
  *     {}
  *   >
@@ -50,32 +49,9 @@ export const withDelegationStubs = (handler) => async (request, env, ctx) => {
   return handler(request, env, {
     ...ctx,
     delegationsStorage: { find: async () => ({ ok: stubDelegations }) },
-    delegationProofs: [], // Delegation proofs are set by withAuthorizedSpace handler
     locator:
-      stubSpace && isDIDKey(stubSpace)
-        ? {
-            locate: async (digest, options) => {
-              const locateResult = await ctx.locator.locate(digest, options)
-              if (locateResult.error) return locateResult
-              return {
-                ok: {
-                  ...locateResult.ok,
-                  site: locateResult.ok.site.map((site) => ({
-                    ...site,
-                    space: stubSpace
-                  }))
-                }
-              }
-            }
-          }
+      stubSpace && Schema.did({ method: 'key' }).is(stubSpace)
+        ? ctx.locator.scopeToSpaces([stubSpace])
         : ctx.locator
   })
 }
-
-/**
- * True if the given string is a `key:` DID.
- *
- * @param {string} did
- * @returns {did is Ucanto.DIDKey}
- */
-const isDIDKey = (did) => did.startsWith('did:key:')

@@ -9,6 +9,7 @@ export interface LocatorEnvironment extends MiddlewareEnvironment {
   CONTENT_CLAIMS_SERVICE_URL?: string
   CARPARK: R2Bucket
   CARPARK_PUBLIC_BUCKET_URL?: string
+  INDEXING_SERVICE_URL?: string
 }
 
 export interface LocatorContext extends MiddlewareContext {

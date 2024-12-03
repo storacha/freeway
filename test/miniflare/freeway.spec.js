@@ -51,7 +51,8 @@ describe('freeway', () => {
     miniflare = new Miniflare({
       bindings: {
         CONTENT_CLAIMS_SERVICE_URL: claimsService.url.toString(),
-        CARPARK_PUBLIC_BUCKET_URL: url.toString()
+        CARPARK_PUBLIC_BUCKET_URL: url.toString(),
+        GATEWAY_SERVICE_DID: 'did:example:gateway'
       },
       inspectorPort: 9898,
       scriptPath: 'dist/worker.mjs',

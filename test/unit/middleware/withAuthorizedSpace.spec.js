@@ -60,12 +60,41 @@ const context = {
 }
 
 /**
+ * Returns a {@link Locator} which locates content only from a specific Space,
+ * by simply filtering the results of another {@link Locator}.
+ *
+ * @param {Locator} locator
+ * @param {Ucanto.DID[]} spaces
+ * @returns {Locator}
+ */
+export const spaceScopedLocator = (locator, spaces) => ({
+  locate: async (digest) => {
+    const locateResult = await locator.locate(digest)
+    if (locateResult.error) {
+      return locateResult
+    } else {
+      return {
+        ok: {
+          ...locateResult.ok,
+          site: locateResult.ok.site.filter(
+            (site) => site.space && spaces.includes(site.space)
+          )
+        }
+      }
+    }
+  },
+  scopeToSpaces (newSpaces) {
+    return spaceScopedLocator(locator, newSpaces)
+  }
+})
+
+/**
  * @param {MultihashDigest} expectedDigest
  * @param {Awaited<ReturnType<Locator['locate']>>} locateResponse
  * @returns {Locator}
  * */
 const createLocator = (expectedDigest, locateResponse) => ({
-  locate: async (digest) => {
+  async locate (digest) {
     if (Digest.equals(digest, expectedDigest)) {
       return locateResponse
     } else {
@@ -75,13 +104,14 @@ const createLocator = (expectedDigest, locateResponse) => ({
         )}`
       )
     }
+  },
+  scopeToSpaces (spaces) {
+    return spaceScopedLocator(this, spaces)
   }
 })
 
 const gatewaySigner = (await ed25519.Signer.generate()).signer
-const gatewayIdentity = gatewaySigner.withDID(
-  'did:web:test.w3s.link'
-)
+const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
 
 /**
  * @param {Ucanto.Delegation[]} delegations
@@ -309,7 +339,12 @@ describe('withAuthorizedSpace', async () => {
       withAuthorizedSpace(sinon.fake(innerHandler))(
         request,
         {},
-        { ...ctx, authToken: 'space2-token', delegationProofs: [], gatewaySigner }
+        {
+          ...ctx,
+          authToken: 'space2-token',
+          delegationProofs: [],
+          gatewaySigner
+        }
       )
     )
 
@@ -370,7 +405,11 @@ describe('withAuthorizedSpace', async () => {
 
     const ih = sinon.fake(innerHandler)
     const errorWithToken = await rejection(
-      withAuthorizedSpace(ih)(request, {}, { ...ctx, authToken: 'a1b2c3', delegationProofs: [], gatewaySigner })
+      withAuthorizedSpace(ih)(
+        request,
+        {},
+        { ...ctx, authToken: 'a1b2c3', delegationProofs: [], gatewaySigner }
+      )
     )
 
     expect(ih.notCalled).to.be.true
@@ -545,7 +584,11 @@ describe('withAuthorizedSpace', async () => {
 
     const ih = sinon.fake(innerHandler)
     const error = await rejection(
-      withAuthorizedSpace(ih)(request, {}, { ...ctx, authToken: 'a1b2c3', delegationProofs: [], gatewaySigner })
+      withAuthorizedSpace(ih)(
+        request,
+        {},
+        { ...ctx, authToken: 'a1b2c3', delegationProofs: [], gatewaySigner }
+      )
     )
 
     expect(ih.notCalled).to.be.true

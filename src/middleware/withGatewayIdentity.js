@@ -1,3 +1,4 @@
+import { Schema } from '@ucanto/core'
 import { ed25519 } from '@ucanto/principal'
 
 /**
@@ -17,7 +18,7 @@ export function withGatewayIdentity (handler) {
       : await ed25519.Signer.generate()
 
     const gatewayIdentity = gatewaySigner.withDID(
-      /** @type {`did:${string}:${string}`} */ (env.GATEWAY_SERVICE_DID)
+      Schema.DID.from(env.GATEWAY_SERVICE_DID)
     )
     return handler(req, env, { ...ctx, gatewaySigner, gatewayIdentity })
   }

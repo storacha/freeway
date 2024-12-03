@@ -1,4 +1,4 @@
-declare module '@web3-storage/w3cli/lib.js' {
-  import { Client } from '@web3-storage/w3up-client'
+declare module '@storacha/cli/lib.js' {
+  import { Client } from '@storacha/client'
   export declare function getClient(): Promise<Client>
 }

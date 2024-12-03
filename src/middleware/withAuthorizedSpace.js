@@ -5,11 +5,11 @@ import * as serve from '../capabilities/serve.js'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
- * @import { Locator } from '@web3-storage/blob-fetcher'
  * @import { IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
  * @import { LocatorContext } from './withLocator.types.js'
  * @import { AuthTokenContext } from './withAuthToken.types.js'
- * @import { SpaceContext, DelegationsStorageContext } from './withAuthorizedSpace.types.js'
+ * @import { SpaceContext, DelegationsStorageContext, DelegationProofsContext } from './withAuthorizedSpace.types.js'
+ * @import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
  */
 
 /**
@@ -21,9 +21,8 @@ import * as serve from '../capabilities/serve.js'
  * @throws {Error} If the locator fails in any other way.
  * @type {(
  *   Middleware<
- *     LocatorContext & IpfsUrlContext & AuthTokenContext & DelegationsStorageContext & SpaceContext,
- *     LocatorContext & IpfsUrlContext & AuthTokenContext & DelegationsStorageContext,
- *     {}
+ *     LocatorContext & IpfsUrlContext & AuthTokenContext & GatewayIdentityContext & DelegationProofsContext & DelegationsStorageContext & SpaceContext,
+ *     LocatorContext & IpfsUrlContext & AuthTokenContext & GatewayIdentityContext & DelegationProofsContext & DelegationsStorageContext
  *   >
  * )}
  */
@@ -68,7 +67,7 @@ export function withAuthorizedSpace (handler) {
         ...ctx,
         space: selectedSpace,
         delegationProofs,
-        locator: spaceScopedLocator(locator, selectedSpace)
+        locator: locator.scopeToSpaces([selectedSpace])
       })
     } catch (error) {
       // If all Spaces failed to authorize, throw the first error.
@@ -76,6 +75,15 @@ export function withAuthorizedSpace (handler) {
         error instanceof AggregateError &&
         error.errors.every((e) => e instanceof Unauthorized)
       ) {
+        if (env.DEBUG === 'true') {
+          console.log(
+            [
+              'Authorization Failures:',
+              ...error.errors.map((e) => e.message)
+            ].join('\n\n')
+          )
+        }
+
         throw new HttpError('Not Found', { status: 404, cause: error })
       } else {
         throw error
@@ -90,7 +98,7 @@ export function withAuthorizedSpace (handler) {
  * {@link DelegationsStorageContext.delegationsStorage}.
  *
  * @param {Ucanto.DID} space
- * @param {AuthTokenContext & DelegationsStorageContext} ctx
+ * @param {AuthTokenContext & DelegationsStorageContext & GatewayIdentityContext} ctx
  * @returns {Promise<Ucanto.Result<{space: Ucanto.DID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
  */
 const authorize = async (space, ctx) => {
@@ -134,26 +142,3 @@ const authorize = async (space, ctx) => {
     }
   }
 }
-
-/**
- * Wraps a {@link Locator} and locates content only from a specific Space.
- *
- * @param {Locator} locator
- * @param {Ucanto.DID} space
- * @returns {Locator}
- */
-const spaceScopedLocator = (locator, space) => ({
-  locate: async (digest) => {
-    const locateResult = await locator.locate(digest)
-    if (locateResult.error) {
-      return locateResult
-    } else {
-      return {
-        ok: {
-          ...locateResult.ok,
-          site: locateResult.ok.site.filter((site) => site.space === space)
-        }
-      }
-    }
-  }
-})
