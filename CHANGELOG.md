@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.22.0](https://github.com/storacha/freeway/compare/v2.21.0...v2.22.0) (2024-12-03)
+
+
+### Features
+
+* egress client - ucanto integration ([#123](https://github.com/storacha/freeway/issues/123)) ([22bed68](https://github.com/storacha/freeway/commit/22bed68716f9661cf5bb1359a55f052a0a04d96f))
+* Use Indexing Service when feature flag is present ([#132](https://github.com/storacha/freeway/issues/132)) ([fa3f480](https://github.com/storacha/freeway/commit/fa3f48091ac259cb9429844bfa6f48b4c1800639))
+
+
+### Bug Fixes
+
+* **egress-client:** set nonce, expire and fix servedAt ([#130](https://github.com/storacha/freeway/issues/130)) ([b135643](https://github.com/storacha/freeway/commit/b135643f7d5c815e46121b09ce7d78e9467b5a17))
+* enable open telemetry for all envs ([#131](https://github.com/storacha/freeway/issues/131)) ([c822465](https://github.com/storacha/freeway/commit/c822465bf873222d6bfa984732feb2d346e77145))
+
 ## [2.21.0](https://github.com/storacha/freeway/compare/v2.20.2...v2.21.0) (2024-11-06)
 
 
