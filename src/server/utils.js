@@ -2,6 +2,8 @@ import { ok, error } from '@ucanto/core'
 import { DIDResolutionError } from '@ucanto/validator'
 import { Access as AccessCapabilities, Space as SpaceCapabilities } from '@web3-storage/capabilities'
 import { DelegationFailure } from '../middleware/withDelegationsStorage.types.js'
+import { access } from '@ucanto/validator'
+import { Verifier } from '@ucanto/principal'
 
 
 /**

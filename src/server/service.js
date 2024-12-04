@@ -5,7 +5,6 @@ import {
 import { provide } from '../server/index.js'
 import { extractContentServeDelegation } from './utils.js'
 import { claim } from '@ucanto/validator'
-import { Verifier } from '@ucanto/principal'
 
 /**
  * @template T
@@ -25,10 +24,14 @@ export function createService(ctx) {
           }
 
           const delegation = result.ok
-          const validationResult = await claim(SpaceCapabilities.contentServe, [delegation], {
-            ...context,
-            authority: ctx.gatewayIdentity,
-          })
+          const validationResult = await claim(
+            SpaceCapabilities.contentServe,
+            [delegation],
+            {
+              ...context,
+              authority: ctx.gatewayIdentity,
+            }
+          )
           if (validationResult.error) {
             console.error(`error while validating delegation`, validationResult.error)
             return validationResult
@@ -42,4 +45,3 @@ export function createService(ctx) {
     }
   }
 }
-
