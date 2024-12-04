@@ -26,8 +26,9 @@ import {
   withEgressClient,
   withAuthorizedSpace,
   withLocator,
-  withDelegationStubs,
-  withUcanInvocationHandler
+  withUcanInvocationHandler,
+  withDelegationsStorage,
+  withDelegationStubs
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
@@ -52,10 +53,11 @@ const middleware = composeMiddleware(
   // Prepare the Context for all types of requests
   withCdnCache,
   withContext,
-  withCorsHeaders, // TODO: do we need Cors preflight?
+  withCorsHeaders, // TODO: do we need to add a Cors preflight handler?
   withVersionHeader,
   withErrorHandler,
   withGatewayIdentity,
+  withDelegationsStorage,
   withHttpMethods('GET', 'HEAD', 'POST'),
 
   // Handle UCAN invocations (POST requests only)
@@ -65,7 +67,7 @@ const middleware = composeMiddleware(
   withParsedIpfsUrl,
   withAuthToken,
   withLocator,
-  
+  withGatewayIdentity,
   // TODO: replace this with a handler to fetch the real delegations
   withDelegationStubs,
 

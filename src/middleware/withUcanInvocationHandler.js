@@ -22,11 +22,12 @@ export function withUcanInvocationHandler(handler) {
       return handler(request, env, ctx)
     }
 
-    const service = createService(ctx, env)
+    const service = createService(ctx)
     const server = createServer(ctx, service)
 
     const { headers, body } = await server.request({
       body: new Uint8Array(await request.arrayBuffer()),
+      // @ts-expect-error: TODO: fix the .entries() type
       headers: Object.fromEntries(request.headers.entries())
     })
 

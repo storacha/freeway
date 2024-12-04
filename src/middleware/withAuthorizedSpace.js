@@ -2,14 +2,17 @@ import { Verifier } from '@ucanto/principal'
 import { ok, access, Unauthorized } from '@ucanto/validator'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as serve from '../capabilities/serve.js'
+import { SpaceDID } from '@web3-storage/capabilities/utils'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
  * @import { IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
  * @import { LocatorContext } from './withLocator.types.js'
  * @import { AuthTokenContext } from './withAuthToken.types.js'
- * @import { SpaceContext, DelegationsStorageContext, DelegationProofsContext } from './withAuthorizedSpace.types.js'
+ * @import { SpaceContext } from './withAuthorizedSpace.types.js'
+ * @import { DelegationsStorageContext } from './withDelegationsStorage.types.js'
  * @import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
+ * @import { DelegationProofsContext } from './withAuthorizedSpace.types.js'
  */
 
 /**
@@ -26,7 +29,7 @@ import * as serve from '../capabilities/serve.js'
  *   >
  * )}
  */
-export function withAuthorizedSpace (handler) {
+export function withAuthorizedSpace(handler) {
   return async (request, env, ctx) => {
     const { locator, dataCid } = ctx
     const locRes = await locator.locate(dataCid.multihash)
@@ -46,7 +49,7 @@ export function withAuthorizedSpace (handler) {
       ctx.authToken === null
 
     if (shouldServeLegacy) {
-      return handler(request, env, { ...ctx, space: null })
+      return handler(request, env, { ...ctx, space: undefined })
     }
 
     // These Spaces all have the content we're to serve, if we're allowed to.
@@ -58,14 +61,14 @@ export function withAuthorizedSpace (handler) {
       // First space to successfully authorize is the one we'll use.
       const { space: selectedSpace, delegationProofs } = await Promise.any(
         spaces.map(async (space) => {
-          const result = await authorize(space, ctx)
+          const result = await authorize(SpaceDID.from(space), ctx)
           if (result.error) throw result.error
           return result.ok
         })
       )
       return handler(request, env, {
         ...ctx,
-        space: selectedSpace,
+        space: SpaceDID.from(selectedSpace),
         delegationProofs,
         locator: locator.scopeToSpaces([selectedSpace])
       })
@@ -97,18 +100,13 @@ export function withAuthorizedSpace (handler) {
  * authorizing delegations in the
  * {@link DelegationsStorageContext.delegationsStorage}.
  *
- * @param {Ucanto.DID} space
+ * @param {import('@web3-storage/capabilities/types').SpaceDID} space
  * @param {AuthTokenContext & DelegationsStorageContext & GatewayIdentityContext} ctx
- * @returns {Promise<Ucanto.Result<{space: Ucanto.DID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
+ * @returns {Promise<Ucanto.Result<{space: import('@web3-storage/capabilities/types').SpaceDID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
  */
 const authorize = async (space, ctx) => {
   // Look up delegations that might authorize us to serve the content.
-  const relevantDelegationsResult = await ctx.delegationsStorage.find({
-    audience: ctx.gatewayIdentity.did(),
-    can: serve.transportHttp.can,
-    with: space
-  })
-
+  const relevantDelegationsResult = await ctx.delegationsStorage.find(space)
   if (relevantDelegationsResult.error) return relevantDelegationsResult
 
   // Create an invocation of the serve capability.
@@ -120,7 +118,7 @@ const authorize = async (space, ctx) => {
       nb: {
         token: ctx.authToken
       },
-      proofs: relevantDelegationsResult.ok
+      proofs: [relevantDelegationsResult.ok]
     })
     .delegate()
 
@@ -138,7 +136,7 @@ const authorize = async (space, ctx) => {
   return {
     ok: {
       space,
-      delegationProofs: relevantDelegationsResult.ok
+      delegationProofs: [relevantDelegationsResult.ok]
     }
   }
 }

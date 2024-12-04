@@ -1,12 +1,8 @@
-import { Failure, ok, error } from '@ucanto/core'
+import { ok, error } from '@ucanto/core'
 import { DIDResolutionError } from '@ucanto/validator'
 import { Access as AccessCapabilities, Space as SpaceCapabilities } from '@web3-storage/capabilities'
+import { DelegationFailure } from '../middleware/withDelegationsStorage.types.js'
 
-export class DelegationFailure extends Failure {
-  get name() {
-    return /** @type {const} */ ('DelegationFailure')
-  }
-}
 
 /**
  * Checks if the space/content/serve/* delegation is for the gateway and it is not expired.
@@ -15,7 +11,7 @@ export class DelegationFailure extends Failure {
  * @param {import('@ucanto/interface').InferInvokedCapability<typeof AccessCapabilities.delegate>} capability - The capability to validate
  * @param {import('@ucanto/interface').Proof[]} proofs - The proofs to validate
  */
-export const getSpaceContentServeDelegation = (gatewayIdentity, capability, proofs) => {
+export const extractContentServeDelegation = (gatewayIdentity, capability, proofs) => {
   const nbDelegations = new Set(Object.values(capability.nb.delegations))
   if (nbDelegations.size > 1) {
     return { error: new DelegationFailure(`nb.delegations has more than one delegation`) }
@@ -56,7 +52,7 @@ export const getSpaceContentServeDelegation = (gatewayIdentity, capability, proo
       )
     }
   }
-
+  
   return { ok: delegationProof }
 }
 

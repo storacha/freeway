@@ -25,7 +25,9 @@ import * as serve from '../../../src/capabilities/serve.js'
  *   Environment as MiddlewareEnvironment,
  *   IpfsUrlContext
  * } from '@web3-storage/gateway-lib'
- * @import { DelegationsStorage, SpaceContext } from '../../../src/middleware/withAuthorizedSpace.types.js'
+ * @import { SpaceContext } from '../../../src/middleware/withAuthorizedSpace.types.js'
+ * @import { DelegationsStorage, DelegationsStorageContext } from '../../../src/middleware/withDelegationsStorage.types.js'
+ * @import { DelegationProofsContext } from '../../../src/middleware/withAuthorizedSpace.types.js'
  * @import { LocatorContext } from '../../../src/middleware/withLocator.types.js'
  * @import { AuthTokenContext } from '../../../src/middleware/withAuthToken.types.js'
  */
@@ -54,7 +56,7 @@ const innerHandler = async (_req, _env, ctx) => {
 const request = new Request('http://example.com/')
 
 const context = {
-  waitUntil: () => {},
+  waitUntil: () => { },
   path: '',
   searchParams: new URLSearchParams()
 }
@@ -83,7 +85,7 @@ export const spaceScopedLocator = (locator, spaces) => ({
       }
     }
   },
-  scopeToSpaces (newSpaces) {
+  scopeToSpaces(newSpaces) {
     return spaceScopedLocator(locator, newSpaces)
   }
 })
@@ -94,7 +96,7 @@ export const spaceScopedLocator = (locator, spaces) => ({
  * @returns {Locator}
  * */
 const createLocator = (expectedDigest, locateResponse) => ({
-  async locate (digest) {
+  async locate(digest) {
     if (Digest.equals(digest, expectedDigest)) {
       return locateResponse
     } else {
@@ -105,7 +107,7 @@ const createLocator = (expectedDigest, locateResponse) => ({
       )
     }
   },
-  scopeToSpaces (spaces) {
+  scopeToSpaces(spaces) {
     return spaceScopedLocator(this, spaces)
   }
 })
@@ -118,18 +120,18 @@ const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
  * @returns {DelegationsStorage}
  * */
 const createDelegationStorage = (delegations) => ({
-  find: async (query) => ({
-    ok: delegations.filter((delegation) => {
-      return (
-        (!query.audience || delegation.audience.did() === query.audience) &&
-        delegation.capabilities.some(
-          (cap) =>
-            (!query.can || cap.can === query.can) &&
-            (!query.with || cap.with === query.with)
-        )
-      )
-    })
-  })
+  find: async (space) => {
+    const delegation = delegations.find((d) =>
+      d.capabilities.some((cap) => cap.with === space)
+    )
+
+    if (!delegation) {
+      return { error: new Error('No matching delegation found') }
+    }
+
+    return { ok: delegation }
+  },
+  store: async (space, delegation) => ({ error: new Error('Not implemented') })
 })
 
 describe('withAuthorizedSpace', async () => {
@@ -398,7 +400,6 @@ describe('withAuthorizedSpace', async () => {
 
     expect(await responseWithoutToken.json()).to.deep.equal({
       CID: cid.toString(),
-      Space: null,
       Token: null,
       URLs: ['http://example.com/blob']
     })
@@ -577,6 +578,9 @@ describe('withAuthorizedSpace', async () => {
       delegationsStorage: {
         find: async () => ({
           error: { name: 'Weirdness', message: 'Something weird happened.' }
+        }),
+        store: async () => ({
+          error: { name: 'Weirdness', message: 'Something weird happened.' }
         })
       },
       gatewayIdentity
@@ -587,7 +591,12 @@ describe('withAuthorizedSpace', async () => {
       withAuthorizedSpace(ih)(
         request,
         {},
-        { ...ctx, authToken: 'a1b2c3', delegationProofs: [], gatewaySigner }
+        {
+          ...ctx,
+          authToken: 'a1b2c3',
+          delegationProofs: [],
+          gatewaySigner
+        }
       )
     )
 
