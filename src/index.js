@@ -53,15 +53,17 @@ const middleware = composeMiddleware(
   // Prepare the Context for all types of requests
   withCdnCache,
   withContext,
-  withCorsHeaders, // TODO: do we need to add a Cors preflight handler?
+  withCorsHeaders,
   withVersionHeader,
   withErrorHandler,
   withGatewayIdentity,
   withDelegationsStorage,
-  withHttpMethods('GET', 'HEAD', 'POST'),
   
   // Handle UCAN invocations (POST requests only)
   withUcanInvocationHandler,
+
+  // Handle Content Serve requests (GET and HEAD requests)
+  withHttpMethods('GET', 'HEAD'),
   
   // Prepare the Context for other types of requests
   withParsedIpfsUrl,

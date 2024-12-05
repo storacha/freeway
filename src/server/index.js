@@ -18,7 +18,7 @@ export function createServer(ctx, service) {
     catch: err => console.error(err),
     // TODO: wire into revocations
     validateAuthorization: () => ({ ok: {} }),
-    // @ts-expect-error - The type is not defined in the ucan package, but it supports the method.
+    // @ts-expect-error - The type is not defined in the ucan package, but it supports the method. See https://github.com/storacha/ucanto/issues/359
     resolveDIDKey: (did) => resolveDIDKey(did, ctx),
     authorities: [ctx.gatewayIdentity]
   })

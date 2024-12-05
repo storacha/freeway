@@ -49,7 +49,7 @@ export function withAuthorizedSpace(handler) {
       ctx.authToken === null
 
     if (shouldServeLegacy) {
-      return handler(request, env, { ...ctx, space: undefined })
+      return handler(request, env, ctx)
     }
 
     // These Spaces all have the content we're to serve, if we're allowed to.

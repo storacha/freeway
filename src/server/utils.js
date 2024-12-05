@@ -1,10 +1,7 @@
 import { ok, error } from '@ucanto/core'
 import { DIDResolutionError } from '@ucanto/validator'
 import { Access as AccessCapabilities, Space as SpaceCapabilities } from '@web3-storage/capabilities'
-import { DelegationFailure } from '../middleware/withDelegationsStorage.types.js'
-import { access } from '@ucanto/validator'
-import { Verifier } from '@ucanto/principal'
-
+import { InvalidDelegation } from '../middleware/withDelegationsStorage.js'
 
 /**
  * Checks if the space/content/serve/* delegation is for the gateway and it is not expired.
@@ -15,25 +12,22 @@ import { Verifier } from '@ucanto/principal'
  */
 export const extractContentServeDelegation = (gatewayIdentity, capability, proofs) => {
   const nbDelegations = new Set(Object.values(capability.nb.delegations))
-  if (nbDelegations.size > 1) {
-    return { error: new DelegationFailure(`nb.delegations has more than one delegation`) }
-  }
-  const proofDelegations = proofs.flatMap((proof) => 'capabilities' in proof ? [proof] : [])
-  if (nbDelegations.size > proofDelegations.length) {
-    return { error: new DelegationFailure(`nb.delegations has more delegations than proofs`) }
+  if (nbDelegations.size !== 1) {
+    return { error: new InvalidDelegation(`nb.delegations has more than one delegation`) }
   }
 
   const delegationLink = Array.from(nbDelegations)[0]
+  const proofDelegations = proofs.flatMap((proof) => 'capabilities' in proof ? [proof] : [])
   const delegationProof = proofDelegations.find((p) =>
     delegationLink.equals(p.cid)
   )
   if (!delegationProof) {
-    return { error: new DelegationFailure(`no delegation found`) }
+    return { error: new InvalidDelegation(`delegation not found in proofs: ${delegationLink}`) }
   }
 
   if (delegationProof.audience.did() !== gatewayIdentity.did()) {
     return {
-      error: new DelegationFailure(
+      error: new InvalidDelegation(
         `invalid audience ${delegationProof.audience.did()} does not match Gateway DID ${gatewayIdentity.did()}`
       )
     }
@@ -41,15 +35,15 @@ export const extractContentServeDelegation = (gatewayIdentity, capability, proof
 
   if (delegationProof.expiration && delegationProof.expiration !== Infinity && delegationProof.expiration < Math.floor(Date.now() / 1000)) {
     return {
-      error: new DelegationFailure(
+      error: new InvalidDelegation(
         `delegation expired at ${delegationProof.expiration}`
       )
     }
   }
 
-  if (delegationProof.capabilities.every((c) => c.can !== SpaceCapabilities.contentServe.can)) {
+  if (!delegationProof.capabilities.some((c) => c.can === SpaceCapabilities.contentServe.can)) {
     return {
-      error: new DelegationFailure(
+      error: new InvalidDelegation(
         `delegation does not contain ${SpaceCapabilities.contentServe.can} capability`
       )
     }

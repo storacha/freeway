@@ -12,5 +12,12 @@ export interface DelegationProofsContext extends MiddlewareContext {
 }
 
 export interface SpaceContext extends MiddlewareContext {
+  /**
+   * The SpaceDID of the space that is authorized to serve the content from.
+   * If the space is not authorized, the request is considered a legacy request - which is served by default.
+   * The egress is not recorded for legacy requests because the space is unknown.
+   * Eventually, legacy requests will be aggressively throttled, forcing the users to migrate to authorized spaces.
+   * Then this field will become required and the legacy behavior will be removed.
+   */
   space?: SpaceDID
 }

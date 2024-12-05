@@ -1,10 +1,29 @@
 import { Delegation } from '@ucanto/core'
+import { ok, error, Failure } from '@ucanto/server'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
  * @import { Middleware } from '@web3-storage/gateway-lib'
- * @import { DelegationsStorageContext, DelegationsStorageEnvironment } from './withDelegationsStorage.types.js'
+ * @typedef {import('./withDelegationsStorage.types.js').DelegationsStorageContext} DelegationsStorageContext
+ * @typedef {import('./withDelegationsStorage.types.js').DelegationsStorageEnvironment} DelegationsStorageEnvironment
  */
+export class InvalidDelegation extends Failure {
+  get name() {
+    return /** @type {const} */ ('InvalidDelegation')
+  }
+}
+
+export class DelegationNotFound extends Failure {
+  get name() {
+    return /** @type {const} */ ('DelegationNotFound')
+  }
+}
+
+export class StoreOperationFailed extends Failure {
+  get name() {
+    return /** @type {const} */ ('StoreOperationFailed')
+  }
+}
 
 /**
  * Provides a delegations storage in the application context
@@ -33,15 +52,13 @@ function createStorage(env) {
      * Finds the delegation proofs for the given space
      * 
      * @param {import('@web3-storage/capabilities/types').SpaceDID} space 
-     * @returns {Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>, Ucanto.Failure>>}
+     * @returns {Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>, DelegationNotFound | Ucanto.Failure>>}
      */
     find: async (space) => {
-      if (!space) return { error: { name: 'MissingSpace', message: 'No space provided' } }
+      if (!space) return error(new DelegationNotFound('space not provided'))
       const delegation = await env.CONTENT_SERVE_DELEGATIONS_STORE.get(space, 'arrayBuffer')
-      if (!delegation) return { error: { name: 'DelegationNotFound', message: `No delegation found for space ${space}` } }
-      const res = await Delegation.extract(new Uint8Array(delegation))
-      if (res.error) return res
-      return { ok: res.ok }
+      if (!delegation) return error(new DelegationNotFound(`delegation not found for space ${space}`))
+      return Delegation.extract(new Uint8Array(delegation))
     },
 
     /**
@@ -50,27 +67,25 @@ function createStorage(env) {
      * 
      * @param {import('@web3-storage/capabilities/types').SpaceDID} space 
      * @param {Ucanto.Delegation<Ucanto.Capabilities>} delegation
-     * @returns {Promise<Ucanto.Result<Ucanto.Unit, Ucanto.Failure>>}
+     * @returns {Promise<Ucanto.Result<Ucanto.Unit, StoreOperationFailed | Ucanto.Failure>>}
      */
     store: async (space, delegation) => {
+      let options = {}
+      if (delegation.expiration && delegation.expiration > 0 && delegation.expiration !== Infinity) {
+        // expire the key-value pair when the delegation expires (seconds since epoch)
+        options = { expiration: delegation.expiration }
+      }
+      
+      const value = await delegation.archive()
+      if (value.error) return error(value.error)
+
       try {
-        let options = {}
-        if (delegation.expiration && delegation.expiration > 0 && delegation.expiration !== Infinity) {
-          // expire the key-value pair when the delegation expires (seconds since epoch)
-          options = { expiration: delegation.expiration }
-        }
-
-        const value = await delegation.archive()
-        if (value.error) return value
-
         await env.CONTENT_SERVE_DELEGATIONS_STORE.put(space, value.ok.buffer, options)
-        return { ok: {} }
-      } catch (error) {
+        return ok({})
+      } catch (/** @type {any} */ err) {
         const message = `error while storing delegation for space ${space}`
-        console.error(message, error)
-        return {
-          error: { name: 'DelegationFailure', message }
-        }
+        console.error(message, err)
+        return error(new StoreOperationFailed(message))
       }
     }
   }
