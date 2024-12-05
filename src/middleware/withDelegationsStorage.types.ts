@@ -4,23 +4,22 @@ import { KVNamespace } from '@cloudflare/workers-types'
 import { SpaceDID } from '@web3-storage/capabilities/types'
 import { Failure } from '@ucanto/core'
 import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
-import { LocatorContext } from './withLocator.types.js'
 
-export interface Environment extends MiddlewareEnvironment {
+export interface DelegationsStorageEnvironment extends MiddlewareEnvironment {
   CONTENT_SERVE_DELEGATIONS_STORE: KVNamespace
   FF_DELEGATIONS_STORAGE_ENABLED: string
-}
-
-export class DelegationFailure extends Failure {
-  get name() {
-    return /** @type {const} */ ('DelegationFailure')
-  }
 }
 
 export interface DelegationsStorageContext
   extends MiddlewareContext,
   GatewayIdentityContext {
   delegationsStorage: DelegationsStorage
+}
+
+export class DelegationFailure extends Failure {
+  get name() {
+    return /** @type {const} */ ('DelegationFailure')
+  }
 }
 
 export interface DelegationsStorage {

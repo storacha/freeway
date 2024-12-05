@@ -1,19 +1,16 @@
 import { Delegation } from '@ucanto/core'
-import { DelegationFailure } from './withDelegationsStorage.types.js'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
- * @import {
- *   Middleware,
- * } from '@web3-storage/gateway-lib'
- * @import { DelegationsStorageContext, Environment } from './withDelegationsStorage.types.js'
+ * @import { Middleware } from '@web3-storage/gateway-lib'
+ * @import { DelegationsStorageContext, DelegationsStorageEnvironment } from './withDelegationsStorage.types.js'
  */
 
 /**
  * Provides a delegations storage in the application context
  *
  * @type {(
- *   Middleware<DelegationsStorageContext, DelegationsStorageContext, Environment>
+ *   Middleware<DelegationsStorageContext, DelegationsStorageContext, DelegationsStorageEnvironment>
  * )}
  */
 export const withDelegationsStorage = (handler) => async (request, env, ctx) => {
@@ -27,7 +24,7 @@ export const withDelegationsStorage = (handler) => async (request, env, ctx) => 
 }
 
 /**
- * @param {Environment} env
+ * @param {DelegationsStorageEnvironment} env
  * @returns {import('./withDelegationsStorage.types.js').DelegationsStorage}
  */
 function createStorage(env) {
@@ -72,7 +69,7 @@ function createStorage(env) {
         const message = `error while storing delegation for space ${space}`
         console.error(message, error)
         return {
-          error: new DelegationFailure(message)
+          error: { name: 'DelegationFailure', message }
         }
       }
     }
