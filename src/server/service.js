@@ -2,9 +2,9 @@ import {
   Access as AccessCapabilities,
   Space as SpaceCapabilities,
 } from '@web3-storage/capabilities'
-import { provide } from '../server/index.js'
-import { extractContentServeDelegation } from './utils.js'
+import { extractContentServeDelegation, resolveDIDKey } from './utils.js'
 import { claim } from '@ucanto/validator'
+import * as UcantoServer from '@ucanto/server'
 
 /**
  * @template T
@@ -14,7 +14,7 @@ import { claim } from '@ucanto/validator'
 export function createService(ctx) {
   return {
     access: {
-      delegate: provide(
+      delegate: UcantoServer.provide(
         AccessCapabilities.delegate,
         async ({ capability, invocation, context }) => {
           const result = extractContentServeDelegation(ctx.gatewayIdentity, capability, invocation.proofs)
@@ -30,6 +30,7 @@ export function createService(ctx) {
             {
               ...context,
               authority: ctx.gatewayIdentity,
+              resolveDIDKey: (did) => resolveDIDKey(did, ctx)
             }
           )
           if (validationResult.error) {
@@ -40,7 +41,6 @@ export function createService(ctx) {
           const space = capability.with
           return ctx.delegationsStorage.store(space, delegation)
         },
-        ctx,
       ),
     }
   }
