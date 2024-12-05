@@ -23,7 +23,6 @@ export const withDelegationsStorage = (handler) => async (request, env, ctx) => 
   return handler(request, env, {
     ...ctx,
     delegationsStorage: createStorage(env),
-    locator: ctx.locator
   })
 }
 

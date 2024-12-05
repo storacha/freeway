@@ -19,7 +19,6 @@ export class DelegationFailure extends Failure {
 
 export interface DelegationsStorageContext
   extends MiddlewareContext,
-  LocatorContext,
   GatewayIdentityContext {
   delegationsStorage: DelegationsStorage
 }
