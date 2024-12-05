@@ -60,7 +60,7 @@ export const extractContentServeDelegation = (gatewayIdentity, capability, proof
  */
 export const resolveDIDKey = (did, ctx) => {
   if (did && did.startsWith('did:web') && did === ctx.gatewayIdentity.did()) {
-    return ok(ctx.gatewaySigner.did())
+    return ok(ctx.gatewaySigner.toDIDKey())
   }
   return error(new DIDResolutionError(did))
 }

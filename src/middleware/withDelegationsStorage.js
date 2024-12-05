@@ -77,7 +77,10 @@ function createStorage(env) {
       }
       
       const value = await delegation.archive()
-      if (value.error) return error(value.error)
+      if (value.error) {
+        console.error(`error while archiving delegation`, value.error)
+        return error(value.error)
+      }
 
       try {
         await env.CONTENT_SERVE_DELEGATIONS_STORE.put(space, value.ok.buffer, options)

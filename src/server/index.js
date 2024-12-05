@@ -1,6 +1,7 @@
-import * as UcantoServer from '@ucanto/server'
+import * as Server from '@ucanto/server'
 import * as CAR from '@ucanto/transport/car'
 import { resolveDIDKey } from './utils.js'
+
 /**
  * Creates a UCAN server.
  * 
@@ -9,14 +10,14 @@ import { resolveDIDKey } from './utils.js'
  * @param {import('./api.types.js').Service<T>} service
  */
 export function createServer(ctx, service) {
-  return UcantoServer.create({
+  return Server.create({
     id: ctx.gatewaySigner,
     codec: CAR.inbound,
     service,
     catch: err => console.error(err),
     // TODO: wire into revocations
     validateAuthorization: () => ({ ok: {} }),
-    // @ts-expect-error - The type is not defined in the ucan package, but it supports the method. See https://github.com/storacha/ucanto/issues/359
+    // @ts-expect-error - The type is not defined in the ucan package, but it supports the method.
     resolveDIDKey: (did) => resolveDIDKey(did, ctx),
     authorities: [ctx.gatewayIdentity]
   })
