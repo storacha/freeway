@@ -7,23 +7,6 @@ import { ok, error, Failure } from '@ucanto/server'
  * @typedef {import('./withDelegationsStorage.types.js').DelegationsStorageContext} DelegationsStorageContext
  * @typedef {import('./withDelegationsStorage.types.js').DelegationsStorageEnvironment} DelegationsStorageEnvironment
  */
-export class InvalidDelegation extends Failure {
-  get name() {
-    return /** @type {const} */ ('InvalidDelegation')
-  }
-}
-
-export class DelegationNotFound extends Failure {
-  get name() {
-    return /** @type {const} */ ('DelegationNotFound')
-  }
-}
-
-export class StoreOperationFailed extends Failure {
-  get name() {
-    return /** @type {const} */ ('StoreOperationFailed')
-  }
-}
 
 /**
  * Provides a delegations storage in the application context
@@ -79,7 +62,7 @@ function createStorage(env) {
       const value = await delegation.archive()
       if (value.error) {
         console.error(`error while archiving delegation`, value.error)
-        return error(value.error)
+        return value
       }
 
       try {
@@ -91,5 +74,63 @@ function createStorage(env) {
         return error(new StoreOperationFailed(message))
       }
     }
+  }
+}
+
+
+export class InvalidDelegation extends Failure {
+  static name = /** @type {const} */ ('InvalidDelegation')
+  #reason
+
+  /** @param {string} [reason] */
+  constructor(reason) {
+    super()
+    this.#reason = reason
+  }
+
+  get name() {
+    return InvalidDelegation.name
+  }
+
+  describe() {
+    return this.#reason ?? 'Invalid delegation'
+  }
+}
+
+export class DelegationNotFound extends Failure {
+  static name = /** @type {const} */ ('DelegationNotFound')
+  #reason
+
+  /** @param {string} [reason] */
+  constructor(reason) {
+    super()
+    this.#reason = reason
+  }
+
+  get name() {
+    return DelegationNotFound.name
+  }
+
+  describe() {
+    return this.#reason ?? 'Delegation not found'
+  }
+}
+
+export class StoreOperationFailed extends Failure {
+  static name = /** @type {const} */ ('StoreOperationFailed')
+  #reason
+
+  /** @param {string} [reason] */
+  constructor(reason) {
+    super()
+    this.#reason = reason
+  }
+
+  get name() {
+    return StoreOperationFailed.name
+  }
+
+  describe() {
+    return this.#reason ?? 'Store operation failed'
   }
 }

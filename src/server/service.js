@@ -2,9 +2,10 @@ import {
   Access as AccessCapabilities,
   Space as SpaceCapabilities,
 } from '@web3-storage/capabilities'
-import { extractContentServeDelegation, resolveDIDKey } from './utils.js'
+import { extractContentServeDelegation } from './utils.js'
 import { claim, Schema } from '@ucanto/validator'
 import * as UcantoServer from '@ucanto/server'
+
 
 /**
  * @template T

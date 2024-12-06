@@ -1,5 +1,3 @@
-import { ok, error } from '@ucanto/core'
-import { DIDResolutionError } from '@ucanto/validator'
 import { Access as AccessCapabilities, Space as SpaceCapabilities } from '@web3-storage/capabilities'
 import { InvalidDelegation } from '../middleware/withDelegationsStorage.js'
 
@@ -50,17 +48,4 @@ export const extractContentServeDelegation = (gatewayIdentity, capability, proof
   }
   
   return { ok: delegationProof }
-}
-
-/**
- * Resolves the DID key for the given DID.
- * 
- * @param {import('@ucanto/interface').DID} did - The DID to resolve
- * @param {import('../middleware/withUcanInvocationHandler.types.js').Context} ctx - The application context
- */
-export const resolveDIDKey = (did, ctx) => {
-  if (did && did.startsWith('did:web') && did === ctx.gatewayIdentity.did()) {
-    return ok(ctx.gatewaySigner.toDIDKey())
-  }
-  return error(new DIDResolutionError(did))
 }

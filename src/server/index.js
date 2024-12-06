@@ -1,6 +1,7 @@
 import * as Server from '@ucanto/server'
 import * as CAR from '@ucanto/transport/car'
-import { resolveDIDKey } from './utils.js'
+import { ok, error } from '@ucanto/core'
+import { DIDResolutionError } from '@ucanto/validator'
 
 /**
  * Creates a UCAN server.
@@ -18,7 +19,24 @@ export function createServer(ctx, service) {
     // TODO: wire into revocations
     validateAuthorization: () => ({ ok: {} }),
     // @ts-expect-error - The type is not defined in the ucan package, but it supports the method.
-    resolveDIDKey: (did) => resolveDIDKey(did, ctx),
-    authorities: [ctx.gatewayIdentity]
+    resolveDIDKey: (did) => resolveDIDKey(did, ctx)
   })
+}
+/**
+ * Resolves the DID key for the given DID.
+ * 
+ * @param {import('@ucanto/interface').DID} did - The DID to resolve
+ * @param {import('../middleware/withUcanInvocationHandler.types.js').Context} ctx - The application context
+ */
+const resolveDIDKey = (did, ctx) => {
+  if (did) {
+    if (did.startsWith('did:web') && did === ctx.gatewayIdentity.did()) {
+      return ok(ctx.gatewaySigner.toDIDKey())
+    }
+    if (did.startsWith('did:key')) {
+      return ok(did)
+    }
+  }
+
+  return error(new DIDResolutionError(did))
 }
