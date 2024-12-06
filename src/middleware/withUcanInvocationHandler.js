@@ -22,8 +22,8 @@ export function withUcanInvocationHandler(handler) {
       return handler(request, env, ctx)
     }
 
-    const service = createService(ctx)
-    const server = createServer(ctx, service)
+    const service = ctx.service ?? createService(ctx)
+    const server = ctx.server ?? createServer(ctx, service)
 
     const { headers, body, status } = await server.request({
       body: new Uint8Array(await request.arrayBuffer()),
