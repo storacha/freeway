@@ -54,7 +54,6 @@ const ctx =
     dataCid: CID.parse('bafybeibv7vzycdcnydl5n5lbws6lul2omkm6a6b5wmqt77sicrwnhesy7y'),
     gatewaySigner,
     gatewayIdentity,
-    delegationsStorage: { find: async () => ({ ok: stubDelegations }) },
     delegationProofs: [],
     waitUntil: async (promise) => {
       try {

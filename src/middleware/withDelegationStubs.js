@@ -2,10 +2,11 @@ import { Delegation, Schema } from '@ucanto/core'
 
 /**
  * @import {
+Environment,
  *   Middleware,
  *   Context as MiddlewareContext
  * } from '@web3-storage/gateway-lib'
- * @import { DelegationsStorageContext } from './withAuthorizedSpace.types.js'
+ * @import { DelegationsStorageContext } from './withDelegationsStorage.types.js'
  * @import { LocatorContext } from './withLocator.types.js'
  * @import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
  */
@@ -23,11 +24,18 @@ import { Delegation, Schema } from '@ucanto/core'
  *   Middleware<
  *     MiddlewareContext & LocatorContext & GatewayIdentityContext & DelegationsStorageContext,
  *     MiddlewareContext & LocatorContext & GatewayIdentityContext,
- *     {}
+ *     Environment & { FF_DELEGATIONS_STORAGE_ENABLED: string }
  *   >
  * )}
  */
 export const withDelegationStubs = (handler) => async (request, env, ctx) => {
+  if (env.FF_DELEGATIONS_STORAGE_ENABLED === 'true') {
+    // @ts-expect-error: If FF_DELEGATIONS_STORAGE_ENABLED is true, the context
+    // will have the delegationsStorage created by the withDelegationsStorage
+    // middleware. So we can skip the stubbing.
+    return handler(request, env, ctx)
+  }
+
   const stubSpace = new URL(request.url).searchParams.get('stub_space')
   const stubDelegations = await Promise.all(
     new URL(request.url).searchParams
@@ -48,7 +56,10 @@ export const withDelegationStubs = (handler) => async (request, env, ctx) => {
 
   return handler(request, env, {
     ...ctx,
-    delegationsStorage: { find: async () => ({ ok: stubDelegations }) },
+    delegationsStorage: {
+      find: async () => ({ ok: stubDelegations[0] }),
+      store: async () => ({ ok: {} })
+    },
     locator:
       stubSpace && Schema.did({ method: 'key' }).is(stubSpace)
         ? ctx.locator.scopeToSpaces([stubSpace])

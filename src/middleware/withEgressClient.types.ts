@@ -1,7 +1,7 @@
 import { Environment as MiddlewareEnvironment, Context as MiddlewareContext } from '@web3-storage/gateway-lib'
 import { DIDKey, UnknownLink } from '@ucanto/principal/ed25519'
 import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
-import { DelegationsStorageContext, DelegationProofsContext } from './withAuthorizedSpace.types.js'
+import { DelegationProofsContext } from './withAuthorizedSpace.types.js'
 
 export interface Environment extends MiddlewareEnvironment {
   FF_EGRESS_TRACKER_ENABLED: string
@@ -13,7 +13,6 @@ export interface Environment extends MiddlewareEnvironment {
 export interface EgressClientContext
   extends MiddlewareContext,
     GatewayIdentityContext,
-    DelegationsStorageContext,
     DelegationProofsContext {
   egressClient: EgressClient
 }
