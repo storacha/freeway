@@ -21,11 +21,11 @@ export interface DelegationsStorage {
    * Finds the delegation proofs for the given space
    * 
    * @param {import('@web3-storage/capabilities/types').SpaceDID} space 
-   * @returns {Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>, DelegationNotFound | Ucanto.Failure>>}
+   * @returns {Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>[], DelegationNotFound | Ucanto.Failure>>}
    */
   find: (
     space: SpaceDID
-  ) => Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>, DelegationNotFound | Ucanto.Failure>>
+  ) => Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>[], DelegationNotFound | Ucanto.Failure>>
 
   /**
    * Stores the delegation proofs for the given space

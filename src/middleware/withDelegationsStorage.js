@@ -30,18 +30,28 @@ export const withDelegationsStorage = (handler) => async (request, env, ctx) => 
  * @returns {import('./withDelegationsStorage.types.js').DelegationsStorage}
  */
 function createStorage(env) {
+
   return {
     /**
      * Finds the delegation proofs for the given space
      * 
      * @param {import('@web3-storage/capabilities/types').SpaceDID} space 
-     * @returns {Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>, DelegationNotFound | Ucanto.Failure>>}
+     * @returns {Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>[], DelegationNotFound | Ucanto.Failure>>}
      */
     find: async (space) => {
       if (!space) return error(new DelegationNotFound('space not provided'))
-      const delegation = await env.CONTENT_SERVE_DELEGATIONS_STORE.get(space, 'arrayBuffer')
-      if (!delegation) return error(new DelegationNotFound(`delegation not found for space ${space}`))
-      return Delegation.extract(new Uint8Array(delegation))
+
+      /** @type {Ucanto.Delegation<Ucanto.Capabilities>[]} */
+      const delegations = []
+      const result = await env.CONTENT_SERVE_DELEGATIONS_STORE.list({ prefix: space })
+      result.keys.forEach(async (key) => {
+        const delegation = await env.CONTENT_SERVE_DELEGATIONS_STORE.get(key.name, 'arrayBuffer')
+        if (delegation) {
+          const d = await Delegation.extract(new Uint8Array(delegation))
+          if (d.ok) delegations.push(d.ok)
+        }
+      })
+      return ok(delegations)
     },
 
     /**
@@ -58,7 +68,7 @@ function createStorage(env) {
         // expire the key-value pair when the delegation expires (seconds since epoch)
         options = { expiration: delegation.expiration }
       }
-      
+
       const value = await delegation.archive()
       if (value.error) {
         console.error(`error while archiving delegation`, value.error)
@@ -66,7 +76,7 @@ function createStorage(env) {
       }
 
       try {
-        await env.CONTENT_SERVE_DELEGATIONS_STORE.put(space, value.ok.buffer, options)
+        await env.CONTENT_SERVE_DELEGATIONS_STORE.put(`${space}:${delegation.cid.toString()}`, value.ok.buffer, options)
         return ok({})
       } catch (/** @type {any} */ err) {
         const message = `error while storing delegation for space ${space}`

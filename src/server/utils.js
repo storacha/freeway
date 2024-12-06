@@ -1,5 +1,6 @@
 import { Access as AccessCapabilities, Space as SpaceCapabilities } from '@web3-storage/capabilities'
 import { InvalidDelegation } from '../middleware/withDelegationsStorage.js'
+import { Delegation } from '@storacha/client/delegation'
 
 /**
  * Checks if the space/content/serve/* delegation is for the gateway and it is not expired.
@@ -8,44 +9,27 @@ import { InvalidDelegation } from '../middleware/withDelegationsStorage.js'
  * @param {import('@ucanto/interface').InferInvokedCapability<typeof AccessCapabilities.delegate>} capability - The capability to validate
  * @param {import('@ucanto/interface').Proof[]} proofs - The proofs to validate
  */
-export const extractContentServeDelegation = (gatewayIdentity, capability, proofs) => {
+export const extractContentServeDelegations = (gatewayIdentity, capability, proofs) => {
   const nbDelegations = new Set(Object.values(capability.nb.delegations))
-  if (nbDelegations.size !== 1) {
-    return { error: new InvalidDelegation(`nb.delegations has more than one delegation`) }
+  if (nbDelegations.size === 0) {
+    return { error: new InvalidDelegation(`nb.delegations can not be empty`) }
   }
-
-  const delegationLink = Array.from(nbDelegations)[0]
-  const proofDelegations = proofs.flatMap((proof) => 'capabilities' in proof ? [proof] : [])
-  const delegationProof = proofDelegations.find((p) =>
-    delegationLink.equals(p.cid)
-  )
-  if (!delegationProof) {
-    return { error: new InvalidDelegation(`delegation not found in proofs: ${delegationLink}`) }
-  }
-
-  if (delegationProof.audience.did() !== gatewayIdentity.did()) {
-    return {
-      error: new InvalidDelegation(
-        `invalid audience ${delegationProof.audience.did()} does not match Gateway DID ${gatewayIdentity.did()}`
-      )
+  const delegations = []
+  for (const delegationLink of nbDelegations) {
+    const proofDelegations = proofs.flatMap((proof) => 'capabilities' in proof ? [proof] : [])
+    const delegationProof = proofDelegations.find((p) => delegationLink.equals(p.cid))
+    if (!delegationProof) {
+      return { error: new InvalidDelegation(`delegation not found in proofs: ${delegationLink}`) }
     }
-  }
 
-  if (delegationProof.expiration && delegationProof.expiration !== Infinity && delegationProof.expiration < Math.floor(Date.now() / 1000)) {
-    return {
-      error: new InvalidDelegation(
-        `delegation expired at ${delegationProof.expiration}`
-      )
+    if (!delegationProof.capabilities.some((c) => c.can === SpaceCapabilities.contentServe.can)) {
+      return {
+        error: new InvalidDelegation(
+          `delegation does not contain ${SpaceCapabilities.contentServe.can} capability`
+        )
+      }
     }
+    delegations.push(delegationProof)
   }
-
-  if (!delegationProof.capabilities.some((c) => c.can === SpaceCapabilities.contentServe.can)) {
-    return {
-      error: new InvalidDelegation(
-        `delegation does not contain ${SpaceCapabilities.contentServe.can} capability`
-      )
-    }
-  }
-  
-  return { ok: delegationProof }
+  return { ok: delegations }
 }

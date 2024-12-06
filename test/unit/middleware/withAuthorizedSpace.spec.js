@@ -121,15 +121,11 @@ const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
  * */
 const createDelegationStorage = (delegations) => ({
   find: async (space) => {
-    const delegation = delegations.find((d) =>
-      d.capabilities.some((cap) => cap.with === space)
-    )
-
-    if (!delegation) {
-      return { error: new Error('No matching delegation found') }
+    return {
+      ok: delegations.filter((d) =>
+        d.capabilities.some((cap) => cap.with === space)
+      )
     }
-
-    return { ok: delegation }
   },
   store: async (space, delegation) => ({ error: new Error('Not implemented') })
 })

@@ -108,7 +108,7 @@ const authorize = async (space, ctx) => {
   // Look up delegations that might authorize us to serve the content.
   const relevantDelegationsResult = await ctx.delegationsStorage.find(space)
   if (relevantDelegationsResult.error) return relevantDelegationsResult
-
+  const delegationProofs = relevantDelegationsResult.ok
   // Create an invocation of the serve capability.
   const invocation = await serve.transportHttp
     .invoke({
@@ -118,7 +118,7 @@ const authorize = async (space, ctx) => {
       nb: {
         token: ctx.authToken
       },
-      proofs: [relevantDelegationsResult.ok]
+      proofs: delegationProofs
     })
     .delegate()
 
@@ -136,7 +136,7 @@ const authorize = async (space, ctx) => {
   return {
     ok: {
       space,
-      delegationProofs: [relevantDelegationsResult.ok]
+      delegationProofs
     }
   }
 }
