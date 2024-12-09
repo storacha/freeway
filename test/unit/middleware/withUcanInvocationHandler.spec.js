@@ -57,7 +57,6 @@ const ctx =
   })
 
 describe('withUcanInvocationHandler', () => {
-
   afterEach(() => {
     serviceStub.access.delegate.reset()
     serverStub.request.reset()

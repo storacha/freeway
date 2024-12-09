@@ -85,7 +85,7 @@ export const spaceScopedLocator = (locator, spaces) => ({
       }
     }
   },
-  scopeToSpaces(newSpaces) {
+  scopeToSpaces (newSpaces) {
     return spaceScopedLocator(locator, newSpaces)
   }
 })
@@ -96,7 +96,7 @@ export const spaceScopedLocator = (locator, spaces) => ({
  * @returns {Locator}
  * */
 const createLocator = (expectedDigest, locateResponse) => ({
-  async locate(digest) {
+  async locate (digest) {
     if (Digest.equals(digest, expectedDigest)) {
       return locateResponse
     } else {
@@ -107,7 +107,7 @@ const createLocator = (expectedDigest, locateResponse) => ({
       )
     }
   },
-  scopeToSpaces(spaces) {
+  scopeToSpaces (spaces) {
     return spaceScopedLocator(this, spaces)
   }
 })

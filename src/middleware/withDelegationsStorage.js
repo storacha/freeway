@@ -21,7 +21,7 @@ export const withDelegationsStorage = (handler) => async (request, env, ctx) => 
   }
   return handler(request, env, {
     ...ctx,
-    delegationsStorage: createStorage(env),
+    delegationsStorage: createStorage(env)
   })
 }
 
@@ -29,13 +29,12 @@ export const withDelegationsStorage = (handler) => async (request, env, ctx) => 
  * @param {DelegationsStorageEnvironment} env
  * @returns {import('./withDelegationsStorage.types.js').DelegationsStorage}
  */
-function createStorage(env) {
-
+function createStorage (env) {
   return {
     /**
      * Finds the delegation proofs for the given space
-     * 
-     * @param {import('@web3-storage/capabilities/types').SpaceDID} space 
+     *
+     * @param {import('@web3-storage/capabilities/types').SpaceDID} space
      * @returns {Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>[], DelegationNotFound | Ucanto.Failure>>}
      */
     find: async (space) => {
@@ -57,8 +56,8 @@ function createStorage(env) {
     /**
      * Stores the delegation proofs for the given space.
      * If the delegation has an expiration, it will be stored with an expiration time in seconds since unix epoch.
-     * 
-     * @param {import('@web3-storage/capabilities/types').SpaceDID} space 
+     *
+     * @param {import('@web3-storage/capabilities/types').SpaceDID} space
      * @param {Ucanto.Delegation<Ucanto.Capabilities>} delegation
      * @returns {Promise<Ucanto.Result<Ucanto.Unit, StoreOperationFailed | Ucanto.Failure>>}
      */
@@ -71,7 +70,7 @@ function createStorage(env) {
 
       const value = await delegation.archive()
       if (value.error) {
-        console.error(`error while archiving delegation`, value.error)
+        console.error('error while archiving delegation', value.error)
         return value
       }
 
@@ -87,22 +86,21 @@ function createStorage(env) {
   }
 }
 
-
 export class InvalidDelegation extends Failure {
   static name = /** @type {const} */ ('InvalidDelegation')
   #reason
 
   /** @param {string} [reason] */
-  constructor(reason) {
+  constructor (reason) {
     super()
     this.#reason = reason
   }
 
-  get name() {
+  get name () {
     return InvalidDelegation.name
   }
 
-  describe() {
+  describe () {
     return this.#reason ?? 'Invalid delegation'
   }
 }
@@ -112,16 +110,16 @@ export class DelegationNotFound extends Failure {
   #reason
 
   /** @param {string} [reason] */
-  constructor(reason) {
+  constructor (reason) {
     super()
     this.#reason = reason
   }
 
-  get name() {
+  get name () {
     return DelegationNotFound.name
   }
 
-  describe() {
+  describe () {
     return this.#reason ?? 'Delegation not found'
   }
 }
@@ -131,16 +129,16 @@ export class StoreOperationFailed extends Failure {
   #reason
 
   /** @param {string} [reason] */
-  constructor(reason) {
+  constructor (reason) {
     super()
     this.#reason = reason
   }
 
-  get name() {
+  get name () {
     return StoreOperationFailed.name
   }
 
-  describe() {
+  describe () {
     return this.#reason ?? 'Store operation failed'
   }
 }

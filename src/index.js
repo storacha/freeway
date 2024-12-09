@@ -58,18 +58,18 @@ const middleware = composeMiddleware(
   withErrorHandler,
   withGatewayIdentity,
   withDelegationsStorage,
-  
+
   // Handle UCAN invocations (POST requests only)
   withUcanInvocationHandler,
 
   // Handle Content Serve requests (GET and HEAD requests)
   withHttpMethods('GET', 'HEAD'),
-  
+
   // Prepare the Context for other types of requests
   withParsedIpfsUrl,
   withAuthToken,
   withLocator,
-  
+
   // TODO: replace this with a handler to fetch the real delegations
   withDelegationStubs,
 

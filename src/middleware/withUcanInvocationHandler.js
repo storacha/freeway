@@ -16,7 +16,7 @@ import { createService } from '../server/service.js'
  *
  * @type {Middleware<UcanInvocationContext, UcanInvocationContext, Environment>}
  */
-export function withUcanInvocationHandler(handler) {
+export function withUcanInvocationHandler (handler) {
   return async (request, env, ctx) => {
     if (request.method !== 'POST' || new URL(request.url).pathname !== '/') {
       return handler(request, env, ctx)
@@ -28,7 +28,7 @@ export function withUcanInvocationHandler(handler) {
     const { headers, body, status } = await server.request({
       body: new Uint8Array(await request.arrayBuffer()),
       // @ts-expect-error: TODO: fix the .entries() type
-      headers: Object.fromEntries(request.headers.entries()),
+      headers: Object.fromEntries(request.headers.entries())
     })
 
     return new Response(body, { headers, status: status ?? 200 })

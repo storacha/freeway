@@ -51,7 +51,6 @@ const ctx =
   })
 
 describe('withDelegationsStorage', async () => {
-
   afterEach(() => {
     kvStoreMock.get.resetHistory()
   })
@@ -62,7 +61,7 @@ describe('withDelegationsStorage', async () => {
       const request = new Request('http://example.com/')
       const env = {
         FF_DELEGATIONS_STORAGE_ENABLED: 'true',
-        CONTENT_SERVE_DELEGATIONS_STORE: kvStoreMock,
+        CONTENT_SERVE_DELEGATIONS_STORE: kvStoreMock
       }
 
       await withDelegationsStorage(mockHandler)(request, env, {

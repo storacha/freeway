@@ -12,7 +12,7 @@ import { Delegation } from '@storacha/client/delegation'
 export const extractContentServeDelegations = (gatewayIdentity, capability, proofs) => {
   const nbDelegations = new Set(Object.values(capability.nb.delegations))
   if (nbDelegations.size === 0) {
-    return { error: new InvalidDelegation(`nb.delegations can not be empty`) }
+    return { error: new InvalidDelegation('nb.delegations can not be empty') }
   }
   const delegations = []
   for (const delegationLink of nbDelegations) {

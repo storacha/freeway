@@ -5,12 +5,12 @@ import { DIDResolutionError } from '@ucanto/validator'
 
 /**
  * Creates a UCAN server.
- * 
+ *
  * @template T
  * @param {import('../middleware/withUcanInvocationHandler.types.js').Context} ctx
  * @param {import('./api.types.js').Service<T>} service
  */
-export function createServer(ctx, service) {
+export function createServer (ctx, service) {
   return Server.create({
     id: ctx.gatewaySigner,
     codec: CAR.inbound,
@@ -24,7 +24,7 @@ export function createServer(ctx, service) {
 }
 /**
  * Resolves the DID key for the given DID.
- * 
+ *
  * @param {import('@ucanto/interface').DID} did - The DID to resolve
  * @param {import('../middleware/withUcanInvocationHandler.types.js').Context} ctx - The application context
  */
