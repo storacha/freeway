@@ -20,14 +20,14 @@ export function createService (ctx) {
           capability: AccessCapabilities.delegate,
           audience: Schema.did({ method: 'web' }),
           handler: async ({ capability, invocation, context }) => {
-            const result = extractContentServeDelegations(ctx.gatewayIdentity, capability, invocation.proofs)
+            const result = extractContentServeDelegations(capability, invocation.proofs)
             if (result.error) {
               console.error('error while extracting delegation', result.error)
               return result
             }
 
             const delegations = result.ok
-            for (const delegation of delegations) {
+            const validationResults = await Promise.all(delegations.map(async (delegation) => {
               const validationResult = await claim(
                 SpaceCapabilities.contentServe,
                 [delegation],
@@ -43,7 +43,13 @@ export function createService (ctx) {
 
               const space = capability.with
               return ctx.delegationsStorage.store(space, delegation)
+            }))
+
+            const errorResult = validationResults.find(result => result.error)
+            if (errorResult) {
+              return errorResult
             }
+
             return ok({})
           }
 

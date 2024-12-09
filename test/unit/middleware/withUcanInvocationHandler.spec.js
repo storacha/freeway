@@ -3,7 +3,7 @@
    `no-unused-expressions` doesn't understand that several of Chai's assertions
    are implemented as getters rather than explicit function calls; it thinks
    the assertions are unused expressions. */
-import { describe, it } from 'mocha'
+import { describe, it, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
 import { ed25519 } from '@ucanto/principal'

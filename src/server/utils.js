@@ -1,18 +1,16 @@
-import { Access as AccessCapabilities, Space as SpaceCapabilities } from '@web3-storage/capabilities'
+import { Space as SpaceCapabilities } from '@web3-storage/capabilities'
 import { InvalidDelegation } from '../middleware/withDelegationsStorage.js'
-import { Delegation } from '@storacha/client/delegation'
 
 /**
  * Checks if the space/content/serve/* delegation is for the gateway and it is not expired.
  *
- * @param {import('@ucanto/interface').Signer} gatewayIdentity - The signer of the gateway identity
- * @param {import('@ucanto/interface').InferInvokedCapability<typeof AccessCapabilities.delegate>} capability - The capability to validate
+ * @param {import('@ucanto/interface').InferInvokedCapability<typeof import('@web3-storage/capabilities').Access.delegate>} capability - The capability to validate
  * @param {import('@ucanto/interface').Proof[]} proofs - The proofs to validate
  */
-export const extractContentServeDelegations = (gatewayIdentity, capability, proofs) => {
+export const extractContentServeDelegations = (capability, proofs) => {
   const nbDelegations = new Set(Object.values(capability.nb.delegations))
-  if (nbDelegations.size === 0) {
-    return { error: new InvalidDelegation('nb.delegations can not be empty') }
+  if (nbDelegations.size !== 1) {
+    return { error: new InvalidDelegation('nb.delegations has more than one delegation') }
   }
   const delegations = []
   for (const delegationLink of nbDelegations) {

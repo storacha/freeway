@@ -3,7 +3,7 @@
    `no-unused-expressions` doesn't understand that several of Chai's assertions
    are implemented as getters rather than explicit function calls; it thinks
    the assertions are unused expressions. */
-import { describe, it, afterEach, before } from 'mocha'
+import { describe, it, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
 import { ed25519 } from '@ucanto/principal'
@@ -21,13 +21,6 @@ const kvStoreMock = {
  * @typedef {import('../../../src/middleware/withDelegationsStorage.types.js').DelegationsStorageEnvironment} DelegationsStorageEnvironment
  * @typedef {import('../../../src/middleware/withDelegationsStorage.types.js').DelegationsStorageContext} DelegationsStorageContext
  */
-
-const env =
-  /** @satisfies {DelegationsStorageEnvironment} */
-  ({
-    FF_DELEGATIONS_STORAGE_ENABLED: 'true',
-    CONTENT_SERVE_DELEGATIONS_STORE: kvStoreMock
-  })
 
 const gatewaySigner = (await ed25519.Signer.generate()).signer
 const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
@@ -57,7 +50,7 @@ describe('withDelegationsStorage', async () => {
 
   describe('-> Successful Requests', () => {
     it('should set delegationsStorage in context when FF_DELEGATIONS_STORAGE_ENABLED is true', async () => {
-      const mockHandler = sinon.stub().callsFake((request, env, ctx) => ctx)
+      const mockHandler = sinon.fake((request, env, ctx) => ctx)
       const request = new Request('http://example.com/')
       const env = {
         FF_DELEGATIONS_STORAGE_ENABLED: 'true',
@@ -76,7 +69,7 @@ describe('withDelegationsStorage', async () => {
   })
 
   it('should not set delegationsStorage in context when FF_DELEGATIONS_STORAGE_ENABLED is not true', async () => {
-    const mockHandler = sinon.stub().callsFake((request, env, ctx) => ctx)
+    const mockHandler = sinon.fake((request, env, ctx) => ctx)
     const request = new Request('http://example.com/')
     const env = {
       FF_DELEGATIONS_STORAGE_ENABLED: 'false',

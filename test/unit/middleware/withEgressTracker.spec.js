@@ -44,8 +44,6 @@ const EgressClient = () => {
 }
 const gatewaySigner = (await ed25519.Signer.generate()).signer
 const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
-/** @type {import('@ucanto/interface').Delegation<import('@ucanto/interface').Capabilities>[]} */
-const stubDelegations = []
 
 const ctx =
   /** @satisfies {EgressTrackerContext} */

@@ -57,7 +57,7 @@ export const withDelegationStubs = (handler) => async (request, env, ctx) => {
   return handler(request, env, {
     ...ctx,
     delegationsStorage: {
-      find: async () => ({ ok: stubDelegations[0] }),
+      find: async () => ({ ok: stubDelegations }),
       store: async () => ({ ok: {} })
     },
     locator:

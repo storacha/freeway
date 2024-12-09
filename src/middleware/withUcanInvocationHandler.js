@@ -27,8 +27,7 @@ export function withUcanInvocationHandler (handler) {
 
     const { headers, body, status } = await server.request({
       body: new Uint8Array(await request.arrayBuffer()),
-      // @ts-expect-error: TODO: fix the .entries() type
-      headers: Object.fromEntries(request.headers.entries())
+      headers: Object.fromEntries(request.headers)
     })
 
     return new Response(body, { headers, status: status ?? 200 })
