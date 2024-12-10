@@ -1,26 +1,6 @@
 import { capability, Schema, DID, nullable, string } from '@ucanto/validator'
 
 /**
- * "Manage the serving of content owned by the subject Space."
- *
- * A Principal who may `space/content/serve/*` is permitted to perform all
- * operations related to serving content owned by the Space, including actually
- * serving it and recording egress charges.
- */
-export const star = capability({
-  can: 'space/content/serve/*',
-  /**
-   * The Space which contains the content. This Space will be charged egress
-   * fees if content is actually retrieved by way of this invocation.
-   */
-  with: DID,
-  nb: Schema.struct({
-    /** The authorization token, if any, used for this request. */
-    token: nullable(string())
-  })
-})
-
-/**
  * "Serve content owned by the subject Space over HTTP."
  *
  * A Principal who may `space/content/serve/transport/http` is permitted to
