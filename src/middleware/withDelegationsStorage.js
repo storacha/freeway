@@ -38,8 +38,6 @@ function createStorage (env) {
      * @returns {Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>[], DelegationNotFound | Ucanto.Failure>>}
      */
     find: async (space) => {
-      if (!space) return error(new DelegationNotFound('space not provided'))
-
       /** @type {Ucanto.Delegation<Ucanto.Capabilities>[]} */
       const delegations = []
       const result = await env.CONTENT_SERVE_DELEGATIONS_STORE.list({ prefix: space })

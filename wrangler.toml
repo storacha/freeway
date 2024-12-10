@@ -29,9 +29,9 @@ namespace_id = "0"
 simple = { limit = 100, period = 60 }
 
 [[kv_namespaces]]
+# TODO BEFORE MERGE - update this to work in all environments - useful to do it like this for now
 binding = "AUTH_TOKEN_METADATA"
-# KV From Staging Environment
-id = "b618bb05deb8493f944ef4a0f538030c"
+id = "f848730e45d94f17bcaf3b6d0915da40"
 
 # PROD!
 [env.production]
