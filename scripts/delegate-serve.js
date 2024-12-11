@@ -2,7 +2,6 @@ import sade from 'sade'
 import { Schema } from '@ucanto/core'
 import { getClient } from '@storacha/cli/lib.js'
 import { Space } from '@web3-storage/capabilities'
-import * as serve from '../src/capabilities/serve.js'
 
 const MailtoDID =
   /** @type {import('@ucanto/validator').StringSchema<`did:mailto:${string}:${string}`, unknown>} */ (
@@ -51,7 +50,7 @@ sade('delegate-serve.js [space]')
 
       if (proofs.length === 0) {
         throw new Error(
-          `No proofs found. Are you authorized to ${serve.star.can} ${space}?`
+          `No proofs found. Are you authorized to ${Space.contentServe.can} ${space}?`
         )
       }
 

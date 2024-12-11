@@ -14,7 +14,7 @@
     "moduleResolution": "NodeNext",
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "target": "ES2022",
     "sourceMap": true
   }
