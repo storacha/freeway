@@ -51,14 +51,16 @@ command = "npm run build"
 [env.production.vars]
 MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
-FF_EGRESS_TRACKER_ENABLED = "false"
+FF_EGRESS_TRACKER_ENABLED = "true"
 FF_TELEMETRY_ENABLED = "true"
+FF_DELEGATIONS_STORAGE_ENABLED = "true"
 FF_RAMP_UP_PROBABILITY = "10"
 GATEWAY_SERVICE_DID = "did:web:w3s.link"
 UPLOAD_SERVICE_DID = "did:web:web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
 UPLOAD_API_URL = "https://up.web3.storage"
+INDEXING_SERVICE_URL = "https://indexer.storacha.network/"
 
 # Staging!
 [env.staging]
