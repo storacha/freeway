@@ -66,6 +66,10 @@ route = { pattern = "https://freeway-staging.dag.haus/*", zone_id = "f2f8a5b1c55
 r2_buckets = [
   { binding = "CARPARK", bucket_name = "carpark-staging-0" }
 ]
+kv_namespaces = [
+  { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "99ae45f8b5b3478a9df09302c27e81a3" }
+]
 
 [env.staging.build]
 command = "npm run build"
@@ -75,15 +79,14 @@ MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "true"
 FF_TELEMETRY_ENABLED = "true"
+FF_DELEGATIONS_STORAGE_ENABLED = "true"
 GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
 UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
 UPLOAD_API_URL = "https://staging.up.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
-kv_namespaces = [
-  { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
-  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "99ae45f8b5b3478a9df09302c27e81a3" }
-]
+INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
+
 
 # Test!
 [env.test]
