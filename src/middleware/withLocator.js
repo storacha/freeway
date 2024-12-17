@@ -48,7 +48,7 @@ export function withLocator (handler) {
 /**
  * Determines if the indexing service is enabled. It is enabled if the request
  * contains the `ff=indexing-service` query parameter or if a random chance
- * falls within the ramp-up percentage. If `FF_RAMP_UP_PERCENTAGE` is not set,
+ * falls within the ramp-up probability. If `FF_RAMP_UP_PROBABILITY` is not set,
  * it defaults to 0%.
  *
  * @param {Request} request
@@ -59,7 +59,7 @@ function isIndexingServiceEnabled (request, env) {
   const withIndexingServicesArg = new URL(request.url).searchParams
     .getAll('ff')
     .includes('indexing-service')
-  const percentage = env.FF_RAMP_UP_PERCENTAGE ? Number(env.FF_RAMP_UP_PERCENTAGE) : 0.0
-  const withIndexerEnabled = Math.random() <= percentage
+  const probability = env.FF_RAMP_UP_PROBABILITY ? Number(env.FF_RAMP_UP_PROBABILITY) : 0
+  const withIndexerEnabled = Math.random() * 100 <= probability
   return withIndexingServicesArg || withIndexerEnabled
 }
