@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.22.0](https://github.com/storacha/freeway/compare/v2.21.0...v2.22.0) (2024-12-19)
+
+
+### Features
+
+* egress client - ucanto integration ([#123](https://github.com/storacha/freeway/issues/123)) ([22bed68](https://github.com/storacha/freeway/commit/22bed68716f9661cf5bb1359a55f052a0a04d96f))
+* enable egress tracking in production env ([#135](https://github.com/storacha/freeway/issues/135)) ([ad43b62](https://github.com/storacha/freeway/commit/ad43b629eda26936177fa0d1a9b11f3201096754))
+* **indexer:** probabilistic feature flag ([#136](https://github.com/storacha/freeway/issues/136)) ([dca2b35](https://github.com/storacha/freeway/commit/dca2b35fe9909377271d6de363630f854028d6e3))
+* ucan invocation handler ([#133](https://github.com/storacha/freeway/issues/133)) ([b199bfa](https://github.com/storacha/freeway/commit/b199bfa2cfe9780f502cfedb9d2e7df9930003be))
+* Use Indexing Service when feature flag is present ([#132](https://github.com/storacha/freeway/issues/132)) ([fa3f480](https://github.com/storacha/freeway/commit/fa3f48091ac259cb9429844bfa6f48b4c1800639))
+
+
+### Bug Fixes
+
+* **config:** staging kv bidding ([#134](https://github.com/storacha/freeway/issues/134)) ([7a523d5](https://github.com/storacha/freeway/commit/7a523d5da18e26e8a4b730f8fe45e77fb8a87cf8))
+* **egress-client:** set nonce, expire and fix servedAt ([#130](https://github.com/storacha/freeway/issues/130)) ([b135643](https://github.com/storacha/freeway/commit/b135643f7d5c815e46121b09ce7d78e9467b5a17))
+* enable open telemetry for all envs ([#131](https://github.com/storacha/freeway/issues/131)) ([c822465](https://github.com/storacha/freeway/commit/c822465bf873222d6bfa984732feb2d346e77145))
+
 ## [2.21.0](https://github.com/storacha/freeway/compare/v2.20.2...v2.21.0) (2024-11-06)
 
 
