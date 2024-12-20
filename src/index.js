@@ -28,7 +28,8 @@ import {
   withLocator,
   withUcanInvocationHandler,
   withDelegationsStorage,
-  withDelegationStubs
+  withDelegationStubs,
+  withOptionsRequest
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
@@ -53,6 +54,7 @@ const middleware = composeMiddleware(
   // Prepare the Context for all types of requests
   withCdnCache,
   withContext,
+  withOptionsRequest,
   withCorsHeaders,
   withVersionHeader,
   withErrorHandler,
