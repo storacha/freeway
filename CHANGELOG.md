@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.22.1](https://github.com/storacha/freeway/compare/v2.22.0...v2.22.1) (2024-12-20)
+
+
+### Bug Fixes
+
+* **locator:** disable indexing service 10% for now ([#138](https://github.com/storacha/freeway/issues/138)) ([3be397c](https://github.com/storacha/freeway/commit/3be397cbb171d8ba64a935a46ecc9a746151fb46))
+
 ## [2.22.0](https://github.com/storacha/freeway/compare/v2.21.0...v2.22.0) (2024-12-19)
 
 
