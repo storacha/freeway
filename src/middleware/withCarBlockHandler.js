@@ -1,14 +1,10 @@
-/* eslint-env browser */
-/* global FixedLengthStream */
-
 import { CAR_CODE } from '../constants.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
-// @ts-expect-error no types
-import httpRangeParse from 'http-range-parse'
 import { base58btc } from 'multiformats/bases/base58'
+import { parseRange, toResponse } from './utils.js'
 
 /**
- * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
+ * @import { R2Bucket, KVNamespace, RateLimit, R2Range } from '@cloudflare/workers-types'
  * @import {
  *   IpfsUrlContext,
  *   Middleware,
@@ -18,8 +14,6 @@ import { base58btc } from 'multiformats/bases/base58'
  * } from '@web3-storage/gateway-lib'
  * @import { Environment } from './withCarBlockHandler.types.js'
  */
-
-/** @typedef {{ offset: number, length?: number } | { offset?: number, length: number } | { suffix: number }} Range */
 
 /**
  * Middleware that will serve CAR files if a CAR codec is found in the path
@@ -92,7 +86,7 @@ export async function handleCarBlock (request, env, ctx) {
     })
   }
 
-  /** @type {Range|undefined} */
+  /** @type {R2Range|undefined} */
   let range
   if (request.headers.has('range')) {
     try {
@@ -108,32 +102,13 @@ export async function handleCarBlock (request, env, ctx) {
   }
   if (!obj) throw new HttpError('CAR not found', { status: 404 })
 
-  const status = range ? 206 : 200
-  const headers = new Headers({
+  return toResponse(obj, range, new Headers({
     'Content-Type': 'application/vnd.ipld.car; version=1;',
     'X-Content-Type-Options': 'nosniff',
     'Cache-Control': 'public, max-age=29030400, immutable',
     'Content-Disposition': `attachment; filename="${dataCid}.car"`,
     Etag: etag
-  })
-
-  let contentLength = obj.size
-  if (range) {
-    let first, last
-    if ('suffix' in range) {
-      first = obj.size - range.suffix
-      last = obj.size - 1
-    } else {
-      first = range.offset || 0
-      last = range.length != null ? first + range.length - 1 : obj.size - 1
-    }
-    headers.set('Content-Range', `bytes ${first}-${last}/${obj.size}`)
-    contentLength = last - first
-  }
-  headers.set('Content-Length', contentLength.toString())
-
-  // @ts-expect-error ReadableStream types incompatible
-  return new Response(obj.body.pipeThrough(new FixedLengthStream(contentLength)), { status, headers })
+  }))
 }
 
 /** @param {import('multiformats').UnknownLink} cid */
@@ -143,19 +118,4 @@ const toCARKey = cid => `${cid}/${cid}.car`
 const toBlobKey = digest => {
   const mhStr = base58btc.encode(digest.bytes)
   return `${mhStr}/${mhStr}.blob`
-}
-
-/**
- * Convert a HTTP Range header to a range object.
- * @param {string} value
- * @returns {Range}
- */
-function parseRange (value) {
-  const result = httpRangeParse(value)
-  if (result.ranges) throw new Error('Multipart ranges not supported')
-  const { unit, first, last, suffix } = result
-  if (unit !== 'bytes') throw new Error(`Unsupported range unit: ${unit}`)
-  return suffix != null
-    ? { suffix }
-    : { offset: first, length: last != null ? last - first + 1 : undefined }
 }

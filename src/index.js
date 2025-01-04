@@ -29,7 +29,8 @@ import {
   withUcanInvocationHandler,
   withDelegationsStorage,
   withDelegationStubs,
-  withOptionsRequest
+  withOptionsRequest,
+  withCarParkFetch
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base'
@@ -71,6 +72,7 @@ const middleware = composeMiddleware(
   withParsedIpfsUrl,
   withAuthToken,
   withLocator,
+  withCarParkFetch,
 
   // TODO: replace this with a handler to fetch the real delegations
   withDelegationStubs,

@@ -338,7 +338,7 @@ describe('freeway', () => {
 
     const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${shards[0]}`, {
       headers: {
-        Range: `bytes=${rootBlock.blockOffset}-${rootBlock.blockOffset + rootBlock.blockLength}`
+        Range: `bytes=${rootBlock.blockOffset}-${rootBlock.blockOffset + rootBlock.blockLength - 1}`
       }
     })
     assert(res.ok)
@@ -349,7 +349,7 @@ describe('freeway', () => {
     const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
     assert(contentLength)
     assert.equal(contentLength, rootBlock.bytes.length)
-    assert.equal(res.headers.get('Content-Range'), `bytes ${rootBlock.blockOffset}-${rootBlock.blockOffset + rootBlock.blockLength}/${obj.size}`)
+    assert.equal(res.headers.get('Content-Range'), `bytes ${rootBlock.blockOffset}-${rootBlock.blockOffset + rootBlock.blockLength - 1}/${obj.size}`)
     assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.car; version=1;')
     assert.equal(res.headers.get('Etag'), `"${shards[0]}"`)
   })
