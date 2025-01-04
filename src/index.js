@@ -133,8 +133,11 @@ let handlerPromise = null
  */
 async function initializeHandler (env) {
   const baseHandler = middleware(handleUnixfs)
+  if (env.FF_TELEMETRY_ENABLED === 'true') {
+    globalThis.fetch = globalThis.fetch.bind(globalThis)
+  }
   const finalHandler = env.FF_TELEMETRY_ENABLED === 'true'
-    ? instrument(baseHandler, config)
+    ? /** @type {Handler<Context, Environment>} */(instrument({ fetch: baseHandler }, config).fetch)
     : baseHandler
   return finalHandler
 }
