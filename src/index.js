@@ -31,7 +31,7 @@ import {
   withDelegationStubs
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
-import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { NoopSpanProcessor, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base'
 
 /**
  * @import {
@@ -101,6 +101,7 @@ const middleware = composeMiddleware(
  *
  * @param {Environment} env
  * @param {*} _trigger
+ * @returns {import('@microlabs/otel-cf-workers').TraceConfig}
  */
 function config (env, _trigger) {
   if (env.HONEYCOMB_API_KEY) {
@@ -109,7 +110,10 @@ function config (env, _trigger) {
         url: 'https://api.honeycomb.io/v1/traces',
         headers: { 'x-honeycomb-team': env.HONEYCOMB_API_KEY }
       },
-      service: { name: 'freeway' }
+      service: { name: 'freeway' },
+      sampling: {
+        headSampler: new TraceIdRatioBasedSampler(parseFloat(env.FF_TELEMETRY_RATIO))
+      }
     }
   }
   return {
