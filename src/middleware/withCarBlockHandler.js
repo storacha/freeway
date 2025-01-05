@@ -1,3 +1,6 @@
+/* eslint-env browser */
+/* global FixedLengthStream */
+
 import { CAR_CODE } from '../constants.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import { base58btc } from 'multiformats/bases/base58'
@@ -108,7 +111,7 @@ export async function handleCarBlock (request, env, ctx) {
     'Cache-Control': 'public, max-age=29030400, immutable',
     'Content-Disposition': `attachment; filename="${dataCid}.car"`,
     Etag: etag
-  }))
+  }), (body, length) => body.pipeThrough(new FixedLengthStream(length)))
 }
 
 /** @param {import('multiformats').UnknownLink} cid */

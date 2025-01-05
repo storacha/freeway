@@ -1,5 +1,3 @@
-/* eslint-env browser */
-/* global FixedLengthStream */
 // @ts-expect-error no types
 import httpRangeParse from 'http-range-parse'
 
@@ -23,11 +21,13 @@ export function parseRange (value) {
  * @param {import("@cloudflare/workers-types").R2ObjectBody} obj
  * @param {import("@cloudflare/workers-types").R2Range | undefined} range
  * @param {Headers} [headers]
+ * @param { (arg0: ReadableStream, arg1: number) => ReadableStream} [transform]
  * @returns
  */
-export const toResponse = (obj, range, headers) => {
+export const toResponse = (obj, range, headers, transform) => {
   const status = range ? 206 : 200
   headers = headers || new Headers({})
+  transform = transform || ((rs, _) => rs)
   let contentLength = obj.size
   if (range) {
     let first, last
@@ -44,5 +44,5 @@ export const toResponse = (obj, range, headers) => {
   headers.set('Content-Length', contentLength.toString())
 
   // @ts-expect-error ReadableStream types incompatible
-  return new Response(obj.body.pipeThrough(new FixedLengthStream(contentLength)), { status, headers })
+  return new Response(transform(obj.body, contentLength), { status, headers })
 }

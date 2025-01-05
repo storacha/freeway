@@ -42,13 +42,11 @@ export function withCarParkFetch (handler) {
         const rangeHeader = (new Headers(headers)).get('Range')
 
         // extract range if present from range header
-        /** @type {import('@cloudflare/workers-types').R2GetOptions} */
-
         /** @type {import('@cloudflare/workers-types').R2Range|undefined} */
         let range
         if (rangeHeader) {
           try {
-            range = parseRange(request.headers.get('range') ?? '')
+            range = parseRange(rangeHeader)
           } catch (err) {
             return globalThis.fetch(input, init)
           }
