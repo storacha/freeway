@@ -15,4 +15,5 @@ export interface Environment
   CONTENT_CLAIMS_SERVICE_URL?: string
   HONEYCOMB_API_KEY: string
   FF_TELEMETRY_ENABLED: string
+  TELEMETRY_RATIO: string
 }
