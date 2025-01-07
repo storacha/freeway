@@ -111,11 +111,13 @@ function config (env, _trigger) {
         headers: { 'x-honeycomb-team': env.HONEYCOMB_API_KEY }
       },
       service: { name: 'freeway' },
-      ...(env.FF_TELEMETRY_RATIO ? {
-        sampling: {
-          headSampler: new TraceIdRatioBasedSampler(parseFloat(env.FF_TELEMETRY_RATIO))
-        }
-      } : {})
+      ...(env.TELEMETRY_RATIO
+        ? {
+            sampling: {
+              headSampler: new TraceIdRatioBasedSampler(parseFloat(env.TELEMETRY_RATIO))
+            }
+          }
+        : {})
     }
   }
   return {
