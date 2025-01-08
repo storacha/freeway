@@ -1,5 +1,34 @@
 import { withSimpleSpan } from '@web3-storage/blob-fetcher/tracing/tracing'
-import { parseRange, toResponse } from './utils.js'
+import { createHandler } from '@web3-storage/public-bucket/server'
+// eslint-disable-next-line
+import * as BucketAPI from '@web3-storage/public-bucket'
+
+/** @implements {BucketAPI.Bucket} */
+export class TraceBucket {
+  #bucket
+
+  /**
+   *
+   * @param {BucketAPI.Bucket} bucket
+   */
+  constructor (bucket) {
+    this.#bucket = bucket
+  }
+
+  /** @param {string} key */
+  head (key) {
+    return withSimpleSpan('bucket.head', this.#bucket.head, this.#bucket)(key)
+  }
+
+  /**
+   * @param {string} key
+   * @param {BucketAPI.GetOptions} [options]
+   */
+  get (key, options) {
+    return withSimpleSpan('bucket.get', this.#bucket.get, this.#bucket)(key, options)
+  }
+}
+
 /**
  * @import {
  *   Middleware,
@@ -10,6 +39,12 @@ import { parseRange, toResponse } from './utils.js'
  *   CarParkFetchEnvironment
  * } from './withCarParkFetch.types.js'
  */
+
+/**
+ * 20MiB should allow the worker to process ~4-5 concurrent requests that
+ * require a batch at the maximum size.
+ */
+const MAX_BATCH_SIZE = 20 * 1024 * 1024
 
 /**
  * Adds {@link CarParkFetchContext.fetch} to the context. This version of fetch
@@ -23,6 +58,9 @@ export function withCarParkFetch (handler) {
     if (!env.CARPARK_PUBLIC_BUCKET_URL) {
       return handler(request, env, { ...ctx, fetch: globalThis.fetch })
     }
+    const bucket = new TraceBucket(/** @type {import('@web3-storage/public-bucket').Bucket} */ (env.CARPARK))
+    const bucketHandler = createHandler({ bucket, maxBatchSize: MAX_BATCH_SIZE })
+
     /**
      *
      * @param {globalThis.RequestInfo | URL} input
@@ -30,32 +68,10 @@ export function withCarParkFetch (handler) {
      * @returns {Promise<globalThis.Response>}
      */
     const fetch = async (input, init) => {
-      const urlString = input instanceof Request ? input.url : input instanceof URL ? input.toString() : input
+      const request = input instanceof Request ? input : new Request(input, init)
       // check whether request is going to CARPARK
-      if (env.CARPARK_PUBLIC_BUCKET_URL && urlString.startsWith(env.CARPARK_PUBLIC_BUCKET_URL)) {
-        // extract carpark key from request
-        let key = urlString.replace(env.CARPARK_PUBLIC_BUCKET_URL, '')
-        key = key[0] === '/' ? key.slice(1) : key
-        // extract headers from request
-        const headers = input instanceof Request ? input.headers : init?.headers || {}
-        // extract range header
-        const rangeHeader = (new Headers(headers)).get('Range')
-
-        // extract range if present from range header
-        /** @type {import('@cloudflare/workers-types').R2Range|undefined} */
-        let range
-        if (rangeHeader) {
-          try {
-            range = parseRange(rangeHeader)
-          } catch (err) {
-            return globalThis.fetch(input, init)
-          }
-        }
-        // fetch directly from carpark
-        const resp = await withSimpleSpan('carPark.get', env.CARPARK.get, env.CARPARK)(key, { range })
-
-        // return a fetch response object from the CARPARK response
-        return resp == null ? new Response(null, { status: 404 }) : toResponse(resp, range)
+      if (env.CARPARK_PUBLIC_BUCKET_URL && request.url.startsWith(env.CARPARK_PUBLIC_BUCKET_URL)) {
+        return bucketHandler(request)
       }
       return globalThis.fetch(input, init)
     }

@@ -15,7 +15,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["@cloudflare/workers-types"],
     "target": "ES2022",
     "sourceMap": true
   }
