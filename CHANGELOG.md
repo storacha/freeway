@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.23.0](https://github.com/storacha/freeway/compare/v2.22.1...v2.23.0) (2025-01-09)
+
+
+### Features
+
+* **tracing:** enable setting a sampling ratio for tracing ([#143](https://github.com/storacha/freeway/issues/143)) ([241545f](https://github.com/storacha/freeway/commit/241545fd42d98dcfa2ebe8332ec72837b4729c1b))
+
+
+### Bug Fixes
+
+* **freeway:** enable tracing properly and resolve fetch issue ([#140](https://github.com/storacha/freeway/issues/140)) ([c60037d](https://github.com/storacha/freeway/commit/c60037dfebea1c2a9e5b3075af2a0c0cf25772fe))
+* handle options req for cors preflight ([#137](https://github.com/storacha/freeway/issues/137)) ([79de5b1](https://github.com/storacha/freeway/commit/79de5b12a31b1a5cd88062d7d188362d1ca8e4ae))
+
 ## [2.22.1](https://github.com/storacha/freeway/compare/v2.22.0...v2.22.1) (2024-12-20)
 
 
