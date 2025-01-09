@@ -10,6 +10,7 @@ import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
  *   Middleware,
  * } from '@web3-storage/gateway-lib'
  * @import { LocatorContext } from './withLocator.types.js'
+ * @import { CarParkFetchContext } from './withCarParkFetch.types.js'
  * @import { Environment } from './withContentClaimsDagula.types.js'
  */
 
@@ -18,8 +19,8 @@ import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
  *
  * @type {(
  *   Middleware<
- *     BlockContext & DagContext & UnixfsContext & IpfsUrlContext & LocatorContext,
- *     IpfsUrlContext & LocatorContext,
+ *     BlockContext & DagContext & UnixfsContext & IpfsUrlContext & LocatorContext & CarParkFetchContext,
+ *     IpfsUrlContext & LocatorContext & CarParkFetchContext,
  *     Environment
  *   >
  * )}
@@ -27,7 +28,7 @@ import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
 export function withContentClaimsDagula (handler) {
   return async (request, env, ctx) => {
     const { locator } = ctx
-    const fetcher = BatchingFetcher.create(locator)
+    const fetcher = BatchingFetcher.create(locator, ctx.fetch)
     const dagula = new Dagula({
       async get (cid) {
         const res = await fetcher.fetch(cid.multihash)

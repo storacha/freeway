@@ -128,7 +128,7 @@ export async function handleCarBlock (request, env, ctx) {
       last = range.length != null ? first + range.length - 1 : obj.size - 1
     }
     headers.set('Content-Range', `bytes ${first}-${last}/${obj.size}`)
-    contentLength = last - first
+    contentLength = last - first + 1
   }
   headers.set('Content-Length', contentLength.toString())
 
