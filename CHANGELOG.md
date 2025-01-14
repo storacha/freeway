@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.23.1](https://github.com/storacha/freeway/compare/v2.23.0...v2.23.1) (2025-01-14)
+
+
+### Bug Fixes
+
+* ramp down probability ([7608649](https://github.com/storacha/freeway/commit/7608649bc366be4ac59130758c677220e06d3244))
+
 ## [2.23.0](https://github.com/storacha/freeway/compare/v2.22.1...v2.23.0) (2025-01-09)
 
 
