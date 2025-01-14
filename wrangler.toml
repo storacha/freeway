@@ -63,6 +63,10 @@ CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
 UPLOAD_API_URL = "https://up.web3.storage"
 INDEXING_SERVICE_URL = "https://indexer.storacha.network/"
 
+[env.production.observability]
+enabled = true
+head_sampling_rate = 0.01 
+
 # Staging!
 [env.staging]
 account_id = "fffa4b4363a7e5250af8357087263b3a"
