@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.24.0](https://github.com/storacha/freeway/compare/v2.23.1...v2.24.0) (2025-01-14)
+
+
+### Features
+
+* trigger release ([35e7429](https://github.com/storacha/freeway/commit/35e74297ceee42cbba210c48f02efd67091ad8a4))
+
 ## [2.23.1](https://github.com/storacha/freeway/compare/v2.23.0...v2.23.1) (2025-01-14)
 
 
