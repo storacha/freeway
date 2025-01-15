@@ -1,12 +1,12 @@
 /**
- * @import { Middleware, Context } from '@web3-storage/gateway-lib'
+ * @import { Middleware } from '@web3-storage/gateway-lib'
  */
 
 /**
  * Handles OPTIONS requests for CORS preflight.
- * @type {Middleware<Context, Context, {}>}
+ * @type {Middleware}
  */
-export function withOptionsRequest (handler) {
+export const withOptionsRequest = (handler) => {
   return async (request, env, ctx) => {
     if (request.method === 'OPTIONS') {
       const headers = new Headers()

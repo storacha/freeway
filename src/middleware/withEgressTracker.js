@@ -1,7 +1,10 @@
 /**
- * @import { Middleware } from '@web3-storage/gateway-lib'
- * @import { Environment } from './withEgressTracker.types.js'
- * @typedef {import('./withEgressTracker.types.js').Context} EgressTrackerContext
+ * @import { Middleware,
+ *   IpfsUrlContext,
+ *   CloudflareContext
+ * } from '@web3-storage/gateway-lib'
+ * @import { EgressClientContext, EgressClientEnvironment } from './withEgressClient.types.js'
+ * @import { SpaceContext } from './withAuthorizedSpace.types.js'
  */
 
 /**
@@ -10,21 +13,30 @@
  * It uses the Space & Data CID of the served content to record the egress in the egress client,
  * and it counts the bytes served with a TransformStream to determine the egress amount.
  *
- * @type {Middleware<EgressTrackerContext, EgressTrackerContext, Environment>}
+ * @type {(
+ *   Middleware<
+ *     SpaceContext &
+ *       EgressClientContext &
+ *       IpfsUrlContext &
+ *       CloudflareContext,
+ *     {},
+ *     EgressClientEnvironment
+ *   >
+ * )}
  */
-export function withEgressTracker (handler) {
+export const withEgressTracker = (handler) => {
   return async (req, env, ctx) => {
+    const { space, dataCid, egressClient, waitUntil } = ctx
     if (env.FF_EGRESS_TRACKER_ENABLED !== 'true') {
       return handler(req, env, ctx)
     }
 
     // If the space is not defined, it is a legacy request and we can't track egress
-    const space = ctx.space
     if (!space) {
       return handler(req, env, ctx)
     }
 
-    if (!ctx.egressClient) {
+    if (!egressClient) {
       console.error('EgressClient is not defined')
       return handler(req, env, ctx)
     }
@@ -38,13 +50,8 @@ export function withEgressTracker (handler) {
       createByteCountStream((totalBytesServed) => {
         if (totalBytesServed > 0) {
           // Non-blocking call to the accounting service to record egress
-          ctx.waitUntil(
-            ctx.egressClient.record(
-              /** @type {import('@ucanto/principal/ed25519').DIDKey} */(space),
-              ctx.dataCid,
-              totalBytesServed,
-              new Date()
-            )
+          waitUntil(
+            egressClient.record(space, dataCid, totalBytesServed, new Date())
           )
         }
       })

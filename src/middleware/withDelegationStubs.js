@@ -1,14 +1,12 @@
 import { Delegation, Schema } from '@ucanto/core'
 
 /**
+ * @import { Middleware } from '@web3-storage/gateway-lib'
  * @import {
-Environment,
- *   Middleware,
- *   Context as MiddlewareContext
- * } from '@web3-storage/gateway-lib'
- * @import { DelegationsStorageContext } from './withDelegationsStorage.types.js'
+ *   DelegationsStorageContext,
+ *   DelegationsStorageEnvironment
+ * } from './withDelegationsStorage.types.js'
  * @import { LocatorContext } from './withLocator.types.js'
- * @import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
  */
 
 /**
@@ -22,17 +20,14 @@ Environment,
  *
  * @type {(
  *   Middleware<
- *     MiddlewareContext & LocatorContext & GatewayIdentityContext & DelegationsStorageContext,
- *     MiddlewareContext & LocatorContext & GatewayIdentityContext,
- *     Environment & { FF_DELEGATIONS_STORAGE_ENABLED: string }
+ *     LocatorContext & DelegationsStorageContext,
+ *     {},
+ *     DelegationsStorageEnvironment
  *   >
  * )}
  */
 export const withDelegationStubs = (handler) => async (request, env, ctx) => {
   if (env.FF_DELEGATIONS_STORAGE_ENABLED === 'true') {
-    // @ts-expect-error: If FF_DELEGATIONS_STORAGE_ENABLED is true, the context
-    // will have the delegationsStorage created by the withDelegationsStorage
-    // middleware. So we can skip the stubbing.
     return handler(request, env, ctx)
   }
 

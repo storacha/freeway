@@ -1,28 +1,20 @@
-import { Environment as MiddlewareEnvironment, Context as MiddlewareContext } from '@web3-storage/gateway-lib'
-import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
-import { DelegationsStorageContext } from './withDelegationsStorage.types.js'
-import { Service } from '../server/api.types.js'
 import * as Server from '@ucanto/server'
-export interface Environment extends MiddlewareEnvironment {
+
+export type UcantoProvider = Server.ServiceMethod<
+  Server.Capability,
+  {},
+  Server.Failure
+>
+
+export type UcantoService = {
+  [key: string]: UcantoProvider | UcantoService
 }
 
-export interface Context<T = unknown, U = unknown>
-  extends MiddlewareContext,
-  GatewayIdentityContext,
-  DelegationsStorageContext {
+export interface UcanInvocationContext<
+  Service extends UcantoService = UcantoService
+> {
   /**
-   * This is optional because the handler is responsible for creating the service if it is not provided.
-   * 
-   * @template T
-   * @type {Service<T>}
+   * The Ucanto server to handle Ucanto invocations.
    */
-  service?: Service<T>
-
-  /**
-   * This is optional because the handler is responsible for creating the server if it is not provided.
-   * 
-   * @template U
-   * @type {Server.ServerView<Service<U>>}
-   */
-  server?: Server.ServerView<Service<U>>
+  server: Server.ServerView<Service>
 }

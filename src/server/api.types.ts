@@ -4,10 +4,11 @@ import { Access as AccessCapabilities } from '@web3-storage/capabilities';
 
 export type AccessDelegation = InferInvokedCapability<typeof AccessCapabilities.delegate>
 
-export interface Service<T> {
-  access: ContentServeAuthService<T>
+export interface Service {
+  /** Missing when service is unavailable due to feature flags. */
+  access?: ContentServeAuthService
 }
 
-export interface ContentServeAuthService<T> {
+export interface ContentServeAuthService {
   delegate: ServiceMethod<AccessDelegation, Unit, Failure>
 }

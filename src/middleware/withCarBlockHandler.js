@@ -8,15 +8,12 @@ import httpRangeParse from 'http-range-parse'
 import { base58btc } from 'multiformats/bases/base58'
 
 /**
- * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
  * @import {
  *   IpfsUrlContext,
  *   Middleware,
- *   Context,
- *   IpfsUrlContext as CarBlockHandlerContext,
  *   Handler
  * } from '@web3-storage/gateway-lib'
- * @import { Environment } from './withCarBlockHandler.types.js'
+ * @import { CarparkEnvironment } from './withCarBlockHandler.types.js'
  */
 
 /** @typedef {{ offset: number, length?: number } | { offset?: number, length: number } | { suffix: number }} Range */
@@ -25,10 +22,10 @@ import { base58btc } from 'multiformats/bases/base58'
  * Middleware that will serve CAR files if a CAR codec is found in the path
  * CID. If the CID is not a CAR CID it delegates to the next middleware.
  *
- * @type {Middleware<IpfsUrlContext, IpfsUrlContext, Environment>}
+ * @type {Middleware<IpfsUrlContext, {}, CarparkEnvironment>}
  */
 
-export function withCarBlockHandler (handler) {
+export const withCarBlockHandler = handler => {
   return async (request, env, ctx) => {
     const { dataCid, searchParams } = ctx
     if (!dataCid) throw new Error('missing data CID')
@@ -58,9 +55,9 @@ export function withCarBlockHandler (handler) {
 /**
  * Handler that serves CAR files directly from R2.
  *
- * @type {Handler<CarBlockHandlerContext, Environment>}
+ * @type {Handler<IpfsUrlContext, CarparkEnvironment>}
  */
-export async function handleCarBlock (request, env, ctx) {
+export const handleCarBlock = async (request, env, ctx) => {
   const { searchParams, dataCid } = ctx
   if (!dataCid) throw new Error('missing data CID')
   if (!searchParams) throw new Error('missing URL search params')

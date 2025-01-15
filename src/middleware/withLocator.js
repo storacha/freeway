@@ -5,21 +5,32 @@ import { Client } from '@storacha/indexing-service-client'
 /**
  * @import {
  *   Middleware,
- *   Context as MiddlewareContext
  * } from '@web3-storage/gateway-lib'
  * @import {
  *   LocatorContext,
  *   LocatorEnvironment
  * } from './withLocator.types.js'
+ * @import { ContentClaimsEnvironment } from './withContentClaimsDagula.types.js'
+ * @import { CarparkEnvironment } from './withCarBlockHandler.types.js'
+ * @import { CarParkFetchEnvironment } from './withCarParkFetch.types.js'
  */
 
 /**
  * Adds {@link LocatorContext.locator} to the context which connects to the
  * {@link LocatorEnvironment.INDEXING_SERVICE_URL}.
  *
- * @type {Middleware<LocatorContext, MiddlewareContext, LocatorEnvironment>}
+ * @type {(
+ *   Middleware<
+ *     {},
+ *     LocatorContext,
+ *     LocatorEnvironment &
+ *       ContentClaimsEnvironment &
+ *       CarparkEnvironment &
+ *       CarParkFetchEnvironment
+ *   >
+ * )}
  */
-export function withLocator (handler) {
+export const withLocator = (handler) => {
   return async (request, env, ctx) => {
     const useIndexingService = isIndexingServiceEnabled(request, env)
 
@@ -59,7 +70,9 @@ function isIndexingServiceEnabled (request, env) {
   const withIndexingServicesArg = new URL(request.url).searchParams
     .getAll('ff')
     .includes('indexing-service')
-  const probability = env.FF_RAMP_UP_PROBABILITY ? Number(env.FF_RAMP_UP_PROBABILITY) : 0
+  const probability = env.FF_RAMP_UP_PROBABILITY
+    ? Number(env.FF_RAMP_UP_PROBABILITY)
+    : 0
   const withIndexerEnabled = Math.random() * 100 <= probability
   return withIndexingServicesArg || withIndexerEnabled
 }

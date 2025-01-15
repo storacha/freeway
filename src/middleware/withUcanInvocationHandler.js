@@ -1,31 +1,22 @@
-import { createServer } from '../server/index.js'
-import { createService } from '../server/service.js'
-
 /**
  * @import { Middleware } from '@web3-storage/gateway-lib'
- * @import {
- *   Environment,
- *   Context,
- * } from './withUcanInvocationHandler.types.js'
- * @typedef {Context} UcanInvocationContext
+ * @import { UcanInvocationContext } from './withUcanInvocationHandler.types.js'
+ * @import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
  */
 
 /**
- * The withUcanInvocationHandler middleware is used to handle UCAN invocation requests to the Freeway Gateway.
+ * The withUcanInvocationHandler middleware is used to handle Ucanto invocation requests to the Freeway Gateway.
  * It supports only POST requests to the root path. Any other requests are passed through.
  *
- * @type {Middleware<UcanInvocationContext, UcanInvocationContext, Environment>}
+ * @type {Middleware<UcanInvocationContext & GatewayIdentityContext>}
  */
-export function withUcanInvocationHandler (handler) {
+export const withUcanInvocationHandler = (handler) => {
   return async (request, env, ctx) => {
     if (request.method !== 'POST' || new URL(request.url).pathname !== '/') {
       return handler(request, env, ctx)
     }
 
-    const service = ctx.service ?? createService(ctx)
-    const server = ctx.server ?? createServer(ctx, service)
-
-    const { headers, body, status } = await server.request({
+    const { headers, body, status } = await ctx.server.request({
       body: new Uint8Array(await request.arrayBuffer()),
       headers: Object.fromEntries(request.headers)
     })

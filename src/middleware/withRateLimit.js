@@ -2,15 +2,16 @@ import { HttpError } from '@web3-storage/gateway-lib/util'
 import { RATE_LIMIT_EXCEEDED } from '../constants.js'
 
 /**
- * @import { Middleware } from '@web3-storage/gateway-lib'
+ * @import { CID } from 'multiformats/cid'
  * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
+ * @import { CloudflareContext, IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
+ * @import { AuthTokenContext } from './withAuthToken.types.js'
+ * @import { TokenMetadata } from './withRateLimit.types.js'
  * @import {
- *   Environment,
- *   Context,
+ *   RateLimiterEnvironment,
  *   RateLimitService,
  *   RateLimitExceeded
  * } from './withRateLimit.types.js'
- * @typedef {Context} RateLimiterContext
  */
 
 /**
@@ -19,9 +20,9 @@ import { RATE_LIMIT_EXCEEDED } from '../constants.js'
  * it can be enabled or disabled using the FF_RATE_LIMITER_ENABLED flag.
  * Every successful request is recorded in the accounting service.
  *
- * @type {Middleware<RateLimiterContext, RateLimiterContext, Environment>}
+ * @type {Middleware<IpfsUrlContext & AuthTokenContext & CloudflareContext, {}, RateLimiterEnvironment>}
  */
-export function withRateLimit (handler) {
+export const withRateLimit = handler => {
   return async (req, env, ctx) => {
     if (env.FF_RATE_LIMITER_ENABLED !== 'true') {
       return handler(req, env, ctx)
@@ -38,14 +39,14 @@ export function withRateLimit (handler) {
 }
 
 /**
- * @param {Environment} env
- * @param {RateLimiterContext} ctx
+ * @param {RateLimiterEnvironment} env
+ * @param {AuthTokenContext & CloudflareContext} ctx
  * @returns {RateLimitService}
  */
 function create (env, ctx) {
   return {
     /**
-     * @param {import('multiformats/cid').CID} cid
+     * @param {CID} cid
      * @param {Request} request
      * @returns {Promise<RateLimitExceeded>}
      */
@@ -78,8 +79,8 @@ function create (env, ctx) {
 
 /**
  * @param {RateLimit} rateLimitAPI
- * @param {import('multiformats/cid').CID} cid
- * @returns {Promise<import('../constants.js').RATE_LIMIT_EXCEEDED>}
+ * @param {CID} cid
+ * @returns {Promise<RateLimitExceeded>}
  * @throws {Error} if no rate limit API is found
  */
 async function isRateLimited (rateLimitAPI, cid) {
@@ -96,10 +97,10 @@ async function isRateLimited (rateLimitAPI, cid) {
 }
 
 /**
- * @param {Environment} env
+ * @param {RateLimiterEnvironment} env
  * @param {string} authToken
- * @param {RateLimiterContext} ctx
- * @returns {Promise<import('./withRateLimit.types.js').TokenMetadata | null>}
+ * @param {CloudflareContext} ctx
+ * @returns {Promise<TokenMetadata | null>}
  */
 async function getTokenMetadata (env, authToken, ctx) {
   const cachedValue = await env.AUTH_TOKEN_METADATA.get(authToken)
@@ -121,7 +122,7 @@ async function getTokenMetadata (env, authToken, ctx) {
 
 /**
  * @param {string} s
- * @returns {import('./withRateLimit.types.js').TokenMetadata}
+ * @returns {TokenMetadata}
  */
 function decode (s) {
   // TODO should this be dag-json?
@@ -129,7 +130,7 @@ function decode (s) {
 }
 
 /**
- * @param {import('./withRateLimit.types.js').TokenMetadata} m
+ * @param {TokenMetadata} m
  * @returns {string}
  */
 function encode (m) {
@@ -141,7 +142,7 @@ function encode (m) {
  * TODO: implement this function
  *
  * @param {string} authToken
- * @returns {Promise<import('./withRateLimit.types.js').TokenMetadata | undefined>}
+ * @returns {Promise<TokenMetadata | undefined>}
  */
 async function locateTokenMetadata (authToken) {
   // TODO I think this needs to check the content claims service (?) for any claims relevant to this token

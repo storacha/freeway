@@ -12,17 +12,15 @@ import { withEgressTracker } from '../../../src/middleware/withEgressTracker.js'
 import { Builder, toBlobKey } from '../../helpers/builder.js'
 import { CARReaderStream } from 'carstream'
 import { SpaceDID } from '@web3-storage/capabilities/utils'
-import { ed25519 } from '@ucanto/principal'
 
 /**
- * @typedef {import('../../../src/middleware/withEgressTracker.types.js').Environment} EgressTrackerEnvironment
- * @typedef {import('../../../src/middleware/withEgressTracker.types.js').Context} EgressTrackerContext
+ * @import { RequiredContextOf } from '@web3-storage/gateway-lib'
+ * @import { EgressTrackerEnvironment } from '../../../src/middleware/withEgressTracker.types.js'
  */
 
 const env =
   /** @satisfies {EgressTrackerEnvironment} */
   ({
-    DEBUG: 'true',
     FF_EGRESS_TRACKER_ENABLED: 'true'
   })
 
@@ -42,17 +40,12 @@ const EgressClient = () => {
     record: recordEgressMock
   }
 }
-const gatewaySigner = (await ed25519.Signer.generate()).signer
-const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
 
 const ctx =
-  /** @satisfies {EgressTrackerContext} */
+  /** @satisfies {RequiredContextOf<typeof withEgressTracker>} */
   ({
     space: SpaceDID.from('did:key:z6MkknBAHEGCWvBzAi4amdH5FXEXrdKoWF1UJuvc8Psm2Mda'),
     dataCid: CID.parse('bafybeibv7vzycdcnydl5n5lbws6lul2omkm6a6b5wmqt77sicrwnhesy7y'),
-    gatewaySigner,
-    gatewayIdentity,
-    delegationProofs: [],
     waitUntil: async (promise) => {
       try {
         await promise
@@ -70,7 +63,7 @@ describe('withEgressTracker', async () => {
   let builder
   /** @type {Map<string, Uint8Array>} */
   let bucketData
-  /** @type {{ put: (digest: string, bytes: Uint8Array) => Promise<unknown>, get: (digest: string) => Promise<Uint8Array> }} */
+  /** @type {{ put: (digest: string, bytes: Uint8Array) => Promise<unknown>, get: (digest: string) => Promise<Uint8Array | undefined> }} */
   let bucket
 
   before(async () => {
@@ -83,7 +76,6 @@ describe('withEgressTracker', async () => {
         bucketData.set(digest, bytes)
         return Promise.resolve()
       },
-      // @ts-expect-error - don't need to check the type of the fake bucket
       get: async (/** @type {string} */ blobKey) => {
         if (process.env.DEBUG) {
           console.log(`[mock] bucket.get called with digest: ${blobKey}`)
@@ -182,6 +174,7 @@ describe('withEgressTracker', async () => {
       /** @type {Uint8Array | undefined} */
       const carBytes = await bucket.get(key)
       expect(carBytes).to.be.not.undefined
+      if (!carBytes) throw new Error('Expectation failed to fail!')
       expect(carBytes).to.be.instanceOf(Uint8Array)
       const expectedTotalBytes = carBytes.byteLength
 

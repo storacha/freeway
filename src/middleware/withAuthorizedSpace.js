@@ -6,7 +6,8 @@ import { SpaceDID } from '@web3-storage/capabilities/utils'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
- * @import { IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
+ * @import { SpaceDID as SpaceDIDType } from '@web3-storage/capabilities/types'
+ * @import { DebugEnvironment, IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
  * @import { LocatorContext } from './withLocator.types.js'
  * @import { AuthTokenContext } from './withAuthToken.types.js'
  * @import { SpaceContext } from './withAuthorizedSpace.types.js'
@@ -24,14 +25,19 @@ import { SpaceDID } from '@web3-storage/capabilities/utils'
  * @throws {Error} If the locator fails in any other way.
  * @type {(
  *   Middleware<
- *     LocatorContext & IpfsUrlContext & AuthTokenContext & GatewayIdentityContext & DelegationProofsContext & DelegationsStorageContext & SpaceContext,
- *     LocatorContext & IpfsUrlContext & AuthTokenContext & GatewayIdentityContext & DelegationProofsContext & DelegationsStorageContext
+ *     LocatorContext &
+ *      IpfsUrlContext &
+ *      AuthTokenContext &
+ *      GatewayIdentityContext &
+ *      DelegationsStorageContext,
+ *     SpaceContext & DelegationProofsContext,
+ *     DebugEnvironment
  *   >
  * )}
  */
-export function withAuthorizedSpace (handler) {
+export const withAuthorizedSpace = (handler) => {
   return async (request, env, ctx) => {
-    const { locator, dataCid } = ctx
+    const { locator, dataCid, delegationsStorage } = ctx
     const locRes = await locator.locate(dataCid.multihash)
     if (locRes.error) {
       if (locRes.error.name === 'NotFound') {
@@ -43,13 +49,15 @@ export function withAuthorizedSpace (handler) {
     // Legacy behavior: Site results which have no Space attached are from
     // before we started authorizing serving content explicitly. For these, we
     // always serve the content, but only if the request has no authorization
-    // token.
+    // token. We also fall back to this behavior if the delegations storage is
+    // not given, indicating the behavior is disabled.
     const shouldServeLegacy =
-      locRes.ok.site.some((site) => site.space === undefined) &&
-      ctx.authToken === null
+      !delegationsStorage ||
+      (locRes.ok.site.some((site) => site.space === undefined) &&
+        ctx.authToken === null)
 
     if (shouldServeLegacy) {
-      return handler(request, env, ctx)
+      return handler(request, env, { ...ctx, delegationProofs: [] })
     }
 
     // These Spaces all have the content we're to serve, if we're allowed to.
@@ -61,7 +69,11 @@ export function withAuthorizedSpace (handler) {
       // First space to successfully authorize is the one we'll use.
       const { space: selectedSpace, delegationProofs } = await Promise.any(
         spaces.map(async (space) => {
-          const result = await authorize(SpaceDID.from(space), ctx)
+          const result = await authorize(SpaceDID.from(space), {
+            ...ctx,
+            // Prove to TS that we have a `delegationsStorage`.
+            delegationsStorage
+          })
           if (result.error) throw result.error
           return result.ok
         })
@@ -100,9 +112,9 @@ export function withAuthorizedSpace (handler) {
  * authorizing delegations in the
  * {@link DelegationsStorageContext.delegationsStorage}.
  *
- * @param {import('@web3-storage/capabilities/types').SpaceDID} space
- * @param {AuthTokenContext & DelegationsStorageContext & GatewayIdentityContext} ctx
- * @returns {Promise<Ucanto.Result<{space: import('@web3-storage/capabilities/types').SpaceDID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
+ * @param {SpaceDIDType} space
+ * @param {AuthTokenContext & Required<DelegationsStorageContext> & GatewayIdentityContext} ctx
+ * @returns {Promise<Ucanto.Result<{space: SpaceDIDType, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
  */
 const authorize = async (space, ctx) => {
   // Look up delegations that might authorize us to serve the content.

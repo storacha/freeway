@@ -18,28 +18,33 @@ import { rejection } from './util/rejection.js'
 /**
  * @import { SinonStub } from 'sinon'
  * @import {
- *   Environment,
- *   Context
+ *   Handler,
+ *   IpfsUrlContext,
+ *   CloudflareContext
+ * } from '@web3-storage/gateway-lib'
+ * @import {
+ *   RateLimiterEnvironment,
  * } from '../../../src/middleware/withRateLimit.types.js'
  * @import {
- *   Handler,
- *   Context as MiddlewareContext,
- *   Environment as MiddlewareEnvironment,
- * } from '@web3-storage/gateway-lib'
+ *   AuthTokenContext,
+ * } from '../../../src/middleware/withAuthToken.types.js'
  */
 
 const sandbox = sinon.createSandbox()
 
-/** @typedef {Handler<MiddlewareContext, MiddlewareEnvironment>} RequestHandler */
-/** @type {SinonStub<Parameters<RequestHandler>, ReturnType<RequestHandler>>} */
-const innerHandler = strictStub(sandbox, 'nextHandler')
-
+/** @type {Handler<AuthTokenContext>} */
+const innerHandler = async (_request, _env, ctx) => {
+  return new Response(
+    JSON.stringify({
+      AuthToken: ctx.authToken
+    })
+  )
+}
 const request = new Request('http://example.com/')
 
 const env =
-  /** @satisfies {Environment} */
+  /** @satisfies {RateLimiterEnvironment} */
   ({
-    DEBUG: 'false',
     RATE_LIMITER: {
       limit: strictStub(sandbox, 'limit')
     },
@@ -53,21 +58,15 @@ const env =
     }
   })
 
-/**
- * Creates a request with an optional authorization token.
- *
- * @param {Object} [options]
- * @param {string|null} [options.authToken] The value for the `authToken` key
- * @returns {Promise<Context>}
- */
-const createContext = async ({ authToken } = {}) => ({
-  // Doesn't matter what the CID is, as long as it's consistent.
-  dataCid: CID.createV1(raw.code, identity.digest(Uint8Array.of(1))),
-  waitUntil: strictStub(sandbox, 'waitUntil').returns(undefined),
-  path: '',
-  searchParams: new URLSearchParams(),
-  authToken: authToken ?? null
-})
+const ctx =
+  /** @satisfies {IpfsUrlContext & CloudflareContext} */
+  ({
+    // Doesn't matter what the CID is, as long as it's consistent.
+    dataCid: CID.createV1(raw.code, identity.digest(Uint8Array.of(1))),
+    waitUntil: strictStub(sandbox, 'waitUntil').returns(undefined),
+    path: '',
+    searchParams: new URLSearchParams()
+  })
 
 describe('withRateLimits', async () => {
   afterEach(() => {
@@ -75,91 +74,74 @@ describe('withRateLimits', async () => {
   })
 
   it('should call next if no auth token and rate limit is not exceeded', async () => {
-    const ctx = await createContext()
-
     env.RATE_LIMITER.limit
       .withArgs({ key: ctx.dataCid.toString() })
       .resolves({ success: true })
 
-    const innerResponse = new Response()
-    innerHandler
-      .withArgs(sinon.match.same(request), env, ctx)
-      .resolves(innerResponse)
-
     const wrappedHandler = withRateLimit(innerHandler)
-    const response = await wrappedHandler(request, env, ctx)
+    const response = await wrappedHandler(request, env, {
+      ...ctx,
+      authToken: null
+    })
 
-    expect(innerHandler.calledOnce).to.be.true
-    expect(response).to.equal(innerResponse)
+    expect(await response.json()).to.deep.equal({
+      AuthToken: null
+    })
   })
 
   it('should throw an error if no auth token and rate limit is exceeded', async () => {
-    const ctx = await createContext()
-
     env.RATE_LIMITER.limit
       .withArgs({ key: ctx.dataCid.toString() })
       .resolves({ success: false })
 
-    const wrappedHandler = withRateLimit(innerHandler)
-    const error = await rejection(wrappedHandler(request, env, ctx))
+    const spiedHandler = sinon.fake(innerHandler)
+    const wrappedHandler = withRateLimit(spiedHandler)
+    const error = await rejection(
+      wrappedHandler(request, env, { ...ctx, authToken: null })
+    )
 
-    expect(innerHandler.notCalled).to.be.true
+    expect(spiedHandler.notCalled).to.be.true
     expectToBeInstanceOf(error, HttpError)
     expect(error.status).to.equal(429)
     expect(error.message).to.equal('Too Many Requests')
   })
 
   it('should call next if auth token is present but no token metadata and rate limit is not exceeded', async () => {
-    const ctx = await createContext({
-      authToken: 'test-token'
-    })
-
-    const innerResponse = new Response()
-    innerHandler
-      .withArgs(sinon.match.same(request), env, ctx)
-      .resolves(innerResponse)
-
     env.RATE_LIMITER.limit
       .withArgs({ key: ctx.dataCid.toString() })
       .resolves({ success: true })
     env.AUTH_TOKEN_METADATA.get.withArgs('test-token').resolves(null)
 
     const wrappedHandler = withRateLimit(innerHandler)
-    const response = await wrappedHandler(request, env, ctx)
-
-    expect(response).to.equal(innerResponse)
-  })
-
-  it('should throw an error if auth token is present but no token metadata and rate limit is exceeded', async () => {
-    const ctx = await createContext({
+    const response = await wrappedHandler(request, env, {
+      ...ctx,
       authToken: 'test-token'
     })
 
+    expect(await response.json()).to.deep.equal({
+      AuthToken: 'test-token'
+    })
+  })
+
+  it('should throw an error if auth token is present but no token metadata and rate limit is exceeded', async () => {
     env.RATE_LIMITER.limit
       .withArgs({ key: ctx.dataCid.toString() })
       .resolves({ success: false })
     env.AUTH_TOKEN_METADATA.get.withArgs('test-token').resolves(null)
 
+    const spiedHandler = sinon.fake(innerHandler)
     const wrappedHandler = withRateLimit(innerHandler)
+    const error = await rejection(
+      wrappedHandler(request, env, { ...ctx, authToken: 'test-token' })
+    )
 
-    const error = await rejection(wrappedHandler(request, env, ctx))
-
-    expect(innerHandler.notCalled).to.be.true
+    expect(spiedHandler.notCalled).to.be.true
     expectToBeInstanceOf(error, HttpError)
     expect(error.status).to.equal(429)
     expect(error.message).to.equal('Too Many Requests')
   })
 
   it('should call next if auth token is present and token metadata is invalid but rate limit is not exceeded', async () => {
-    const ctx = await createContext({
-      authToken: 'test-token'
-    })
-
-    const innerResponse = new Response()
-    innerHandler
-      .withArgs(sinon.match.same(request), env, ctx)
-      .resolves(innerResponse)
-
     env.RATE_LIMITER.limit
       .withArgs({ key: ctx.dataCid.toString() })
       .resolves({ success: true })
@@ -168,17 +150,17 @@ describe('withRateLimits', async () => {
       .resolves(JSON.stringify({ invalid: true }))
 
     const wrappedHandler = withRateLimit(innerHandler)
-
-    const response = await wrappedHandler(request, env, ctx)
-
-    expect(response).to.equal(innerResponse)
-  })
-
-  it('should throw an error if auth token is present and token metadata is invalid and rate limit is exceeded', async () => {
-    const ctx = await createContext({
+    const response = await wrappedHandler(request, env, {
+      ...ctx,
       authToken: 'test-token'
     })
 
+    expect(await response.json()).to.deep.equal({
+      AuthToken: 'test-token'
+    })
+  })
+
+  it('should throw an error if auth token is present and token metadata is invalid and rate limit is exceeded', async () => {
     env.RATE_LIMITER.limit
       .withArgs({ key: ctx.dataCid.toString() })
       .resolves({ success: false })
@@ -186,34 +168,31 @@ describe('withRateLimits', async () => {
       .withArgs('test-token')
       .resolves(JSON.stringify({ invalid: true }))
 
+    const spiedHandler = sinon.fake(innerHandler)
     const wrappedHandler = withRateLimit(innerHandler)
+    const error = await rejection(
+      wrappedHandler(request, env, { ...ctx, authToken: 'test-token' })
+    )
 
-    const error = await rejection(wrappedHandler(request, env, ctx))
-
-    expect(innerHandler.notCalled).to.be.true
+    expect(spiedHandler.notCalled).to.be.true
     expectToBeInstanceOf(error, HttpError)
     expect(error.status).to.equal(429)
     expect(error.message).to.equal('Too Many Requests')
   })
 
   it('should call next if auth token is present and token metadata is valid', async () => {
-    const ctx = await createContext({
-      authToken: 'test-token'
-    })
-
-    const innerResponse = new Response()
-    innerHandler
-      .withArgs(sinon.match.same(request), env, ctx)
-      .resolves(innerResponse)
-
     env.AUTH_TOKEN_METADATA.get
       .withArgs('test-token')
       .resolves(JSON.stringify({ invalid: false }))
 
     const wrappedHandler = withRateLimit(innerHandler)
+    const response = await wrappedHandler(request, env, {
+      ...ctx,
+      authToken: 'test-token'
+    })
 
-    const response = await wrappedHandler(request, env, ctx)
-
-    expect(response).to.equal(innerResponse)
+    expect(await response.json()).to.deep.equal({
+      AuthToken: 'test-token'
+    })
   })
 })

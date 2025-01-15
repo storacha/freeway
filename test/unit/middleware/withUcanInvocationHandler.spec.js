@@ -3,137 +3,161 @@
    `no-unused-expressions` doesn't understand that several of Chai's assertions
    are implemented as getters rather than explicit function calls; it thinks
    the assertions are unused expressions. */
-import { describe, it, afterEach } from 'mocha'
+import { describe, it } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
 import { ed25519 } from '@ucanto/principal'
+import { invoke } from '@ucanto/core'
+import * as Server from '@ucanto/server'
+import * as Client from '@ucanto/client'
+import * as CAR from '@ucanto/transport/car'
+import { createServer } from '../../../src/server/index.js'
 import { withUcanInvocationHandler } from '../../../src/middleware/withUcanInvocationHandler.js'
 
 /**
- * @typedef {import('../../../src/middleware/withUcanInvocationHandler.types.js').Environment} Environment
- * @typedef {import('../../../src/middleware/withUcanInvocationHandler.types.js').Context} Context
+ * @import { ConnectionView, Invocation, Capability } from '@ucanto/client'
+ * @import { Handler } from '@web3-storage/gateway-lib'
+ * @import { UcanInvocationContext } from '../../../src/middleware/withUcanInvocationHandler.types.js'
+ * @import { GatewayIdentityContext } from '../../../src/middleware/withGatewayIdentity.types.js'
  */
-
-const env =
-  /** @satisfies {Environment} */
-  ({
-  })
 
 const gatewaySigner = (await ed25519.Signer.generate()).signer
 const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
-const serviceStub = {
-  access: {
-    delegate: sinon.stub().resolves({ ok: {} })
+const service = {
+  do: {
+    /**
+     * @param {Invocation<Capability>} invocation
+     */
+    something: async (invocation) => {
+      return Server.ok({
+        Invoked: 'do/something',
+        Args: invocation.capabilities[0].nb
+      })
+    }
   }
-}
-const serverStub = {
-  request: sinon.stub().returns({
-    headers: {},
-    body: crypto.getRandomValues(new Uint8Array(10)),
-    status: 200
-  }),
-  id: gatewayIdentity,
-  service: serviceStub,
-  codec: { accept: sinon.stub() },
-  validateAuthorization: sinon.stub()
 }
 
 const ctx =
-  /** @satisfies {Context} */
+  /** @satisfies {UcanInvocationContext & GatewayIdentityContext} */
   ({
     gatewaySigner,
     gatewayIdentity,
-    waitUntil: async (promise) => {
-      try {
-        await promise
-      } catch (error) {
-        // Ignore errors.
+    server: createServer(gatewaySigner, service)
+  })
+
+/**
+ * Returns a Ucanto connection which sends requests to the given handler.
+ *
+ * @param {Handler<UcanInvocationContext & GatewayIdentityContext>} handler
+ * @returns {ConnectionView<typeof service>}
+ */
+const connectToHandler = (handler) =>
+  Client.connect({
+    id: gatewayIdentity,
+    codec: CAR.outbound,
+    channel: {
+      async request (request) {
+        const response = await handler(
+          new Request('http://example.com/', {
+            method: 'POST',
+            body: request.body,
+            headers: request.headers
+          }),
+          {},
+          ctx
+        )
+
+        return {
+          status: response.status,
+          headers: Object.fromEntries(response.headers),
+          body: new Uint8Array(await response.arrayBuffer())
+        }
       }
-    },
-    delegationsStorage: {
-      find: sinon.stub(),
-      store: sinon.stub()
     }
   })
 
+/** @type {Handler<{ contextValue?: string }, { ENV_VALUE?: string }>} */
+const innerHandler = async (request, env, ctx) => {
+  return new Response(
+    JSON.stringify({
+      Message: "I'm a teapot",
+      Url: request.url,
+      Method: request.method,
+      EnvValue: env.ENV_VALUE,
+      ContextValue: ctx.contextValue
+    }),
+    { status: 418 }
+  )
+}
 describe('withUcanInvocationHandler', () => {
-  afterEach(() => {
-    serviceStub.access.delegate.reset()
-    serverStub.request.reset()
-  })
-
   it('should handle POST requests to the root path', async () => {
-    const mockHandler = sinon.stub().callsFake((request, env, ctx) => {
-      return {
-        headers: {},
-        body: crypto.getRandomValues(new Uint8Array(10)),
-        status: 200
+    const spiedHandler = sinon.fake(innerHandler)
+    const handler = withUcanInvocationHandler(spiedHandler)
+    const connection = connectToHandler(handler)
+
+    const invoker = (await ed25519.Signer.generate()).signer
+
+    const { out } = await invoke({
+      audience: gatewayIdentity,
+      issuer: invoker,
+      capability: {
+        can: 'do/something',
+        with: invoker.did(),
+        nb: {
+          some: 'arguments'
+        }
+      }
+    }).execute(connection)
+
+    // The invocation successfully runs through the Ucanto server
+    expect(out).to.deep.equal({
+      ok: {
+        Invoked: 'do/something',
+        Args: { some: 'arguments' }
       }
     })
 
-    const handler = withUcanInvocationHandler(mockHandler)
-    const request = new Request('http://example.com/', { method: 'POST' })
-    const response = await handler(request, env, {
-      ...ctx,
-      // @ts-expect-error - TODO: fix the type
-      server: serverStub,
-      service: serviceStub
-    })
-
-    expect(response).to.be.an.instanceOf(Response)
-    expect(response.status).to.equal(200)
-    expect(serverStub.request.called).to.be.true
-    expect(mockHandler.calledOnceWith(request, env, ctx)).to.be.false
+    // The inner handler is never called
+    expect(spiedHandler.called).to.be.false
   })
 
   it('should pass through non-POST requests', async () => {
-    const content = crypto.getRandomValues(new Uint8Array(10))
-    const mockHandler = sinon.stub().callsFake((request, env, ctx) => {
-      return {
-        headers: {},
-        body: content,
-        status: 200
-      }
-    })
-
-    const handler = withUcanInvocationHandler(mockHandler)
+    const handler = withUcanInvocationHandler(innerHandler)
     const request = new Request('http://example.com/', { method: 'GET' })
-    const response = await handler(request, env, {
-      ...ctx,
-      // @ts-expect-error - TODO: fix the type
-      server: serverStub,
-      service: serviceStub
-    })
+    const response = await handler(
+      request,
+      { ENV_VALUE: 'env-value' },
+      { ...ctx, contextValue: 'context-value' }
+    )
 
-    expect(response.status).to.equal(200)
-    expect(response.body).to.equal(content)
-    expect(mockHandler.called).to.be.true
-    expect(serverStub.request.called).to.be.false
+    expect(response.status).to.equal(418)
+    expect(await response.json()).to.deep.equal({
+      Message: "I'm a teapot",
+      Url: 'http://example.com/',
+      Method: 'GET',
+      EnvValue: 'env-value',
+      ContextValue: 'context-value'
+    })
   })
 
   it('should pass through POST requests to non-root paths', async () => {
-    const content = crypto.getRandomValues(new Uint8Array(10))
-    const mockHandler = sinon.stub().callsFake((request, env, ctx) => {
-      return {
-        headers: {},
-        body: content,
-        status: 200
-      }
+    const handler = withUcanInvocationHandler(innerHandler)
+    const request = new Request('http://example.com/other', {
+      method: 'POST'
     })
+    const response = await handler(
+      request,
+      { ENV_VALUE: 'env-value' },
+      { ...ctx, contextValue: 'context-value' }
+    )
 
-    const path = 'other'
-    const handler = withUcanInvocationHandler(mockHandler)
-    const request = new Request(`http://example.com/${path}`, { method: 'POST' })
-    const response = await handler(request, env, {
-      ...ctx,
-      // @ts-expect-error - TODO: fix the type
-      server: serverStub,
-      service: serviceStub
+    expect(response.status).to.equal(418)
+    expect(await response.json()).to.deep.equal({
+      Message: "I'm a teapot",
+      Url: 'http://example.com/other',
+      Method: 'POST',
+      EnvValue: 'env-value',
+      ContextValue: 'context-value'
     })
-
-    expect(response.status).to.equal(200)
-    expect(response.body).to.equal(content)
-    expect(mockHandler.called).to.be.true
-    expect(serverStub.request.called).to.be.false
   })
 })

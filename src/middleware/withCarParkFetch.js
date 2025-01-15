@@ -25,19 +25,21 @@ export class TraceBucket {
    * @param {BucketAPI.GetOptions} [options]
    */
   get (key, options) {
-    return withSimpleSpan('bucket.get', this.#bucket.get, this.#bucket)(key, options)
+    return withSimpleSpan(
+      'bucket.get',
+      this.#bucket.get,
+      this.#bucket
+    )(key, options)
   }
 }
 
 /**
- * @import {
- *   Middleware,
- *   Context as MiddlewareContext
- * } from '@web3-storage/gateway-lib'
+ * @import { Middleware } from '@web3-storage/gateway-lib'
  * @import {
  *   CarParkFetchContext,
  *   CarParkFetchEnvironment
  * } from './withCarParkFetch.types.js'
+ * @import { CarparkEnvironment } from './withCarBlockHandler.types.js'
  */
 
 /**
@@ -50,16 +52,21 @@ const MAX_BATCH_SIZE = 20 * 1024 * 1024
  * Adds {@link CarParkFetchContext.fetch} to the context. This version of fetch
  * will pull directly from R2 CARPARK when present
  *
- * @type {Middleware<CarParkFetchContext, MiddlewareContext, CarParkFetchEnvironment>}
+ * @type {Middleware<{}, CarParkFetchContext, CarParkFetchEnvironment & CarparkEnvironment>}
  */
-export function withCarParkFetch (handler) {
+export const withCarParkFetch = (handler) => {
   return async (request, env, ctx) => {
     // if carpark public bucket is not set, just use default
     if (!env.CARPARK_PUBLIC_BUCKET_URL) {
       return handler(request, env, { ...ctx, fetch: globalThis.fetch })
     }
-    const bucket = new TraceBucket(/** @type {import('@web3-storage/public-bucket').Bucket} */ (env.CARPARK))
-    const bucketHandler = createHandler({ bucket, maxBatchSize: MAX_BATCH_SIZE })
+    const bucket = new TraceBucket(
+      /** @type {import('@web3-storage/public-bucket').Bucket} */ (env.CARPARK)
+    )
+    const bucketHandler = createHandler({
+      bucket,
+      maxBatchSize: MAX_BATCH_SIZE
+    })
 
     /**
      *
@@ -68,9 +75,13 @@ export function withCarParkFetch (handler) {
      * @returns {Promise<globalThis.Response>}
      */
     const fetch = async (input, init) => {
-      const request = input instanceof Request ? input : new Request(input, init)
+      const request =
+        input instanceof Request ? input : new Request(input, init)
       // check whether request is going to CARPARK
-      if (env.CARPARK_PUBLIC_BUCKET_URL && request.url.startsWith(env.CARPARK_PUBLIC_BUCKET_URL)) {
+      if (
+        env.CARPARK_PUBLIC_BUCKET_URL &&
+        request.url.startsWith(env.CARPARK_PUBLIC_BUCKET_URL)
+      ) {
         return bucketHandler(request)
       }
       return globalThis.fetch(input, init)

@@ -2,16 +2,19 @@ import { Schema } from '@ucanto/core'
 import { ed25519 } from '@ucanto/principal'
 
 /**
- * @typedef {import('./withGatewayIdentity.types.js').GatewayIdentityContext} GatewayIdentityContext
- * @typedef {import('./withGatewayIdentity.types.js').Environment} Environment
+ * @import { Middleware } from '@web3-storage/gateway-lib'
+ * @import {
+ *   GatewayIdentityContext,
+ *   GatewayIdentityEnvironment
+ * } from './withGatewayIdentity.types.js'
  */
 
 /**
  * The GatewayIdentity handler adds the gateway identity to the context.
  *
- * @type {import('@web3-storage/gateway-lib').Middleware<GatewayIdentityContext, GatewayIdentityContext, Environment>}
+ * @type {Middleware<{}, GatewayIdentityContext, GatewayIdentityEnvironment>}
  */
-export function withGatewayIdentity (handler) {
+export const withGatewayIdentity = (handler) => {
   return async (req, env, ctx) => {
     const gatewaySigner = env.GATEWAY_PRINCIPAL_KEY
       ? ed25519.Signer.parse(env.GATEWAY_PRINCIPAL_KEY)

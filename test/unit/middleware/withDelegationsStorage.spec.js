@@ -6,7 +6,6 @@
 import { describe, it, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { ed25519 } from '@ucanto/principal'
 import { withDelegationsStorage } from '../../../src/middleware/withDelegationsStorage.js'
 
 const kvStoreMock = {
@@ -18,30 +17,9 @@ const kvStoreMock = {
 }
 
 /**
- * @typedef {import('../../../src/middleware/withDelegationsStorage.types.js').DelegationsStorageEnvironment} DelegationsStorageEnvironment
- * @typedef {import('../../../src/middleware/withDelegationsStorage.types.js').DelegationsStorageContext} DelegationsStorageContext
+ * @import { Handler } from '@web3-storage/gateway-lib'
+ * @import { DelegationsStorageEnvironment, DelegationsStorageContext } from '../../../src/middleware/withDelegationsStorage.types.js'
  */
-
-const gatewaySigner = (await ed25519.Signer.generate()).signer
-const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
-
-const ctx =
-  /** @satisfies {DelegationsStorageContext} */
-  ({
-    gatewaySigner,
-    gatewayIdentity,
-    waitUntil: async (promise) => {
-      try {
-        await promise
-      } catch (error) {
-        // Ignore errors.
-      }
-    },
-    delegationsStorage: {
-      find: sinon.stub(),
-      store: sinon.stub()
-    }
-  })
 
 describe('withDelegationsStorage', async () => {
   afterEach(() => {
@@ -50,40 +28,36 @@ describe('withDelegationsStorage', async () => {
 
   describe('-> Successful Requests', () => {
     it('should set delegationsStorage in context when FF_DELEGATIONS_STORAGE_ENABLED is true', async () => {
-      const mockHandler = sinon.fake((request, env, ctx) => ctx)
+      const mockHandler = sinon.fake(
+        /** @type {Handler<DelegationsStorageContext>} */
+        async (_request, _env, _ctx) => new Response(null)
+      )
       const request = new Request('http://example.com/')
       const env = {
         FF_DELEGATIONS_STORAGE_ENABLED: 'true',
         CONTENT_SERVE_DELEGATIONS_STORE: kvStoreMock
       }
 
-      await withDelegationsStorage(mockHandler)(request, env, {
-        ...ctx,
-        // @ts-expect-error - we are testing the case where delegationsStorage is set
-        delegationsStorage: undefined
-      })
+      await withDelegationsStorage(mockHandler)(request, env, {})
       expect(mockHandler.calledOnce).to.be.true
-      expect(mockHandler.firstCall.args[2]).to.have.property('delegationsStorage')
       expect(mockHandler.firstCall.args[2].delegationsStorage).to.be.an('object')
     })
   })
 
   it('should not set delegationsStorage in context when FF_DELEGATIONS_STORAGE_ENABLED is not true', async () => {
-    const mockHandler = sinon.fake((request, env, ctx) => ctx)
+    const mockHandler = sinon.fake(
+      /** @type {Handler<DelegationsStorageContext>} */
+      async (_request, _env, _ctx) => new Response(null)
+    )
     const request = new Request('http://example.com/')
     const env = {
       FF_DELEGATIONS_STORAGE_ENABLED: 'false',
       CONTENT_SERVE_DELEGATIONS_STORE: kvStoreMock
     }
 
-    await withDelegationsStorage(mockHandler)(request, env, {
-      ...ctx,
-      // @ts-expect-error - we are testing the case where delegationsStorage is not set
-      delegationsStorage: undefined
-    })
+    await withDelegationsStorage(mockHandler)(request, env, {})
 
     expect(mockHandler.calledOnce).to.be.true
-    expect(mockHandler.firstCall.args[2]).to.have.property('delegationsStorage')
     expect(mockHandler.firstCall.args[2].delegationsStorage).to.be.undefined
   })
 })

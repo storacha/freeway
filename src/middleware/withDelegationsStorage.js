@@ -4,26 +4,29 @@ import { ok, error, Failure } from '@ucanto/server'
 /**
  * @import * as Ucanto from '@ucanto/interface'
  * @import { Middleware } from '@web3-storage/gateway-lib'
- * @typedef {import('./withDelegationsStorage.types.js').DelegationsStorageContext} DelegationsStorageContext
- * @typedef {import('./withDelegationsStorage.types.js').DelegationsStorageEnvironment} DelegationsStorageEnvironment
+ * @import {
+ *   DelegationsStorageContext,
+ *   DelegationsStorageEnvironment
+ * } from './withDelegationsStorage.types.js'
  */
 
 /**
  * Provides a delegations storage in the application context
  *
  * @type {(
- *   Middleware<DelegationsStorageContext, DelegationsStorageContext, DelegationsStorageEnvironment>
+ *   Middleware<{}, DelegationsStorageContext, DelegationsStorageEnvironment>
  * )}
  */
-export const withDelegationsStorage = (handler) => async (request, env, ctx) => {
-  if (env.FF_DELEGATIONS_STORAGE_ENABLED !== 'true') {
-    return handler(request, env, ctx)
+export const withDelegationsStorage =
+  (handler) => async (request, env, ctx) => {
+    if (env.FF_DELEGATIONS_STORAGE_ENABLED !== 'true') {
+      return handler(request, env, ctx)
+    }
+    return handler(request, env, {
+      ...ctx,
+      delegationsStorage: createStorage(env)
+    })
   }
-  return handler(request, env, {
-    ...ctx,
-    delegationsStorage: createStorage(env)
-  })
-}
 
 /**
  * @param {DelegationsStorageEnvironment} env
@@ -40,9 +43,14 @@ function createStorage (env) {
     find: async (space) => {
       /** @type {Ucanto.Delegation<Ucanto.Capabilities>[]} */
       const delegations = []
-      const result = await env.CONTENT_SERVE_DELEGATIONS_STORE.list({ prefix: space })
+      const result = await env.CONTENT_SERVE_DELEGATIONS_STORE.list({
+        prefix: space
+      })
       result.keys.forEach(async (key) => {
-        const delegation = await env.CONTENT_SERVE_DELEGATIONS_STORE.get(key.name, 'arrayBuffer')
+        const delegation = await env.CONTENT_SERVE_DELEGATIONS_STORE.get(
+          key.name,
+          'arrayBuffer'
+        )
         if (delegation) {
           const d = await Delegation.extract(new Uint8Array(delegation))
           if (d.ok) delegations.push(d.ok)
@@ -61,7 +69,11 @@ function createStorage (env) {
      */
     store: async (space, delegation) => {
       let options = {}
-      if (delegation.expiration && delegation.expiration > 0 && delegation.expiration !== Infinity) {
+      if (
+        delegation.expiration &&
+        delegation.expiration > 0 &&
+        delegation.expiration !== Infinity
+      ) {
         // expire the key-value pair when the delegation expires (seconds since epoch)
         options = { expiration: delegation.expiration }
       }
@@ -73,7 +85,11 @@ function createStorage (env) {
       }
 
       try {
-        await env.CONTENT_SERVE_DELEGATIONS_STORE.put(`${space}:${delegation.cid.toString()}`, value.ok.buffer, options)
+        await env.CONTENT_SERVE_DELEGATIONS_STORE.put(
+          `${space}:${delegation.cid.toString()}`,
+          value.ok.buffer,
+          options
+        )
         return ok({})
       } catch (/** @type {any} */ err) {
         const message = `error while storing delegation for space ${space}`

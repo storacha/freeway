@@ -3,7 +3,6 @@ import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
 
 /**
  * @import {
- *   IpfsUrlContext,
  *   BlockContext,
  *   DagContext,
  *   UnixfsContext,
@@ -11,7 +10,7 @@ import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
  * } from '@web3-storage/gateway-lib'
  * @import { LocatorContext } from './withLocator.types.js'
  * @import { CarParkFetchContext } from './withCarParkFetch.types.js'
- * @import { Environment } from './withContentClaimsDagula.types.js'
+ * @import { ContentClaimsEnvironment } from './withContentClaimsDagula.types.js'
  */
 
 /**
@@ -19,13 +18,13 @@ import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
  *
  * @type {(
  *   Middleware<
- *     BlockContext & DagContext & UnixfsContext & IpfsUrlContext & LocatorContext & CarParkFetchContext,
- *     IpfsUrlContext & LocatorContext & CarParkFetchContext,
- *     Environment
+ *     LocatorContext & CarParkFetchContext,
+ *     BlockContext & DagContext & UnixfsContext,
+ *     ContentClaimsEnvironment
  *   >
  * )}
  */
-export function withContentClaimsDagula (handler) {
+export const withContentClaimsDagula = (handler) => {
   return async (request, env, ctx) => {
     const { locator } = ctx
     const fetcher = BatchingFetcher.create(locator, ctx.fetch)
@@ -43,6 +42,11 @@ export function withContentClaimsDagula (handler) {
         return res.ok ? { size: res.ok.site[0].range.length } : undefined
       }
     })
-    return handler(request, env, { ...ctx, blocks: dagula, dag: dagula, unixfs: dagula })
+    return handler(request, env, {
+      ...ctx,
+      blocks: dagula,
+      dag: dagula,
+      unixfs: dagula
+    })
   }
 }

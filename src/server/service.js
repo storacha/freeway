@@ -8,11 +8,23 @@ import * as UcantoServer from '@ucanto/server'
 import { ok } from '@ucanto/client'
 
 /**
- * @template T
- * @param {import('../middleware/withUcanInvocationHandler.types.js').Context} ctx
- * @returns {import('./api.types.js').Service<T>}
+ * @import { GatewayIdentityContext } from '../middleware/withGatewayIdentity.types.js'
+ * @import { DelegationsStorageContext } from '../middleware/withDelegationsStorage.types.js'
+ * @import { Service } from './api.types.js'
+ */
+
+/**
+ * @param {GatewayIdentityContext & DelegationsStorageContext} ctx
+ * @returns {Service}
  */
 export function createService (ctx) {
+  const { delegationsStorage, gatewayIdentity } = ctx
+
+  if (!delegationsStorage) {
+    // Disable the service if the delegations storage is not enabled.
+    return {}
+  }
+
   return {
     access: {
       delegate: UcantoServer.provideAdvanced(
@@ -33,7 +45,7 @@ export function createService (ctx) {
                 [delegation],
                 {
                   ...context,
-                  authority: ctx.gatewayIdentity
+                  authority: gatewayIdentity
                 }
               )
               if (validationResult.error) {
@@ -42,7 +54,7 @@ export function createService (ctx) {
               }
 
               const space = capability.with
-              return ctx.delegationsStorage.store(space, delegation)
+              return delegationsStorage.store(space, delegation)
             }))
 
             const errorResult = validationResults.find(result => result.error)
