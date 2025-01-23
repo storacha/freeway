@@ -42,7 +42,8 @@ r2_buckets = [
 ]
 kv_namespaces = [
   { binding = "AUTH_TOKEN_METADATA", id = "f848730e45d94f17bcaf3b6d0915da40" },
-  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "b2984f16c21e4991a644683c00d80033" }
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "b2984f16c21e4991a644683c00d80033" },
+  { binding = "DAGPB_CONTENT_CACHE", id = "e1339664614940a0804a3020ce3dae12" }
 ]
 
 [env.production.build]
@@ -76,7 +77,8 @@ r2_buckets = [
 ]
 kv_namespaces = [
   { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
-  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "99ae45f8b5b3478a9df09302c27e81a3" }
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "99ae45f8b5b3478a9df09302c27e81a3" },
+  { binding = "DAGPB_CONTENT_CACHE", id = "c70a74363e7a4f06ad39fa3022aab7c7" }
 ]
 
 [env.staging.build]
