@@ -40,9 +40,9 @@ export function withContentClaimsDagula(handler) {
           const res = await fetcher.fetch(cid.multihash)
           if (res.ok) {
             const bytes = await res.ok.bytes()
-            if (env.DAGPB_CONTENT_CACHE_MAX_SIZE_MB && bytes.length <= env.DAGPB_CONTENT_CACHE_MAX_SIZE_MB * 1024 * 1024) {
+            if (env.FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB && bytes.length <= env.FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB * 1024 * 1024) {
               await env.DAGPB_CONTENT_CACHE.put(cid.multihash.digest.toString(), bytes.buffer, {
-                expirationTtl: env.DAGPB_CONTENT_CACHE_TTL > 60 ? env.DAGPB_CONTENT_CACHE_TTL : undefined,
+                expirationTtl: env.FF_DAGPB_CONTENT_CACHE_TTL > 60 ? env.FF_DAGPB_CONTENT_CACHE_TTL : undefined,
               })
             }
             return { cid, bytes }

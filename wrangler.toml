@@ -144,12 +144,16 @@ account_id = "fffa4b4363a7e5250af8357087263b3a"
 # r2_buckets = [
 #  { binding = "CARPARK", bucket_name = "carpark-fforbeck-0", preview_bucket_name = "carpark-fforbeck-preview-0" }
 # ]
+# r2_buckets = [
+#   { binding = "CARPARK", bucket_name = "carpark-staging-0" }
+# ]
 r2_buckets = [
-  { binding = "CARPARK", bucket_name = "carpark-staging-0" }
+  { binding = "CARPARK", bucket_name = "carpark-prod-0", preview_bucket_name = "carpark-prod-0" }
 ]
 kv_namespaces = [
   { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
-  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "26cc47fec09749bb9ee42bc6407f9a9d" }
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "26cc47fec09749bb9ee42bc6407f9a9d" },
+  { binding = "DAGPB_CONTENT_CACHE", id = "3f0c253b90fc48c1b384f1563ede54f9" }
 ]
 
 [env.fforbeck.vars]
@@ -157,14 +161,25 @@ DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "true"
 FF_TELEMETRY_ENABLED = "true"
-TELEMETRY_RATIO = 1.0
 FF_DELEGATIONS_STORAGE_ENABLED = "true"
-FF_RAMP_UP_PROBABILITY = "100"
-GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
-UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
-CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
-UPLOAD_API_URL = "https://staging.up.web3.storage"
-INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
+FF_RAMP_UP_PROBABILITY = "0"
+FF_DAGPB_CONTENT_CACHE_TTL = 300
+FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB = 2
+FF_DAGPB_CONTENT_CACHE_ENABLED = "true"
+TELEMETRY_RATIO = 1.0
+### staging
+# CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+# CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
+# GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+#UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
+#UPLOAD_API_URL = "https://staging.up.web3.storage"
+#INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
+### prod
+CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
+# CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
+GATEWAY_SERVICE_DID = "did:web:w3s.link"
+UPLOAD_SERVICE_DID = "did:web:web3.storage"
+UPLOAD_API_URL = "https://up.web3.storage"
 
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"
