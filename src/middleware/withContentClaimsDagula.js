@@ -1,5 +1,5 @@
 import { Dagula } from 'dagula'
-import { base58 } from 'multiformats/bases/base58'
+import { base58btc } from 'multiformats/bases/base58'
 import * as BatchingFetcher from '@web3-storage/blob-fetcher/fetcher/batching'
 import * as dagPb from '@ipld/dag-pb'
 
@@ -28,12 +28,12 @@ import * as dagPb from '@ipld/dag-pb'
  *   >
  * )}
  */
-export function withContentClaimsDagula(handler) {
+export function withContentClaimsDagula (handler) {
   return async (request, env, ctx) => {
     const { locator } = ctx
     const fetcher = BatchingFetcher.create(locator, ctx.fetch)
     const dagula = new Dagula({
-      async get(cid) {
+      async get (cid) {
         const dagPbContent = await getDagPbContent(env, fetcher, cid, ctx)
         if (dagPbContent) {
           return dagPbContent
@@ -41,11 +41,11 @@ export function withContentClaimsDagula(handler) {
         const res = await fetcher.fetch(cid.multihash)
         return res.ok ? { cid, bytes: await res.ok.bytes() } : undefined
       },
-      async stream(cid, options) {
+      async stream (cid, options) {
         const res = await fetcher.fetch(cid.multihash, options)
         return res.ok ? res.ok.stream() : undefined
       },
-      async stat(cid) {
+      async stat (cid) {
         const res = await locator.locate(cid.multihash)
         return res.ok ? { size: res.ok.site[0].range.length } : undefined
       }
@@ -64,7 +64,7 @@ export function withContentClaimsDagula(handler) {
  * @param {import('@web3-storage/gateway-lib').Context} ctx
  * @returns {Promise<{ cid: import('multiformats').UnknownLink, bytes: Uint8Array } | undefined>}
  */
-async function getDagPbContent(env, fetcher, cid, ctx) {
+async function getDagPbContent (env, fetcher, cid, ctx) {
   if (env.FF_DAGPB_CONTENT_CACHE_ENABLED === 'true' && cid.code === dagPb.code) {
     const cachedBytes = await getCachedDagPbBytes(env, cid)
     if (cachedBytes) {
@@ -95,11 +95,13 @@ async function getDagPbContent(env, fetcher, cid, ctx) {
  * @param {Uint8Array} bytes
  * @returns {Promise<void>}
  */
-async function cacheDagPbBytes(env, cid, bytes) {
-  if (env.FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB && bytes.length <= env.FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB * 1024 * 1024) {
+async function cacheDagPbBytes (env, cid, bytes) {
+  const maxSize = env.FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB ? parseInt(env.FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB) * 1024 * 1024 : undefined
+  if (maxSize && bytes.length <= maxSize) {
     try {
-      const ttlSeconds = env.FF_DAGPB_CONTENT_CACHE_TTL_SECONDS ?? 0
-      await env.DAGPB_CONTENT_CACHE.put(getDagPbKey(cid), bytes.buffer, {
+      const ttlSeconds = env.FF_DAGPB_CONTENT_CACHE_TTL_SECONDS ? parseInt(env.FF_DAGPB_CONTENT_CACHE_TTL_SECONDS) : 0
+      const key = getDagPbKey(cid)
+      await env.DAGPB_CONTENT_CACHE.put(key, bytes, {
         expirationTtl: ttlSeconds > 60 ? ttlSeconds : undefined
       })
     } catch (/** @type {any} */ error) {
@@ -115,8 +117,9 @@ async function cacheDagPbBytes(env, cid, bytes) {
  * @param {import('multiformats').UnknownLink} cid
  * @returns {Promise<Uint8Array | null>}
  */
-async function getCachedDagPbBytes(env, cid) {
-  const dagPbBytes = await env.DAGPB_CONTENT_CACHE.get(getDagPbKey(cid), 'arrayBuffer')
+async function getCachedDagPbBytes (env, cid) {
+  const key = getDagPbKey(cid)
+  const dagPbBytes = await env.DAGPB_CONTENT_CACHE.get(key, 'arrayBuffer')
   if (dagPbBytes) {
     return new Uint8Array(dagPbBytes)
   }
@@ -124,11 +127,11 @@ async function getCachedDagPbBytes(env, cid) {
 }
 
 /**
- * Returns the base58 encoded key for the DAG Protobuf content in the KV store.
+ * Returns the base58btc encoded key for the DAG Protobuf content in the KV store.
  *
  * @param {import('multiformats').UnknownLink} cid
  * @returns {string}
  */
-function getDagPbKey(cid) {
-  return base58.encode(cid.multihash.bytes)
+function getDagPbKey (cid) {
+  return base58btc.encode(cid.multihash.bytes)
 }

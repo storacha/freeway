@@ -1,7 +1,7 @@
 import { describe, before, beforeEach, after, it } from 'node:test'
 import assert from 'node:assert'
 import { randomBytes } from 'node:crypto'
-import { Miniflare } from 'miniflare'
+import { Log, LogLevel, Miniflare } from 'miniflare'
 import * as Link from 'multiformats/link'
 import { sha256 } from 'multiformats/hashes/sha2'
 import * as raw from 'multiformats/codecs/raw'
@@ -49,17 +49,26 @@ describe('freeway', () => {
     const { port } = server.address()
     url = new URL(`http://127.0.0.1:${port}`)
     miniflare = new Miniflare({
+      host: '127.0.0.1',
+      port: 8787,
+      inspectorPort: 9898,
+      log: new Log(LogLevel.INFO),
+      cache: false, // Disable Worker Global Cache to test cache middlewares
       bindings: {
         CONTENT_CLAIMS_SERVICE_URL: claimsService.url.toString(),
         CARPARK_PUBLIC_BUCKET_URL: url.toString(),
-        GATEWAY_SERVICE_DID: 'did:example:gateway'
+        GATEWAY_SERVICE_DID: 'did:example:gateway',
+        DAGPB_CONTENT_CACHE: 'DAGPB_CONTENT_CACHE',
+        FF_DAGPB_CONTENT_CACHE_ENABLED: 'true',
+        FF_DAGPB_CONTENT_CACHE_TTL_SECONDS: 300,
+        FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB: 2
       },
-      inspectorPort: 9898,
       scriptPath: 'dist/worker.mjs',
       modules: true,
       compatibilityFlags: ['nodejs_compat'],
       compatibilityDate: '2024-09-23',
-      r2Buckets: ['CARPARK']
+      r2Buckets: ['CARPARK'],
+      kvNamespaces: ['DAGPB_CONTENT_CACHE']
     })
 
     bucket = await miniflare.getR2Bucket('CARPARK')
@@ -70,10 +79,15 @@ describe('freeway', () => {
     builder = new Builder(bucket)
   })
 
-  beforeEach(() => {
+  beforeEach(async () => {
     claimsService.resetCallCount()
     claimsService.resetClaims()
     bucketService.resetCallCount()
+    const dagpbCache = await miniflare.getKVNamespace('DAGPB_CONTENT_CACHE')
+    const keys = await dagpbCache.list()
+    for (const key of keys.keys) {
+      await dagpbCache.delete(key.name)
+    }
   })
 
   after(() => {
@@ -480,5 +494,89 @@ describe('freeway', () => {
           partsCount++
         }
       }))
+  })
+
+  it('should be faster to get a file in a directory when the protobuf directory structure is cached', async () => {
+    // Generate 3 files wrapped in a folder, >2MB each to force a unixfs file header block (dag protobuf)
+    const input = [
+      new File([randomBytes(2_050_550)], 'data.txt'),
+      new File([randomBytes(2_050_550)], 'image.png'),
+      new File([randomBytes(2_050_550)], 'image2.png')
+    ]
+    // Adding to the builder will generate the unixfs file header block
+    const { root, shards } = await builder.add(input)
+    assert.equal(root.code, 112, 'Root should be a protobuf directory code 112')
+
+    // Generate claims for the shards
+    for (const shard of shards) {
+      const location = new URL(toBlobKey(shard.multihash), url)
+      const res = await fetch(location)
+      assert(res.body)
+      const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
+      claimsService.addClaims(claims)
+    }
+
+    // Check that the cache is empty
+    const dagpb = await miniflare.getKVNamespace('DAGPB_CONTENT_CACHE')
+    const cachedContent1 = await dagpb.list()
+    assert.equal(cachedContent1.keys.length, 0, 'Cache should be empty')
+
+    // First request adds the file to the cache, so it takes longer
+    const start = performance.now()
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}/${input[2].name}`, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
+    const end = performance.now()
+    assertBlobEqual(input[2], await res.blob())
+
+    const cachedContent2 = await dagpb.list()
+    assert(cachedContent2.keys.length > 0, 'Cache should have one or more keys')
+
+    // Second request retrieves the file from the cache, so it should take less time than the first request
+    const start2 = performance.now()
+    console.log('SECOND REQUEST')
+    const res2 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}/${input[2].name}`, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+    if (!res2.ok) assert.fail(`unexpected response: ${await res2.text()}`)
+    const end2 = performance.now()
+    assertBlobEqual(input[2], await res2.blob())
+    assert(end2 - start2 < end - start, 'Second request should take less time than the first request')
+  })
+
+  it('should not cache content if it is not dag protobuf content', async () => {
+    // Generate 1 file, >1MB each and do not wrap it in a folder
+    const input = new File([randomBytes(256)], 'data.txt')
+    const { root, shards } = await builder.add(input)
+    assert.equal(root.code, 85, 'Root should be a raw file code 85')
+
+    // Generate claims for the shards
+    for (const shard of shards) {
+      const location = new URL(toBlobKey(shard.multihash), url)
+      const res = await fetch(location)
+      assert(res.body)
+      const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
+      claimsService.addClaims(claims)
+    }
+
+    // Check that the cache is empty
+    const dagpb = await miniflare.getKVNamespace('DAGPB_CONTENT_CACHE')
+    const cachedContent = await dagpb.list()
+    assert.equal(cachedContent.keys.length, 0, 'Cache should be empty')
+
+    // It should not add the file to the cache, because it is not dag protobuf content
+    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}`, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
+    if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
+    assertBlobEqual(input, await res.blob())
+    assert.equal(cachedContent.keys.length, 0, 'Cache should be empty')
   })
 })
