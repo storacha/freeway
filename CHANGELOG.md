@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.0](https://github.com/storacha/freeway/compare/v2.24.0...v2.25.0) (2025-01-28)
+
+
+### Features
+
+* **dag-protobuf:** cache dag pb directory structure and block indexes ([#147](https://github.com/storacha/freeway/issues/147)) ([e367852](https://github.com/storacha/freeway/commit/e3678524349072df5f68486f68e86dd0736038ee))
+
 ## [2.24.0](https://github.com/storacha/freeway/compare/v2.23.1...v2.24.0) (2025-01-14)
 
 
