@@ -1,5 +1,5 @@
-import * as ContentClaimsLocator from '@web3-storage/blob-fetcher/locator/content-claims'
-import { IndexingServiceLocator } from '@web3-storage/blob-fetcher/locator/indexing-service'
+import { ContentClaimsClient } from '@web3-storage/blob-fetcher/locator/content-claims-client'
+import * as Locator from '@web3-storage/blob-fetcher/locator'
 import { Client } from '@storacha/indexing-service-client'
 
 /**
@@ -23,15 +23,13 @@ export function withLocator (handler) {
   return async (request, env, ctx) => {
     const useIndexingService = isIndexingServiceEnabled(request, env)
 
-    const locator = useIndexingService
-      ? new IndexingServiceLocator({
-        client: new Client({
-          serviceURL: env.INDEXING_SERVICE_URL
-            ? new URL(env.INDEXING_SERVICE_URL)
-            : undefined
-        })
+    const client = useIndexingService
+      ? new Client({
+        serviceURL: env.INDEXING_SERVICE_URL
+          ? new URL(env.INDEXING_SERVICE_URL)
+          : undefined
       })
-      : ContentClaimsLocator.create({
+      : new ContentClaimsClient({
         serviceURL: env.CONTENT_CLAIMS_SERVICE_URL
           ? new URL(env.CONTENT_CLAIMS_SERVICE_URL)
           : undefined,
@@ -41,6 +39,7 @@ export function withLocator (handler) {
           : undefined
       })
 
+    const locator = Locator.create({ client })
     return handler(request, env, { ...ctx, locator })
   }
 }
