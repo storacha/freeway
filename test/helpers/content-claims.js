@@ -41,7 +41,7 @@ export const generateBlockLocationClaims = async (signer, shard, carStream, loca
     .pipeTo(new WritableStream({
       async write ({ cid, blockOffset, blockLength }) {
         const blocks = claims.get(cid) ?? []
-        blocks.push(await generateLocationClaim(signer, shard, location, blockOffset, blockLength))
+        blocks.push(await generateLocationClaim(signer, cid, location, blockOffset, blockLength))
         claims.set(cid, blocks)
       }
     }))
