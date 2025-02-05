@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.26.0](https://github.com/storacha/freeway/compare/v2.25.0...v2.26.0) (2025-02-05)
+
+
+### Features
+
+* **deps:** update to new blob-fetcher ([#150](https://github.com/storacha/freeway/issues/150)) ([87e3298](https://github.com/storacha/freeway/commit/87e3298e8675048207b28485da03a5ef53640226))
+
 ## [2.25.0](https://github.com/storacha/freeway/compare/v2.24.0...v2.25.0) (2025-01-28)
 
 
