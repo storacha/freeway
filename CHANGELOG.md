@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.26.1](https://github.com/storacha/freeway/compare/v2.26.0...v2.26.1) (2025-02-05)
+
+
+### Bug Fixes
+
+* **wrangler:** reenable content cache ([bcc06a8](https://github.com/storacha/freeway/commit/bcc06a8a1d1f0490bb92930fad7f664767deba43))
+
 ## [2.26.0](https://github.com/storacha/freeway/compare/v2.25.0...v2.26.0) (2025-02-05)
 
 
