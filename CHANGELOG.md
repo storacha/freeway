@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.27.0](https://github.com/storacha/freeway/compare/v2.26.1...v2.27.0) (2025-02-07)
+
+
+### Features
+
+* **wrangler:** enable indexer at 10% ([#153](https://github.com/storacha/freeway/issues/153)) ([0f853ec](https://github.com/storacha/freeway/commit/0f853ec8839d9cb62d4573e6de14e2c9bc7709d6))
+
 ## [2.26.1](https://github.com/storacha/freeway/compare/v2.26.0...v2.26.1) (2025-02-05)
 
 
