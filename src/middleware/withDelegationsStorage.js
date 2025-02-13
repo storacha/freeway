@@ -41,13 +41,14 @@ function createStorage (env) {
       /** @type {Ucanto.Delegation<Ucanto.Capabilities>[]} */
       const delegations = []
       const result = await env.CONTENT_SERVE_DELEGATIONS_STORE.list({ prefix: space })
-      result.keys.forEach(async (key) => {
+      await Promise.all(result.keys.map(async (key) => {
         const delegation = await env.CONTENT_SERVE_DELEGATIONS_STORE.get(key.name, 'arrayBuffer')
         if (delegation) {
           const d = await Delegation.extract(new Uint8Array(delegation))
           if (d.ok) delegations.push(d.ok)
+          else console.error('error while extracting delegation', d.error)
         }
-      })
+      }))
       return ok(delegations)
     },
 
