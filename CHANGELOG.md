@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.28.0](https://github.com/storacha/freeway/compare/v2.27.0...v2.28.0) (2025-02-13)
+
+
+### Features
+
+* **freeway:** put prod indexer usage to 50% ([#158](https://github.com/storacha/freeway/issues/158)) ([6bd8e90](https://github.com/storacha/freeway/commit/6bd8e90354870cb7026331871e36a7689df47150))
+
+
+### Bug Fixes
+
+* **delegationStorage:** find delegations call was not returning results ([#159](https://github.com/storacha/freeway/issues/159)) ([9cd6e57](https://github.com/storacha/freeway/commit/9cd6e5752ceb53f5af7f7c3ac04a87602799482c))
+
 ## [2.27.0](https://github.com/storacha/freeway/compare/v2.26.1...v2.27.0) (2025-02-12)
 
 
