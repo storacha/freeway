@@ -1,6 +1,7 @@
 import { ContentClaimsClient } from '@web3-storage/blob-fetcher/locator/content-claims-client'
 import * as Locator from '@web3-storage/blob-fetcher/locator'
 import { Client } from '@storacha/indexing-service-client'
+import { trace } from '@opentelemetry/api'
 
 /**
  * @import {
@@ -22,7 +23,10 @@ import { Client } from '@storacha/indexing-service-client'
 export function withLocator (handler) {
   return async (request, env, ctx) => {
     const useIndexingService = isIndexingServiceEnabled(request, env)
-
+    const span = trace.getActiveSpan()
+    if (span) {
+      span.setAttribute('useIndexingService', useIndexingService)
+    }
     const client = useIndexingService
       ? new Client({
         serviceURL: env.INDEXING_SERVICE_URL
