@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.28.1](https://github.com/storacha/freeway/compare/v2.28.0...v2.28.1) (2025-03-12)
+
+
+### Bug Fixes
+
+* **staging:** enable delegation storage ([3ca7548](https://github.com/storacha/freeway/commit/3ca7548f5c6f8291969da6500c0edb11a95199a6))
+* **wrangler:** lower indexer percentage to 10 in prod for now ([#162](https://github.com/storacha/freeway/issues/162)) ([02d20cc](https://github.com/storacha/freeway/commit/02d20cc188faa173e06869cb4b6edbe60a258648))
+
 ## [2.28.0](https://github.com/storacha/freeway/compare/v2.27.0...v2.28.0) (2025-02-13)
 
 
