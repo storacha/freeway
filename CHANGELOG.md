@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.28.3](https://github.com/storacha/freeway/compare/v2.28.2...v2.28.3) (2025-03-26)
+
+
+### Bug Fixes
+
+* **package.json:** wrangler fix ([9131d9e](https://github.com/storacha/freeway/commit/9131d9e47b46a4a2ed401a5298154c14a1e3b5c3))
+* **wrangler:** use v3 wrangler action ([5e90112](https://github.com/storacha/freeway/commit/5e90112eaa771fd6d7e5dfcb01ffdcc1c44e1560))
+
 ## [2.28.2](https://github.com/storacha/freeway/compare/v2.28.1...v2.28.2) (2025-03-26)
 
 
