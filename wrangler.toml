@@ -66,7 +66,7 @@ UPLOAD_SERVICE_DID = "did:web:web3.storage"
 CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
 UPLOAD_API_URL = "https://up.web3.storage"
-INDEXING_SERVICE_URL = "https://indexer.storacha.network/"
+INDEXING_SERVICE_URL = "https://accelerated.indexer.storacha.network/"
 
 [env.production.observability]
 enabled = true
