@@ -1,6 +1,6 @@
 {
   "name": "freeway",
-  "version": "2.28.3",
+  "version": "2.28.4",
   "description": "An IPFS gateway for accessing UnixFS data via CAR CIDs",
   "keywords": [
     "IPFS",

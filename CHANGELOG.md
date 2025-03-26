@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.4](https://github.com/storacha/freeway/compare/v2.28.3...v2.28.4) (2025-03-26)
+
+
+### Bug Fixes
+
+* **deploy:** force version ([ce26f64](https://github.com/storacha/freeway/commit/ce26f6404ab8d416f4ba1b20fd6534174fdcabbd))
+
 ## [2.28.3](https://github.com/storacha/freeway/compare/v2.28.2...v2.28.3) (2025-03-26)
 
 
