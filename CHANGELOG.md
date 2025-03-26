@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.2](https://github.com/storacha/freeway/compare/v2.28.1...v2.28.2) (2025-03-26)
+
+
+### Bug Fixes
+
+* **wrangler:** use cloudfront accelerated indexer ([#163](https://github.com/storacha/freeway/issues/163)) ([118aad5](https://github.com/storacha/freeway/commit/118aad53389e494448f63039098a90b725ae7142))
+
 ## [2.28.1](https://github.com/storacha/freeway/compare/v2.28.0...v2.28.1) (2025-03-12)
 
 
