@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.5](https://github.com/storacha/freeway/compare/v2.28.4...v2.28.5) (2025-03-28)
+
+
+### Bug Fixes
+
+* **wrangler:** ramp indexer to 50% ([6e14102](https://github.com/storacha/freeway/commit/6e141027d425201261b947b92ac6dd7d3affeacc))
+
 ## [2.28.4](https://github.com/storacha/freeway/compare/v2.28.3...v2.28.4) (2025-03-26)
 
 
