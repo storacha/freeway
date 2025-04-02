@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.7](https://github.com/storacha/freeway/compare/v2.28.6...v2.28.7) (2025-04-02)
+
+
+### Bug Fixes
+
+* **wrangler:** force deploy ([9be4ccc](https://github.com/storacha/freeway/commit/9be4cccdf2a5655557513adfc23506238a88186f))
+
 ## [2.28.6](https://github.com/storacha/freeway/compare/v2.28.5...v2.28.6) (2025-04-01)
 
 
