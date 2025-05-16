@@ -62,7 +62,17 @@ function isIndexingServiceEnabled (request, env) {
   const withIndexingServicesArg = new URL(request.url).searchParams
     .getAll('ff')
     .includes('indexing-service')
-  const probability = env.FF_RAMP_UP_PROBABILITY ? Number(env.FF_RAMP_UP_PROBABILITY) : 0
-  const withIndexerEnabled = Math.random() * 100 <= probability
-  return withIndexingServicesArg || withIndexerEnabled
+  const withoutIndexingServicesArg = new URL(request.url).searchParams
+    .getAll('ff')
+    .includes('no-indexing-service')
+  const probability = env.FF_RAMP_UP_PROBABILITY
+    ? Number(env.FF_RAMP_UP_PROBABILITY)
+    : 0
+  const withIndexerEnabledProbabalistically = Math.random() * 100 <= probability
+  return (
+    // We haven't explicitly disabled the indexing service, and
+    !withoutIndexingServicesArg &&
+    // We have explicitly enabled the indexing service, or hit it probabilistically.
+    (withIndexingServicesArg || withIndexerEnabledProbabalistically)
+  )
 }
