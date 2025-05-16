@@ -54,10 +54,12 @@ const MAX_BATCH_SIZE = 20 * 1024 * 1024
  */
 export function withCarParkFetch (handler) {
   return async (request, env, ctx) => {
-    // if carpark public bucket is not set, just use default
-    if (!env.CARPARK_PUBLIC_BUCKET_URL) {
+    const url = new URL(request.url)
+    const legacyRequest = url.searchParams.get('legacyReq') === 'true'
+    if (!env.CARPARK_PUBLIC_BUCKET_URL || legacyRequest) {
       return handler(request, env, { ...ctx, fetch: globalThis.fetch })
     }
+
     const bucket = new TraceBucket(/** @type {import('@web3-storage/public-bucket').Bucket} */ (env.CARPARK))
     const bucketHandler = createHandler({ bucket, maxBatchSize: MAX_BATCH_SIZE })
 
