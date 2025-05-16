@@ -22,12 +22,16 @@ import { trace } from '@opentelemetry/api'
  */
 export function withLocator (handler) {
   return async (request, env, ctx) => {
+    const url = new URL(request.url)
+    const legacyRequest = url.searchParams.get('legacyReq') === 'true'
     const useIndexingService = isIndexingServiceEnabled(request, env)
     const span = trace.getActiveSpan()
     if (span) {
       span.setAttribute('useIndexingService', useIndexingService)
+      span.setAttribute('legacyRequest', legacyRequest)
     }
-    const client = useIndexingService
+
+    const client = !legacyRequest && useIndexingService
       ? new Client({
         serviceURL: env.INDEXING_SERVICE_URL
           ? new URL(env.INDEXING_SERVICE_URL)
@@ -37,10 +41,8 @@ export function withLocator (handler) {
         serviceURL: env.CONTENT_CLAIMS_SERVICE_URL
           ? new URL(env.CONTENT_CLAIMS_SERVICE_URL)
           : undefined,
-        carpark: env.CARPARK,
-        carparkPublicBucketURL: env.CARPARK_PUBLIC_BUCKET_URL
-          ? new URL(env.CARPARK_PUBLIC_BUCKET_URL)
-          : undefined
+        carpark: !legacyRequest ? env.CARPARK : undefined,
+        carparkPublicBucketURL: !legacyRequest && env.CARPARK_PUBLIC_BUCKET_URL ? new URL(env.CARPARK_PUBLIC_BUCKET_URL) : undefined
       })
 
     const locator = Locator.create({ client })
