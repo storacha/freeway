@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.8](https://github.com/storacha/freeway/compare/v2.28.7...v2.28.8) (2025-05-16)
+
+
+### Bug Fixes
+
+* handling legacy requests ([#174](https://github.com/storacha/freeway/issues/174)) ([8c1396f](https://github.com/storacha/freeway/commit/8c1396ff3e211f2136ab566af8af40ae391b246b))
+
 ## [2.28.7](https://github.com/storacha/freeway/compare/v2.28.6...v2.28.7) (2025-04-02)
 
 
