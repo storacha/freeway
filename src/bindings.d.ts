@@ -3,7 +3,7 @@ import type { Context } from '@web3-storage/gateway-lib'
 import type { CARLink } from 'cardex/api'
 import type { R2Bucket, KVNamespace } from '@cloudflare/workers-types'
 import type { MemoryBudget } from './lib/mem-budget'
-import { CID } from '@web3-storage/gateway-lib/handlers'
+import { CID } from 'multiformats'
 
 export {}
 
@@ -13,8 +13,9 @@ export interface Environment {
   CONTENT_CLAIMS_SERVICE_URL?: string
   RATE_LIMITS_SERVICE_URL?: string
   ACCOUNTING_SERVICE_URL: string
-  MY_RATE_LIMITER: RateLimit
+  MY_RATE_LIMITER: KVNamespace
   AUTH_TOKEN_METADATA: KVNamespace
+  FF_RATE_LIMITER_ENABLED: string
 }
 
 export type GetCIDRequestData = Pick<Request, 'url' | 'headers'>
@@ -25,13 +26,24 @@ export interface RateLimitsService {
   check: (cid: CID, options: GetCIDRequestOptions) => Promise<RateLimitExceeded>
 }
 
+export interface RateLimitConfig {
+  requests: number
+  window: number
+  concurrent: number
+}
+
 export interface TokenMetadata {
-  locationClaim?: unknown // TODO: figure out the right type to use for this - we probably need it for the private data case to verify auth
+  id: string
   invalid?: boolean
+  rateLimits?: RateLimitConfig
+  origins?: string[]
+  expiresAt?: number
 }
 
 export interface RateLimits {
-  create: ({ env }: { env: Environment }) => RateLimitsService
+  create: (options: { env: Environment }) => {
+    check: (cid: CID, request: Request) => Promise<RATE_LIMIT_EXCEEDED>
+  }
 }
 
 export interface AccountingService {
@@ -40,6 +52,18 @@ export interface AccountingService {
 }
 
 export interface Accounting {
-  create: ({ serviceURL }: { serviceURL?: string }) => AccountingService
+  create: (options: { serviceURL: string }) => {
+    record: (cid: CID, options: any) => Promise<void>
+    getTokenMetadata: (token: string) => Promise<TokenMetadata | null>
+  }
+}
+
+export enum RATE_LIMIT_EXCEEDED {
+  YES = 'yes',
+  NO = 'no'
+}
+
+export interface ExecutionContext extends EventContext<Environment, string, any> {
+  waitUntil(promise: Promise<any>): voidUU
 }
 
