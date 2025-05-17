@@ -24,7 +24,9 @@ import {
   withEgressTracker,
   withAuthorizedSpace,
   withLocator,
-  withDelegationStubs
+  withDelegationStubs,
+  withMemoryBudget,
+  withRangeCache
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor } from '@opentelemetry/sdk-trace-base'
@@ -47,32 +49,34 @@ const handler = {
   fetch (request, env, ctx) {
     console.log(request.method, request.url)
     const middleware = composeMiddleware(
-      // Prepare the Context
-      withCdnCache,
+      // Basic context and error handling
       withContext,
+      withErrorHandler,
       withCorsHeaders,
       withVersionHeader,
-      withErrorHandler,
+
+      // Security and resource management
+      withMemoryBudget,        // Add memory budgeting early
+      withRateLimit,           // Rate limiting before expensive operations
+      withAuthToken,           // Authentication
+      withAuthorizedSpace,     // Authorization
+
+      // Request parsing and validation
       withParsedIpfsUrl,
       createWithHttpMethod('GET', 'HEAD'),
-      withAuthToken,
+      
+      // Caching and performance
+      withCdnCache,
+      withRangeCache,          // Range request handling
+      
+      // Data fetching and processing
       withLocator,
       withDelegationStubs,
-
-      // Rate-limit requests
-      withRateLimit,
-
-      // Track egress bytes
-      withEgressTracker,
-
-      // Fetch data
       withCarBlockHandler,
-      withAuthorizedSpace,
       withContentClaimsDagula,
-      withFormatRawHandler,
-      withFormatCarHandler,
-
-      // Prepare the Response
+      withEgressTracker,
+      
+      // Response preparation
       withContentDispositionHeader,
       withFixedLengthStream
     )
