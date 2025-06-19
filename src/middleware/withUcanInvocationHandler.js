@@ -22,7 +22,7 @@ export function withUcanInvocationHandler (handler) {
       return handler(request, env, ctx)
     }
 
-    const service = ctx.service ?? createService(ctx)
+    const service = ctx.service ?? createService(ctx, env)
     const server = ctx.server ?? createServer(ctx, service)
 
     const { headers, body, status } = await server.request({

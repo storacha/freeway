@@ -2,17 +2,20 @@ import {
   Access as AccessCapabilities,
   Space as SpaceCapabilities
 } from '@web3-storage/capabilities'
+import * as ServeCapabilities from '../capabilities/serve.js'
 import { extractContentServeDelegations } from './utils.js'
+import { handleEncryptionSetup } from './handlers/encryption-setup.js'
+import { handleKeyDecryption } from './handlers/decrypt-key.js'
 import { claim, Schema } from '@ucanto/validator'
 import * as UcantoServer from '@ucanto/server'
-import { ok } from '@ucanto/client'
 
 /**
  * @template T
  * @param {import('../middleware/withUcanInvocationHandler.types.js').Context} ctx
+ * @param {import('../middleware/withUcanInvocationHandler.types.js').Environment} env
  * @returns {import('./api.types.js').Service<T>}
  */
-export function createService (ctx) {
+export function createService(ctx, env) {
   return {
     access: {
       delegate: UcantoServer.provideAdvanced(
@@ -50,10 +53,33 @@ export function createService (ctx) {
               return errorResult
             }
 
-            return ok({})
+            return UcantoServer.ok({})
           }
 
         })
+    },
+    space: {
+      content: {
+        encryption: {
+          setup: UcantoServer.provideAdvanced({
+            capability: ServeCapabilities.encryptionSetup,
+            audience: Schema.did({ method: 'web' }),
+            handler: async ({ capability, invocation }) => {
+              const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
+              return await handleEncryptionSetup(space, invocation, ctx, env)
+            }
+          })
+        },
+        decrypt: UcantoServer.provideAdvanced({
+          capability: ServeCapabilities.contentDecrypt,
+          audience: Schema.did({ method: 'web' }),
+          handler: async ({ capability, invocation }) => {
+            const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
+            const encryptedSymmetricKey = capability.nb?.encryptedSymmetricKey
+            return await handleKeyDecryption(space, encryptedSymmetricKey, invocation, ctx, env)
+          }
+        })
+      }
     }
   }
 }
