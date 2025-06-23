@@ -1,0 +1,27 @@
+{
+  "name": "test-client",
+  "version": "1.0.0",
+  "description": "Test client for Storacha encryption gateway",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:encrypt": "node test-encryption-setup.js",
+    "test:decrypt": "node test-content-decrypt.js"
+  },
+  "keywords": [
+    "storacha",
+    "encryption",
+    "gateway",
+    "test"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@web3-storage/w3up-client": "^17.3.0",
+    "@ipld/dag-ucan": "^3.4.5",
+    "@ucanto/client": "^9.0.1",
+    "@ucanto/principal": "^9.0.2",
+    "@ucanto/transport": "^9.2.0"
+  }
+}
