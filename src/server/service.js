@@ -2,10 +2,9 @@ import {
   Access as AccessCapabilities,
   Space as SpaceCapabilities
 } from '@web3-storage/capabilities'
-import * as ServeCapabilities from '../capabilities/serve.js'
 import { extractContentServeDelegations } from './utils.js'
-import { handleEncryptionSetup } from './handlers/encryption-setup.js'
-import { handleKeyDecryption } from './handlers/decrypt-key.js'
+import { EncryptionSetup, handleEncryptionSetup } from './handlers/encryption-setup.js'
+import { ContentDecrypt, handleKeyDecryption } from './handlers/decrypt-key.js'
 import { claim, Schema } from '@ucanto/validator'
 import * as UcantoServer from '@ucanto/server'
 
@@ -44,7 +43,7 @@ export function createService(ctx, env) {
                 return validationResult
               }
 
-              const space = capability.with
+              const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
               return ctx.delegationsStorage.store(space, delegation)
             }))
 
@@ -62,7 +61,7 @@ export function createService(ctx, env) {
       content: {
         encryption: {
           setup: UcantoServer.provideAdvanced({
-            capability: ServeCapabilities.encryptionSetup,
+            capability: EncryptionSetup,
             audience: Schema.did({ method: 'web' }),
             handler: async ({ capability, invocation }) => {
               const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
@@ -71,7 +70,7 @@ export function createService(ctx, env) {
           })
         },
         decrypt: UcantoServer.provideAdvanced({
-          capability: ServeCapabilities.contentDecrypt,
+          capability: ContentDecrypt,
           audience: Schema.did({ method: 'web' }),
           handler: async ({ capability, invocation }) => {
             const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)

@@ -20,7 +20,7 @@ import { capability } from '@ucanto/server'
  *
  * The Space must be provisioned for a paid plan to use encryption.
  */
-const EncryptionSetup = capability({
+export const EncryptionSetup = capability({
   can: 'space/encryption/setup',
   with: DID.match({ method: 'key' }),
   derives: (child, parent) => {

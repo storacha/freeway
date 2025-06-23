@@ -45,7 +45,7 @@ export function withLocator (handler) {
         carparkPublicBucketURL: !legacyRequest && env.CARPARK_PUBLIC_BUCKET_URL ? new URL(env.CARPARK_PUBLIC_BUCKET_URL) : undefined
       })
 
-    const locator = Locator.create({ client })
+    const locator = Locator.create({ client: /** @type {any} */ (client) })
     return handler(request, env, { ...ctx, locator })
   }
 }

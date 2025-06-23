@@ -206,7 +206,7 @@ describe('withEgressTracker', async () => {
       // Consume the response body by reading the CAR file
       const source = /** @type {ReadableStream<Uint8Array>} */ (await response.body)
 
-      /** @type {(import('carstream').Block & import('carstream').Position)[]} */
+      /** @type {(import('carstream/api').Block & import('carstream/api').Position)[]} */
       const blocks = []
       await source
         .pipeThrough(new CARReaderStream())

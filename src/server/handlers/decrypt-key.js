@@ -18,7 +18,7 @@ import { capability } from '@ucanto/server'
  * The gateway will validate this capability against UCAN delegations before
  * providing decrypted Data Encryption Keys (DEKs) to authorized clients.
  */
-const Decrypt = capability({
+export const ContentDecrypt = capability({
   can: 'space/content/decrypt',
   with: DID.match({ method: 'key' }),
   nb: Schema.struct({
@@ -99,10 +99,10 @@ export async function handleKeyDecryption(space, encryptedSymmetricKey, invocati
 async function validateDecryptDelegation(invocation, spaceDID, ctx) {
   try {
     const decryptCapability = invocation.capabilities.find(
-      (cap) => cap.can === Decrypt.can
+      (cap) => cap.can === ContentDecrypt.can
     )
     if (!decryptCapability) {
-      return error(`Delegation does not contain ${Decrypt.can} capability!`)
+      return error(`Delegation does not contain ${ContentDecrypt.can} capability!`)
     }
 
     if (decryptCapability.with !== spaceDID) {
@@ -116,15 +116,15 @@ async function validateDecryptDelegation(invocation, spaceDID, ctx) {
     const delegation = /** @type {import('@ucanto/interface').Delegation} */ (invocation.proofs[0])
     if (
       !delegation.capabilities.some(
-        (c) => c.can === Decrypt.can
+        (c) => c.can === ContentDecrypt.can
       )
     ) {
-      return error(`Delegation does not contain ${Decrypt.can} capability!`)
+      return error(`Delegation does not contain ${ContentDecrypt.can} capability!`)
     }
 
     if (
       !delegation.capabilities.some(
-        (c) => c.with === spaceDID && c.can === Decrypt.can
+        (c) => c.with === spaceDID && c.can === ContentDecrypt.can
       )
     ) {
       return error(`Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`)
@@ -136,7 +136,7 @@ async function validateDecryptDelegation(invocation, spaceDID, ctx) {
 
     const authorization = await access(/** @type {any} */(invocation), {
       principal: Verifier,
-      capability: Decrypt,
+      capability: ContentDecrypt,
       authority: ctx.gatewayIdentity,
       validateAuthorization: () => ok({})
     })

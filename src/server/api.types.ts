@@ -1,11 +1,12 @@
 import { InferInvokedCapability, ServiceMethod, Unit } from '@ucanto/interface';
 import { Failure } from '@ucanto/interface';
 import { Access as AccessCapabilities } from '@web3-storage/capabilities';
-import * as ServeCapabilities from '../capabilities/serve.js';
+import { EncryptionSetup } from './handlers/encryption-setup.js';
+import { ContentDecrypt } from './handlers/decrypt-key.js';
 
 export type AccessDelegation = InferInvokedCapability<typeof AccessCapabilities.delegate>
-export type EncryptionSetupCapability = InferInvokedCapability<typeof ServeCapabilities.encryptionSetup>
-export type ContentDecryptCapability = InferInvokedCapability<typeof ServeCapabilities.contentDecrypt>
+export type EncryptionSetupCapability = InferInvokedCapability<typeof EncryptionSetup>
+export type ContentDecryptCapability = InferInvokedCapability<typeof ContentDecrypt>
 
 export interface Service<T> {
   access: ContentServeAuthService<T>
