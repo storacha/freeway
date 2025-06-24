@@ -1,16 +1,13 @@
 import dotenv from 'dotenv'
 dotenv.config({ path: '.env' })
 
-import { ok, fail, DID } from '@ucanto/validator'
-import { capability } from '@ucanto/server'
 import { connect } from '@ucanto/client'
 import { CAR, HTTP } from '@ucanto/transport'
 import { create as createClient } from '@web3-storage/w3up-client'
 import { StoreMemory } from '@web3-storage/w3up-client/stores'
-import { Space as SpaceCapabilities, Access as AccessCapabilities } from '@web3-storage/capabilities'
-
 import { ed25519 } from '@ucanto/principal'
 import * as Proof from '@web3-storage/w3up-client/proof'
+import { EncryptionSetup } from '../src/server/handlers/encryption-setup.js'
 
 const agentPrivKey = process.env.AGENT_PRIVATE_KEY
 const agentAccessProof = process.env.DELEGATION
@@ -21,26 +18,6 @@ export const privateGatewayPrincipal = {
   did: () => 'did:web:w3s.link',
 }
 export const privateGatewayURL = new URL('https://freeway-fforbeck.protocol-labs.workers.dev')
-
-// Configuration for Web3 Storage
-export const w3ServicePrincipal = {
-  did: () => 'did:web:web3.storage',
-}
-export const w3ServiceURL = new URL('https://up.web3.storage')
-
-// Capabilities for testing
-export const EncryptionSetup = capability({
-  can: 'space/content/encryption/setup',
-  with: DID.match({ method: 'key' }),
-  derives: (child, parent) => {
-    if (child.with !== parent.with) {
-      return fail(
-        `Can not derive ${child.can} with ${child.with} from ${parent.with}`
-      )
-    }
-    return ok({})
-  },
-})
 
 /** @type {import('@ucanto/interface').ConnectionView<any>} */
 export const connection = ({ id, url }) => connect({

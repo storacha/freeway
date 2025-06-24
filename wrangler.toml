@@ -194,6 +194,12 @@ GATEWAY_SERVICE_DID = "did:web:w3s.link"
 UPLOAD_SERVICE_DID = "did:web:web3.storage"
 UPLOAD_API_URL = "https://up.web3.storage"
 
+### Google KMS
+GOOGLE_KMS_PROJECT_ID = "storacha"
+GOOGLE_KMS_LOCATION = "global"
+GOOGLE_KMS_KEYRING_NAME = "private-gateway-global"
+GOOGLE_KMS_TOKEN = ""
+
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"
 type = "ratelimit"

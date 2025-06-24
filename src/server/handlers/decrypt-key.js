@@ -1,6 +1,7 @@
 import { ok, error, fail, access, Schema, DID } from '@ucanto/validator'
 import { Verifier } from '@ucanto/principal'
 import { capability } from '@ucanto/server'
+import { sanitizeSpaceDIDForKMSKeyId } from '../utils.js'
 
 /**
  * @import { Environment } from '../../middleware/withUcanInvocationHandler.types.js'
@@ -8,18 +9,18 @@ import { capability } from '@ucanto/server'
 
 
 /**
- * "Decrypt encrypted content owned by the subject Space."
+ * "Decrypt symmetric keys for encrypted content owned by the subject Space."
  *
- * A Principal who may `space/content/decrypt` is permitted to decrypt 
- * any encrypted content owned by the Space. This capability is used by
- * the gateway to validate that a client has permission to access encrypted
- * content and receive the decryption key.
+ * A Principal who may `space/encryption/key/decrypt` is permitted to decrypt 
+ * the symmetric keys for any encrypted content owned by the Space. This capability 
+ * is used by the gateway to validate that a client has permission to access encrypted
+ * content and receive the decrypted Data Encryption Keys (DEKs).
  *
  * The gateway will validate this capability against UCAN delegations before
  * providing decrypted Data Encryption Keys (DEKs) to authorized clients.
  */
-export const ContentDecrypt = capability({
-  can: 'space/content/decrypt',
+export const KeyDecrypt = capability({
+  can: 'space/encryption/key/decrypt',
   with: DID.match({ method: 'key' }),
   nb: Schema.struct({
     encryptedSymmetricKey: Schema.string(),
@@ -34,8 +35,21 @@ export const ContentDecrypt = capability({
   },
 })
 
+export const ContentDecrypt = capability({
+  can: 'space/content/decrypt',
+  with: DID.match({ method: 'key' }),
+  derives: (child, parent) => {
+    if (child.with !== parent.with) {
+      return fail(
+        `Can not derive ${child.can} with ${child.with} from ${parent.with}`
+      )
+    }
+    return ok({})
+  },
+})
+
 /**
- * Handles space/content/decrypt delegation to decrypt symmetric key using the Space's KMS Asymmetric Key.
+ * Handles space/encryption/key/decrypt delegation to decrypt symmetric key using the Space's KMS Asymmetric Key.
  * 
  * @param {import('@web3-storage/capabilities/types').SpaceDID} space
  * @param {string} encryptedSymmetricKey
@@ -88,6 +102,8 @@ export async function handleKeyDecryption(space, encryptedSymmetricKey, invocati
 
 /**
  * Validates a decrypt delegation.
+ * The invocation should have space/encryption/key/decrypt capability.
+ * The delegation proof should contain space/content/decrypt capability.
  * The issuer of the invocation must be in the audience of the delegation.
  * The provided space must be the same as the space in the delegation.
  * 
@@ -98,22 +114,26 @@ export async function handleKeyDecryption(space, encryptedSymmetricKey, invocati
  */
 async function validateDecryptDelegation(invocation, spaceDID, ctx) {
   try {
+    // Check invocation has the key decrypt capability
     const decryptCapability = invocation.capabilities.find(
-      (cap) => cap.can === ContentDecrypt.can
+      (cap) => cap.can === KeyDecrypt.can
     )
     if (!decryptCapability) {
-      return error(`Delegation does not contain ${ContentDecrypt.can} capability!`)
+      return error(`Invocation does not contain ${KeyDecrypt.can} capability!`)
     }
 
     if (decryptCapability.with !== spaceDID) {
-      return error(`Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`)
+      return error(`Invalid "with" in the invocation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`)
     }
 
+    // Check that we have exactly one delegation proof
     if (invocation.proofs.length !== 1) {
-      return error(`Expected exactly one delegation!`)
+      return error(`Expected exactly one delegation proof!`)
     }
 
     const delegation = /** @type {import('@ucanto/interface').Delegation} */ (invocation.proofs[0])
+    
+    // Check delegation contains space/content/decrypt capability
     if (
       !delegation.capabilities.some(
         (c) => c.can === ContentDecrypt.can
@@ -122,6 +142,7 @@ async function validateDecryptDelegation(invocation, spaceDID, ctx) {
       return error(`Delegation does not contain ${ContentDecrypt.can} capability!`)
     }
 
+    // Check delegation is for the correct space
     if (
       !delegation.capabilities.some(
         (c) => c.with === spaceDID && c.can === ContentDecrypt.can
@@ -130,13 +151,15 @@ async function validateDecryptDelegation(invocation, spaceDID, ctx) {
       return error(`Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`)
     }
 
+    // Check that the invocation issuer matches the delegation audience
     if (invocation.issuer.did() !== delegation.audience.did()) {
       return error('The invoker must be equal to the delegated audience!')
     }
 
+    // Validate the key decrypt invocation authorization
     const authorization = await access(/** @type {any} */(invocation), {
       principal: Verifier,
-      capability: ContentDecrypt,
+      capability: KeyDecrypt,
       authority: ctx.gatewayIdentity,
       validateAuthorization: () => ok({})
     })
@@ -187,8 +210,12 @@ async function decryptSymmetricKeyWithKMS(encryptedSymmetricKey, space, env) {
       return error('Google KMS not properly configured')
     }
 
-    const keyName = `projects/${env.GOOGLE_KMS_PROJECT_ID}/locations/${env.GOOGLE_KMS_LOCATION}/keyRings/${env.GOOGLE_KMS_KEYRING_NAME}/cryptoKeys/${space}`
-    const kmsUrl = `https://cloudkms.googleapis.com/v1/${keyName}:asymmetricDecrypt`
+    // Sanitize space DID to match the key ID format used in encryption setup
+    const sanitizedKeyId = sanitizeSpaceDIDForKMSKeyId(space)
+    
+    const keyName = `projects/${env.GOOGLE_KMS_PROJECT_ID}/locations/${env.GOOGLE_KMS_LOCATION}/keyRings/${env.GOOGLE_KMS_KEYRING_NAME}/cryptoKeys/${sanitizedKeyId}`
+    // For asymmetric decryption, we need to specify the key version
+    const kmsUrl = `https://cloudkms.googleapis.com/v1/${keyName}/cryptoKeyVersions/1:asymmetricDecrypt`
 
     const response = await fetch(kmsUrl, {
       method: 'POST',
@@ -202,10 +229,15 @@ async function decryptSymmetricKeyWithKMS(encryptedSymmetricKey, space, env) {
     })
 
     if (!response.ok) {
-      return error(`KMS decryption failed: ${response.status}`)
+      const errorText = await response.text()
+      return error(`KMS decryption failed for space ${space}: ${response.status} - ${errorText}`)
     }
 
     const result = await response.json()
+    if (!result.plaintext) {
+      return error(`No plaintext returned from KMS for space ${space}`)
+    }
+    
     const decryptedKey = Buffer.from(result.plaintext, 'base64').toString('base64')
 
     return ok({ decryptedKey })

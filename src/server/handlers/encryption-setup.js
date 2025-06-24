@@ -1,6 +1,7 @@
-import { ok, fail, access, Schema, DID, error } from '@ucanto/validator'
+import { ok, fail, access, DID, error } from '@ucanto/validator'
 import { Verifier } from '@ucanto/principal'
 import { capability } from '@ucanto/server'
+import { sanitizeSpaceDIDForKMSKeyId } from '../utils.js'
 
 /**
  * @import { Environment } from '../../middleware/withUcanInvocationHandler.types.js'
@@ -21,7 +22,7 @@ import { capability } from '@ucanto/server'
  * The Space must be provisioned for a paid plan to use encryption.
  */
 export const EncryptionSetup = capability({
-  can: 'space/content/encryption/setup',
+  can: 'space/encryption/setup',
   with: DID.match({ method: 'key' }),
   derives: (child, parent) => {
     if (child.with !== parent.with) {
@@ -34,7 +35,7 @@ export const EncryptionSetup = capability({
 })
 
 /**
- * Handles space/content/encryption/setup - creates/retrieves RSA key pair from KMS
+ * Handles space/encryption/setup - creates/retrieves RSA key pair from KMS
  * 
  * @param {import('@web3-storage/capabilities/types').SpaceDID} space
  * @param {import('@ucanto/interface').Invocation} invocation
@@ -156,10 +157,10 @@ async function setupKMSKeyForSpace(space, env) {
       return error('Google KMS not properly configured')
     }
 
-    const keyName = `projects/${env.GOOGLE_KMS_PROJECT_ID}/locations/${env.GOOGLE_KMS_LOCATION}/keyRings/${env.GOOGLE_KMS_KEYRING_NAME}/cryptoKeys/${space}`
-
-    // First, try to get existing key
-    const getKeyUrl = `https://cloudkms.googleapis.com/v1/${keyName}`
+    const sanitizedKeyId = sanitizeSpaceDIDForKMSKeyId(space)
+    const keyName = `projects/${env.GOOGLE_KMS_PROJECT_ID}/locations/${env.GOOGLE_KMS_LOCATION}/keyRings/${env.GOOGLE_KMS_KEYRING_NAME}/cryptoKeys/${sanitizedKeyId}`
+    const cloudKMSUrl = `https://cloudkms.googleapis.com/v1`
+    const getKeyUrl = `${cloudKMSUrl}/${keyName}`
     const getResponse = await fetch(getKeyUrl, {
       headers: {
         'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`
@@ -167,8 +168,16 @@ async function setupKMSKeyForSpace(space, env) {
     })
 
     if (getResponse.ok) {
-      // Key exists, get the public key
-      const publicKeyUrl = `${keyName}/cryptoKeyVersions/1/publicKey`
+      // Key exists, get the primary key version and its public key
+      const keyData = await getResponse.json()
+      let primaryVersion = keyData.primary?.name
+      
+      // If primary version is not available, try version 1
+      if (!primaryVersion) {
+        primaryVersion = `${keyName}/cryptoKeyVersions/1`
+      }
+
+      const publicKeyUrl = `${cloudKMSUrl}/${primaryVersion}/publicKey`
       const pubKeyResponse = await fetch(publicKeyUrl, {
         headers: {
           'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`
@@ -177,46 +186,71 @@ async function setupKMSKeyForSpace(space, env) {
 
       if (pubKeyResponse.ok) {
         const pubKeyData = await pubKeyResponse.json()
-        //TODO check format of pubKeyData.pem
+        
+        // Validate the public key format
+        if (!pubKeyData.pem || !pubKeyData.pem.startsWith('-----BEGIN PUBLIC KEY-----')) {
+          return error(`Invalid public key format received from KMS for space ${space}`)
+        }
+        
         return ok({ publicKey: pubKeyData.pem })
+      } else {
+        const errorText = await pubKeyResponse.text()
+        return error(`Failed to retrieve public key for space ${space}: ${pubKeyResponse.status} - ${errorText}`)
       }
-    }
+    } else if (getResponse.status === 404) {
+      // Key doesn't exist, create it
+      const encodedKeyId = encodeURIComponent(sanitizedKeyId)
+      const createKeyUrl = `${cloudKMSUrl}/projects/${env.GOOGLE_KMS_PROJECT_ID}/locations/${env.GOOGLE_KMS_LOCATION}/keyRings/${env.GOOGLE_KMS_KEYRING_NAME}/cryptoKeys?cryptoKeyId=${encodedKeyId}`
 
-    // Key doesn't exist, create it
-    const createKeyUrl = `https://cloudkms.googleapis.com/v1/projects/${env.GOOGLE_KMS_PROJECT_ID}/locations/${env.GOOGLE_KMS_LOCATION}/keyRings/${env.GOOGLE_KMS_KEYRING_NAME}/cryptoKeys?cryptoKeyId=${space}`
+      const createResponse = await fetch(createKeyUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          purpose: 'ASYMMETRIC_DECRYPT',
+          versionTemplate: {
+            algorithm: 'RSA_DECRYPT_OAEP_2048_SHA256'
+          }
+        })
+      })
 
-    const createResponse = await fetch(createKeyUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        purpose: 'ASYMMETRIC_DECRYPT',
-        versionTemplate: {
-          algorithm: 'RSA_DECRYPT_OAEP_2048_SHA256'
+             if (!createResponse.ok) {
+         const errorText = await createResponse.text()
+         return error(`Failed to create KMS key for space ${space}: ${createResponse.status} - ${errorText}`)
+       }
+
+       // For newly created keys, the primary version is always version 1
+       // We can construct the path directly since we know the key structure
+       const primaryVersion = `${keyName}/cryptoKeyVersions/1`
+
+       // Get the public key of the newly created key
+       const publicKeyUrl = `${cloudKMSUrl}/${primaryVersion}/publicKey`
+      const pubKeyResponse = await fetch(publicKeyUrl, {
+        headers: {
+          'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`
         }
       })
-    })
 
-    if (!createResponse.ok) {
-      return error(`Failed to create Asymmetric KMS key for space ${space}: ${createResponse.status}`)
-    }
-
-    // Get the public key of the newly created key
-    const publicKeyUrl = `${keyName}/cryptoKeyVersions/1/publicKey`
-    const pubKeyResponse = await fetch(publicKeyUrl, {
-      headers: {
-        'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`
+      if (!pubKeyResponse.ok) {
+        const errorText = await pubKeyResponse.text()
+        return error(`Failed to retrieve public key for newly created key ${space}: ${pubKeyResponse.status} - ${errorText}`)
       }
-    })
 
-    if (!pubKeyResponse.ok) {
-      return error(`Failed to retrieve public key for space ${space}: ${pubKeyResponse.status}`)
+      const pubKeyData = await pubKeyResponse.json()
+      
+      // Validate the public key format
+      if (!pubKeyData.pem || !pubKeyData.pem.startsWith('-----BEGIN PUBLIC KEY-----')) {
+        return error(`Invalid public key format received from KMS for space ${space}`)
+      }
+      
+      return ok({ publicKey: pubKeyData.pem })
+    } else {
+      // Other error (permissions, etc.)
+      const errorText = await getResponse.text()
+      return error(`Failed to access KMS key for space ${space}: ${getResponse.status} - ${errorText}`)
     }
-
-    const pubKeyData = await pubKeyResponse.json()
-    return ok({ publicKey: pubKeyData.pem })
   } catch (err) {
     return error(err instanceof Error ? err.message : String(err))
   }

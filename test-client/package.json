@@ -6,8 +6,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:encrypt": "node test-encryption-setup.js",
-    "test:decrypt": "node test-content-decrypt.js"
+    "test:encrypt-setup": "node test-encryption-setup.js",
+    "test:encryption-flow": "node test-encryption-flow.js",
+    "test:decryption-flow": "node test-decryption-flow.js"
   },
   "keywords": [
     "storacha",
