@@ -1,9 +1,20 @@
+import dotenv from 'dotenv'
+dotenv.config({ path: '.env' })
+
 import { ok, fail, DID } from '@ucanto/validator'
 import { capability } from '@ucanto/server'
 import { connect } from '@ucanto/client'
 import { CAR, HTTP } from '@ucanto/transport'
 import { create as createClient } from '@web3-storage/w3up-client'
+import { StoreMemory } from '@web3-storage/w3up-client/stores'
 import { Space as SpaceCapabilities, Access as AccessCapabilities } from '@web3-storage/capabilities'
+
+import { ed25519 } from '@ucanto/principal'
+import * as Proof from '@web3-storage/w3up-client/proof'
+
+const agentPrivKey = process.env.AGENT_PRIVATE_KEY
+const agentAccessProof = process.env.DELEGATION
+
 
 // Configuration for Private Gateway
 export const privateGatewayPrincipal = {
@@ -19,7 +30,7 @@ export const w3ServiceURL = new URL('https://up.web3.storage')
 
 // Capabilities for testing
 export const EncryptionSetup = capability({
-  can: 'space/encryption/setup',
+  can: 'space/content/encryption/setup',
   with: DID.match({ method: 'key' }),
   derives: (child, parent) => {
     if (child.with !== parent.with) {
@@ -32,7 +43,7 @@ export const EncryptionSetup = capability({
 })
 
 /** @type {import('@ucanto/interface').ConnectionView<any>} */
-export const connection =  ({id, url}) => connect({
+export const connection = ({ id, url }) => connect({
   id: id,
   codec: CAR.outbound,
   channel: HTTP.open({
@@ -44,101 +55,45 @@ export const connection =  ({id, url}) => connect({
 async function testEncryptionSetup() {
   try {
     console.log('🔧 Testing encryption setup...')
-    
+    const principal = ed25519.Signer.parse(agentPrivKey)
+    const store = new StoreMemory()
     const client = await createClient({
-      serviceConfig: {
-        access: connection({
-          id: w3ServicePrincipal,
-          url: w3ServiceURL
-        }),
-        upload: connection({
-          id: w3ServicePrincipal,
-          url: w3ServiceURL
-        }),
-      }
+      principal,
+      store,
     })
-    
-    console.log('🔑 Logging in...')
-    const account = await client.login("felipe@storacha.network");
-    console.log(`logged in as ${account.did()}`);
-    
-    // Get the current space (you'll need to have a space set up)
-    const space = client.currentSpace()
+
+    console.log('🔑 Client DID:', (await client.did()))
+    console.log('🔑 Agent DID:', client.agent.did())
+    console.log('🔑 Agent Private Key is set:', !!agentPrivKey)
+    console.log('🔑 Agent Access Proof is set:', !!agentAccessProof)
+
+    const spaceAccessProof = await Proof.parse(agentAccessProof)
+    const space = await client.addSpace(spaceAccessProof)
     if (!space) {
       throw new Error('No space available. Please set up a space first.')
     }
-    
+    await client.setCurrentSpace(space.did())
     console.log(`📦 Using space: ${space.name} (${space.did()})`)
-    
-    // Create an audience (this represents the gateway)
-    /** @type {import('@ucanto/client').Principal<`did:${string}:${string}`>} */
-    const audience = {
-      did: () => privateGatewayPrincipal.did(),
-    }
 
-    // // Grant the audience the ability to serve content from the space
-    // const delegation = await client.createDelegation(
-    //   audience,
-    //   [SpaceCapabilities.contentServe.can],
-    //   {
-    //     expiration: Infinity,
-    //   }
-    // )
-
-    // console.log('📜 Created delegation for content serve')
-
-    // // Publish the delegation to the content serve service
-    const accessProofs = client.proofs([
-      { can: AccessCapabilities.access.can, with: space.did() },
-    ])
-    
-    // const verificationResult = await AccessCapabilities.delegate
-    //   .invoke({
-    //     issuer: client.agent.issuer,
-    //     audience,
-    //     with: space.did(),
-    //     proofs: [...accessProofs, delegation],
-    //     nb: {
-    //       delegations: {
-    //         [delegation.cid.toString()]: delegation.cid,
-    //       },
-    //     },
-    //   })
-    //   .execute(connection)
-
-    // if (verificationResult.out.error) {
-    //   throw new Error(
-    //     `Failed to publish delegation for audience ${audience.did()}: ${
-    //       verificationResult.out.error.message
-    //     }`,
-    //     {
-    //       cause: verificationResult.out.error,
-    //     }
-    //   )
-    // }
-
-    // console.log('✅ Successfully published delegation to gateway')
-
-    // Now test the encryption setup capability
-    // This would invoke space/encryption/setup on your gateway
     console.log('🔐 Testing encryption setup capability...')
-    
-    // Create encryption setup invocation
     const privateGatewayConnection = connection({
       id: privateGatewayPrincipal,
       url: privateGatewayURL
     })
+
+    // Invoke the encryption setup capability
     const encryptionSetupResult = await EncryptionSetup
       .invoke({
         issuer: client.agent.issuer,
-        audience,
+        audience: {
+          did: () => privateGatewayPrincipal.did(),
+        },
         with: space.did(),
-        proofs: [...accessProofs],
+        proofs: [spaceAccessProof]
       })
       .execute(privateGatewayConnection)
 
     console.log('🔐 Encryption setup result:', encryptionSetupResult)
-
     if (encryptionSetupResult.out.error) {
       throw new Error(
         `Encryption setup failed: ${encryptionSetupResult.out.error.message}`,

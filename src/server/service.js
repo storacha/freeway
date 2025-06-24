@@ -64,6 +64,7 @@ export function createService(ctx, env) {
             capability: EncryptionSetup,
             audience: Schema.did({ method: 'web' }),
             handler: async ({ capability, invocation }) => {
+              console.log('Encryption setup invoked')
               const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
               return await handleEncryptionSetup(space, invocation, ctx, env)
             }
@@ -73,6 +74,7 @@ export function createService(ctx, env) {
           capability: ContentDecrypt,
           audience: Schema.did({ method: 'web' }),
           handler: async ({ capability, invocation }) => {
+            console.log('Key decryption invoked')
             const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
             const encryptedSymmetricKey = capability.nb?.encryptedSymmetricKey
             return await handleKeyDecryption(space, encryptedSymmetricKey, invocation, ctx, env)
