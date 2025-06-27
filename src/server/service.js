@@ -3,16 +3,18 @@ import {
   Space as SpaceCapabilities
 } from '@web3-storage/capabilities'
 import { extractContentServeDelegations } from './utils.js'
+import { EncryptionSetup, handleEncryptionSetup } from './handlers/encryption-setup.js'
+import { KeyDecrypt, handleKeyDecryption } from './handlers/decrypt-key.js'
 import { claim, Schema } from '@ucanto/validator'
 import * as UcantoServer from '@ucanto/server'
-import { ok } from '@ucanto/client'
 
 /**
  * @template T
  * @param {import('../middleware/withUcanInvocationHandler.types.js').Context} ctx
+ * @param {import('../middleware/withUcanInvocationHandler.types.js').Environment} env
  * @returns {import('./api.types.js').Service<T>}
  */
-export function createService (ctx) {
+export function createService(ctx, env) {
   return {
     access: {
       delegate: UcantoServer.provideAdvanced(
@@ -41,7 +43,7 @@ export function createService (ctx) {
                 return validationResult
               }
 
-              const space = capability.with
+              const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
               return ctx.delegationsStorage.store(space, delegation)
             }))
 
@@ -50,10 +52,35 @@ export function createService (ctx) {
               return errorResult
             }
 
-            return ok({})
+            return UcantoServer.ok({})
           }
 
         })
+    },
+    space: {
+      encryption: {
+        setup: UcantoServer.provideAdvanced({
+          capability: EncryptionSetup,
+          audience: Schema.did({ method: 'web' }),
+          handler: async ({ capability, invocation }) => {
+            console.log('Encryption setup invoked')
+            const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
+            return await handleEncryptionSetup(space, invocation, ctx, env)
+          }
+        }),
+        key: {
+          decrypt: UcantoServer.provideAdvanced({
+            capability: KeyDecrypt,
+            audience: Schema.did({ method: 'web' }),
+            handler: async ({ capability, invocation }) => {
+              console.log('Key decryption invoked')
+              const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
+              const encryptedSymmetricKey = capability.nb?.encryptedSymmetricKey
+              return await handleKeyDecryption(space, encryptedSymmetricKey, invocation, ctx, env)
+            }
+          })
+        }
+      }
     }
   }
 }

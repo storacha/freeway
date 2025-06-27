@@ -1,4 +1,5 @@
-import { version } from '../../package.json'
+import pkg from '../../package.json' with { type: 'json' }
+const { version } = pkg
 
 /**
  * @import { Middleware, Context } from '@web3-storage/gateway-lib'
