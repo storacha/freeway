@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Provider - Storacha Console Test</title>
+    <title>DMAIL - Decentralized Mail Platform</title>
     <style>
         * {
             margin: 0;
@@ -12,99 +12,321 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
-            color: #2d3748;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
         }
         
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            min-height: 100vh;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 30px;
+        .app-container {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid #e1e5e9;
+            padding: 0 20px;
+            display: flex;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            justify-content: space-between;
+            height: 60px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
-        .header h1 {
-            font-size: 24px;
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
             font-weight: 600;
+            color: #2c3e50;
         }
         
-        .user-info {
+        .header-nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .header-nav-item {
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: #666;
+        }
+        
+        .header-nav-item:hover {
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        .header-nav-item.active {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+        }
+        
+        .header-right {
             display: flex;
             align-items: center;
             gap: 15px;
         }
         
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: #f8f9fa;
+        }
+        
         .user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.2);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
         }
         
-        .nav {
+        .user-info {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* Main Content */
+        .main-content {
             display: flex;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            overflow-x: auto;
+            flex: 1;
+            overflow: hidden;
         }
         
-        .nav-item {
-            padding: 16px 24px;
+        /* Left Sidebar */
+        .sidebar {
+            width: 250px;
+            background: white;
+            border-right: 1px solid #e1e5e9;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            padding: 20px 16px 12px;
+        }
+        
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            border-bottom: 3px solid transparent;
             transition: all 0.2s ease;
-            white-space: nowrap;
+            margin-bottom: 2px;
+            font-size: 14px;
+        }
+        
+        .sidebar-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .sidebar-item.active {
+            background: #e3f2fd;
+            color: #1976d2;
             font-weight: 500;
         }
         
-        .nav-item:hover {
-            background: rgba(102, 126, 234, 0.1);
+        .sidebar-item-icon {
+            width: 18px;
+            text-align: center;
         }
         
-        .nav-item.active {
+        .sidebar-item-count {
+            margin-left: auto;
+            font-size: 12px;
+            background: #e0e0e0;
+            color: #666;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .sidebar-item.active .sidebar-item-count {
+            background: #1976d2;
+            color: white;
+        }
+        
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .content-header {
             background: white;
-            border-bottom-color: #667eea;
-            color: #667eea;
+            border-bottom: 1px solid #e1e5e9;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         
-        .content {
-            height: calc(100vh - 140px);
-            position: relative;
+        .content-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .content-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
             background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
         
+        .action-btn:hover {
+            background: #f8f9fa;
+            border-color: #ccc;
+        }
+        
+        .action-btn.primary {
+            background: #1976d2;
+            color: white;
+            border-color: #1976d2;
+        }
+        
+        .action-btn.primary:hover {
+            background: #1565c0;
+            border-color: #1565c0;
+        }
+        
+        /* Tab Content */
         .tab-content {
-            width: 100%;
-            height: 100%;
+            flex: 1;
             display: none;
-            padding: 30px;
+            overflow: hidden;
         }
         
         .tab-content.active {
-            display: block;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Inbox Content */
+        .inbox-content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        .inbox-item {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .inbox-item:hover {
+            border-color: #ccc;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .inbox-item-header {
+            display: grid;
+            grid-template-columns: 60px 200px 1fr 120px;
+            gap: 16px;
+            padding: 16px 20px;
+            align-items: center;
+        }
+        
+        .inbox-item.unread {
+            border-left: 4px solid #1976d2;
+        }
+        
+        .inbox-item.unread .inbox-item-sender {
+            font-weight: 600;
+        }
+        
+        .inbox-item-priority {
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .inbox-item-sender {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .inbox-item-subject {
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .inbox-item-date {
+            font-size: 12px;
+            color: #999;
+            text-align: right;
+        }
+        
+        /* Workspaces Iframe */
+        .workspaces-content {
+            flex: 1;
+            position: relative;
+            background: #f5f5f5;
         }
         
         .iframe-container {
-            width: 100%;
-            height: 100%;
-            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            border-radius: 8px;
             overflow: hidden;
+            margin: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         #storacha-iframe {
@@ -113,451 +335,287 @@
             border: none;
         }
         
+        .iframe-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        
+        .iframe-loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #1976d2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .loading-subtext {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        /* Status notifications */
         .status {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #48bb78;
+            background: #4caf50;
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
             display: none;
-            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
             z-index: 1000;
         }
         
         .status.error {
-            background: #f56565;
-            box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+            background: #f44336;
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
         }
         
-        .message-log {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 20px;
-            height: 300px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
+        .status.info {
+            background: #2196f3;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
         }
         
-        .message-item {
-            margin-bottom: 8px;
-            padding: 8px;
-            border-radius: 4px;
-        }
-        
-        .message-item.sent {
-            background: #ebf8ff;
-            border-left: 4px solid #4299e1;
-        }
-        
-        .message-item.received {
-            background: #f0fff4;
-            border-left: 4px solid #48bb78;
-        }
-        
-        .timestamp {
-            color: #718096;
-            font-size: 10px;
-        }
-        
-        .controls {
-            margin-top: 20px;
-        }
-        
-        .btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-right: 10px;
-            font-weight: 500;
-            transition: background 0.2s ease;
-        }
-        
-        .btn:hover {
-            background: #5a67d8;
-        }
-        
-        .btn.secondary {
-            background: #718096;
-        }
-        
-        .btn.secondary:hover {
-            background: #4a5568;
-        }
-        
-        /* Iframe placeholder styles */
-        #iframe-placeholder {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            background-color: #f7fafc;
-            border: 2px dashed #cbd5e0;
-            border-radius: 8px;
-        }
-        
-        .text-center {
-            text-align: center;
-        }
-        
-        /* Inbox styles */
-        .inbox-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .inbox-stats {
-            font-size: 14px;
-            color: #718096;
-        }
-        
-        .inbox-list {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .inbox-item {
-            border-bottom: 1px solid #e2e8f0;
-            transition: background-color 0.2s ease;
-            cursor: pointer;
-        }
-        
-        .inbox-item:last-child {
-            border-bottom: none;
-        }
-        
-        .inbox-item:hover {
-            background-color: #f7fafc;
-        }
-        
-        .inbox-item.unread {
-            background-color: #f0fff4;
-            border-left: 4px solid #48bb78;
-        }
-        
-        .inbox-item-header {
-            display: grid;
-            grid-template-columns: 200px 1fr 120px 60px;
-            gap: 16px;
-            padding: 16px 20px;
-            align-items: center;
-        }
-        
-        .inbox-item-sender {
-            font-weight: 600;
-            color: #2d3748;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .inbox-item.unread .inbox-item-sender {
-            font-weight: 700;
-        }
-        
-        .inbox-item-subject {
-            color: #4a5568;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .inbox-item.unread .inbox-item-subject {
-            font-weight: 600;
-            color: #2d3748;
-        }
-        
-        .inbox-item-date {
-            font-size: 12px;
-            color: #718096;
-            text-align: right;
-        }
-        
-        .inbox-item-actions {
-            display: flex;
-            gap: 8px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        
-        .inbox-item:hover .inbox-item-actions {
-            opacity: 1;
-        }
-        
-        .inbox-action-btn {
-            width: 24px;
-            height: 24px;
-            border: none;
-            background: #f7fafc;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            transition: background-color 0.2s ease;
-        }
-        
-        .inbox-action-btn:hover {
-            background: #edf2f7;
-        }
-        
-        .unread-badge {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #48bb78;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        .email-priority {
-            font-size: 16px;
-            margin-right: 8px;
-        }
-        
-        .priority-high { color: #f56565; }
-        .priority-normal { color: #cbd5e0; }
-        
-        .search-bar {
-            width: 300px;
-            padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        
-        .search-bar:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            
+            .inbox-item-header {
+                grid-template-columns: 40px 150px 1fr 80px;
+                gap: 12px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="app-container">
+        <!-- Header -->
         <div class="header">
-            <h1>📧 DMAIL</h1>
-            <div class="user-info">
-                <div class="user-avatar">JD</div>
-                <div>
-                    <div>john.doe@demail.ai</div>
-                    <div style="font-size: 12px; opacity: 0.8;">Pro Plan</div>
+            <div class="header-left">
+                <div class="logo">
+                    📧 DMAIL
+                </div>
+                <div class="header-nav">
+                    <div class="header-nav-item active" data-tab="messages">Messages</div>
+                    <div class="header-nav-item" data-tab="workspaces">Workspaces</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-profile">
+                    <div class="user-avatar">JD</div>
+                    <div class="user-info">john.doe@dmail.ai</div>
                 </div>
             </div>
         </div>
         
-        <div class="nav">
-            <div class="nav-item active" data-tab="inbox">📥 Inbox (42)</div>
-            <div class="nav-item" data-tab="compose">✍️ Compose</div>
-            <div class="nav-item" data-tab="workspaces">💾 Workspaces</div>
-        </div>
-        
-        <div class="content">
-            <div class="status" id="status">✅ Connected to Storacha</div>
-            
-            <!-- Inbox Tab -->
-            <div class="tab-content active" id="inbox">
-                <div class="inbox-header">
-                    <div>
-                        <h2 style="margin: 0; color: #2d3748;">📥 Inbox</h2>
-                        <div class="inbox-stats">42 messages, 8 unread</div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Mail</div>
+                    <div class="sidebar-item active">
+                        <div class="sidebar-item-icon">📥</div>
+                        <span>Inbox</span>
+                        <div class="sidebar-item-count">42</div>
                     </div>
-                    <input type="text" class="search-bar" placeholder="🔍 Search emails...">
+                    <div class="sidebar-item">
+                        <div class="sidebar-item-icon">⭐</div>
+                        <span>Starred</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <div class="sidebar-item-icon">📤</div>
+                        <span>Sent</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <div class="sidebar-item-icon">📋</div>
+                        <span>Drafts</span>
+                        <div class="sidebar-item-count">3</div>
+                    </div>
+                    <div class="sidebar-item">
+                        <div class="sidebar-item-icon">🗑️</div>
+                        <span>Trash</span>
+                    </div>
                 </div>
                 
-                <div class="inbox-list">
-                    <div class="inbox-item unread">
-                        <div class="inbox-item-header">
-                            <div class="inbox-item-sender">
-                                <span class="unread-badge"></span>
-                                <span class="email-priority priority-high">🔴</span>
-                                Sarah Chen
-                            </div>
-                            <div class="inbox-item-subject">
-                                ⚡ Urgent: Q4 Budget Review Meeting Tomorrow
-                            </div>
-                            <div class="inbox-item-date">2 min ago</div>
-                            <div class="inbox-item-actions">
-                                <button class="inbox-action-btn" title="Archive">📁</button>
-                                <button class="inbox-action-btn" title="Delete">🗑️</button>
-                            </div>
-                        </div>
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Labels</div>
+                    <div class="sidebar-item">
+                        <div class="sidebar-item-icon">🔴</div>
+                        <span>Important</span>
+                        <div class="sidebar-item-count">5</div>
                     </div>
-                    
-                    <div class="inbox-item unread">
-                        <div class="inbox-item-header">
-                            <div class="inbox-item-sender">
-                                <span class="unread-badge"></span>
-                                <span class="email-priority priority-normal">⚪</span>
-                                GitHub
-                            </div>
-                            <div class="inbox-item-subject">
-                                🔔 [storacha/console] New pull request #127: Add iframe support
-                            </div>
-                            <div class="inbox-item-date">15 min ago</div>
-                            <div class="inbox-item-actions">
-                                <button class="inbox-action-btn" title="Archive">📁</button>
-                                <button class="inbox-action-btn" title="Delete">🗑️</button>
-                            </div>
-                        </div>
+                    <div class="sidebar-item">
+                        <div class="sidebar-item-icon">💼</div>
+                        <span>Work</span>
+                        <div class="sidebar-item-count">12</div>
                     </div>
-                    
-                    <div class="inbox-item">
-                        <div class="inbox-item-header">
-                            <div class="inbox-item-sender">
-                                <span class="email-priority priority-normal">⚪</span>
-                                Alex Martinez
-                            </div>
-                            <div class="inbox-item-subject">
-                                📊 Weekly Analytics Report - User Engagement Up 23%
-                            </div>
-                            <div class="inbox-item-date">1 hour ago</div>
-                            <div class="inbox-item-actions">
-                                <button class="inbox-action-btn" title="Archive">📁</button>
-                                <button class="inbox-action-btn" title="Delete">🗑️</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="inbox-item unread">
-                        <div class="inbox-item-header">
-                            <div class="inbox-item-sender">
-                                <span class="unread-badge"></span>
-                                <span class="email-priority priority-normal">⚪</span>
-                                Storacha Team
-                            </div>
-                            <div class="inbox-item-subject">
-                                🎉 Welcome to Storacha! Your storage solution is ready
-                            </div>
-                            <div class="inbox-item-date">3 hours ago</div>
-                            <div class="inbox-item-actions">
-                                <button class="inbox-action-btn" title="Archive">📁</button>
-                                <button class="inbox-action-btn" title="Delete">🗑️</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="inbox-item">
-                        <div class="inbox-item-header">
-                            <div class="inbox-item-sender">
-                                <span class="email-priority priority-normal">⚪</span>
-                                LinkedIn
-                            </div>
-                            <div class="inbox-item-subject">
-                                👥 You have 12 new connection requests
-                            </div>
-                            <div class="inbox-item-date">5 hours ago</div>
-                            <div class="inbox-item-actions">
-                                <button class="inbox-action-btn" title="Archive">📁</button>
-                                <button class="inbox-action-btn" title="Delete">🗑️</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="inbox-item">
-                        <div class="inbox-item-header">
-                            <div class="inbox-item-sender">
-                                <span class="email-priority priority-normal">⚪</span>
-                                Dr. Emily Watson
-                            </div>
-                            <div class="inbox-item-subject">
-                                🏥 Appointment Confirmation - Dec 15, 2:30 PM
-                            </div>
-                            <div class="inbox-item-date">Yesterday</div>
-                            <div class="inbox-item-actions">
-                                <button class="inbox-action-btn" title="Archive">📁</button>
-                                <button class="inbox-action-btn" title="Delete">🗑️</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="inbox-item unread">
-                        <div class="inbox-item-header">
-                            <div class="inbox-item-sender">
-                                <span class="unread-badge"></span>
-                                <span class="email-priority priority-high">🔴</span>
-                                Security Team
-                            </div>
-                            <div class="inbox-item-subject">
-                                🔒 Security Alert: New login from Chrome on MacOS
-                            </div>
-                            <div class="inbox-item-date">Yesterday</div>
-                            <div class="inbox-item-actions">
-                                <button class="inbox-action-btn" title="Archive">📁</button>
-                                <button class="inbox-action-btn" title="Delete">🗑️</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="inbox-item">
-                        <div class="inbox-item-header">
-                            <div class="inbox-item-sender">
-                                <span class="email-priority priority-normal">⚪</span>
-                                Newsletter Daily
-                            </div>
-                            <div class="inbox-item-subject">
-                                📰 Tech News Digest: AI Breakthroughs & Web3 Updates
-                            </div>
-                            <div class="inbox-item-date">2 days ago</div>
-                            <div class="inbox-item-actions">
-                                <button class="inbox-action-btn" title="Archive">📁</button>
-                                <button class="inbox-action-btn" title="Delete">🗑️</button>
-                            </div>
-                        </div>
+                    <div class="sidebar-item">
+                        <div class="sidebar-item-icon">👨‍👩‍👧‍👦</div>
+                        <span>Personal</span>
+                        <div class="sidebar-item-count">8</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Compose Tab -->
-            <div class="tab-content" id="compose">
-                <h2>✍️ Compose Email</h2>
-                <p>Email composition interface would be here...</p>
-            </div>
-            
-            <!-- Workspaces Tab (Storacha Iframe) -->
-            <div class="tab-content" id="workspaces">
-                <div class="iframe-container">
-                    <iframe 
-                        id="storacha-iframe"
-                        style="width: 100%; height: 100%; border: none;"
-                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
-                        title="Storacha Workspaces">
-                        <p>Your browser does not support iframes. Please <a href="http://localhost:3000" target="_blank">open Storacha Console</a> in a new tab.</p>
-                    </iframe>
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Messages Tab -->
+                <div class="tab-content active" id="messages">
+                    <div class="content-header">
+                        <div class="content-title">📥 Inbox</div>
+                        <div class="content-actions">
+                            <button class="action-btn">🔍 Search</button>
+                            <button class="action-btn primary">✍️ Compose</button>
+                        </div>
+                    </div>
+                    
+                    <div class="inbox-content">
+                        <div class="inbox-item unread">
+                            <div class="inbox-item-header">
+                                <div class="inbox-item-priority">🔴</div>
+                                <div class="inbox-item-sender">Sarah Chen</div>
+                                <div class="inbox-item-subject">⚡ Urgent: Q4 Budget Review Meeting Tomorrow</div>
+                                <div class="inbox-item-date">2 min ago</div>
+                            </div>
+                        </div>
+                        
+                        <div class="inbox-item unread">
+                            <div class="inbox-item-header">
+                                <div class="inbox-item-priority">⚪</div>
+                                <div class="inbox-item-sender">GitHub</div>
+                                <div class="inbox-item-subject">🔔 [storacha/console] New pull request #127: Add iframe support</div>
+                                <div class="inbox-item-date">15 min ago</div>
+                            </div>
+                        </div>
+                        
+                        <div class="inbox-item">
+                            <div class="inbox-item-header">
+                                <div class="inbox-item-priority">⚪</div>
+                                <div class="inbox-item-sender">Alex Martinez</div>
+                                <div class="inbox-item-subject">📊 Weekly Analytics Report - User Engagement Up 23%</div>
+                                <div class="inbox-item-date">1 hour ago</div>
+                            </div>
+                        </div>
+                        
+                        <div class="inbox-item unread">
+                            <div class="inbox-item-header">
+                                <div class="inbox-item-priority">⚪</div>
+                                <div class="inbox-item-sender">Storacha Team</div>
+                                <div class="inbox-item-subject">🎉 Welcome to Storacha! Your storage solution is ready</div>
+                                <div class="inbox-item-date">3 hours ago</div>
+                            </div>
+                        </div>
+                        
+                        <div class="inbox-item">
+                            <div class="inbox-item-header">
+                                <div class="inbox-item-priority">⚪</div>
+                                <div class="inbox-item-sender">LinkedIn</div>
+                                <div class="inbox-item-subject">👥 You have 12 new connection requests</div>
+                                <div class="inbox-item-date">5 hours ago</div>
+                            </div>
+                        </div>
+                        
+                        <div class="inbox-item">
+                            <div class="inbox-item-header">
+                                <div class="inbox-item-priority">⚪</div>
+                                <div class="inbox-item-sender">Dr. Emily Watson</div>
+                                <div class="inbox-item-subject">🏥 Appointment Confirmation - Dec 15, 2:30 PM</div>
+                                <div class="inbox-item-date">Yesterday</div>
+                            </div>
+                        </div>
+                        
+                        <div class="inbox-item unread">
+                            <div class="inbox-item-header">
+                                <div class="inbox-item-priority">🔴</div>
+                                <div class="inbox-item-sender">Security Team</div>
+                                <div class="inbox-item-subject">🔒 Security Alert: New login from Chrome on MacOS</div>
+                                <div class="inbox-item-date">Yesterday</div>
+                            </div>
+                        </div>
+                        
+                        <div class="inbox-item">
+                            <div class="inbox-item-header">
+                                <div class="inbox-item-priority">⚪</div>
+                                <div class="inbox-item-sender">Newsletter Daily</div>
+                                <div class="inbox-item-subject">📰 Tech News Digest: AI Breakthroughs & Web3 Updates</div>
+                                <div class="inbox-item-date">2 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Workspaces Tab -->
+                <div class="tab-content" id="workspaces">
+                    <div class="workspaces-content">
+                        <div class="iframe-container">
+                            <!-- Loading state -->
+                            <div id="iframe-loading" class="iframe-loading">
+                                <div class="loading-spinner"></div>
+                                <div class="loading-text">Loading Storacha Workspaces...</div>
+                                <div class="loading-subtext">Setting up your decentralized storage dashboard</div>
+                            </div>
+                            
+                            <iframe 
+                                id="storacha-iframe"
+                                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation allow-modals"
+                                title="Storacha Workspaces"
+                                scrolling="yes">
+                                <p>Your browser does not support iframes. Please <a href="http://localhost:3000" target="_blank">open Storacha Console</a> in a new tab.</p>
+                            </iframe>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            
         </div>
     </div>
+    
+    <!-- Status notifications -->
+    <div class="status" id="status">✅ Connected to Storacha</div>
 
     <script>
-        let messageCount = 0;
         let iframeLoaded = false;
         
         // Tab switching functionality
-        document.querySelectorAll('.nav-item').forEach(item => {
+        document.querySelectorAll('.header-nav-item').forEach(item => {
             item.addEventListener('click', () => {
                 const tabName = item.dataset.tab;
                 
-                // Update nav
-                document.querySelector('.nav-item.active').classList.remove('active');
+                // Update header nav
+                document.querySelector('.header-nav-item.active').classList.remove('active');
                 item.classList.add('active');
                 
                 // Update content
@@ -573,23 +631,29 @@
             });
         });
         
-
-        
         // Iframe communication handling
         window.addEventListener('message', (event) => {
             // In production, validate origin properly
             if (!event.origin.includes('localhost') && !event.origin.includes('storacha.network')) {
-                logMessage('error', `Blocked message from unauthorized origin: ${event.origin}`);
+                console.warn(`Blocked message from unauthorized origin: ${event.origin}`);
                 return;
             }
             
-            const status = document.getElementById('status');
-            logMessage('received', `${event.data.type}`, event.data);
+            console.log('📨 Message from iframe:', event.data);
             
             switch (event.data.type) {
                 case 'CONSOLE_LOADED':
                     console.log('✅ Storacha console loaded');
                     showStatus('Console loaded successfully', 'success');
+                    
+                    // Hide loading state
+                    setTimeout(() => {
+                        const loading = document.getElementById('iframe-loading');
+                        if (loading) {
+                            loading.classList.add('hidden');
+                            setTimeout(() => loading.style.display = 'none', 300);
+                        }
+                    }, 500);
                     
                     // Send initialization message
                     setTimeout(() => {
@@ -598,14 +662,31 @@
                             config: {
                                 theme: 'light',
                                 compact: true,
-                                parentContext: 'email-provider',
+                                parentContext: 'dmail-provider',
                                 allowedFeatures: ['upload', 'view', 'manage']
                             }
                         };
                         
                         document.getElementById('storacha-iframe').contentWindow.postMessage(initMessage, '*');
-                        logMessage('sent', 'IFRAME_INIT', initMessage);
-                    }, 500);
+                        console.log('📤 Sent iframe init message');
+                        
+                        // Send user authentication after initialization
+                        setTimeout(() => {
+                            const userAuthMessage = {
+                                type: 'USER_AUTH',
+                                user: {
+                                    email: 'john.doe@dmail.ai',
+                                    id: 'user_12345',
+                                    name: 'John Doe',
+                                    plan: 'pro'
+                                }
+                            };
+                            
+                            document.getElementById('storacha-iframe').contentWindow.postMessage(userAuthMessage, '*');
+                            console.log('🔐 Sent user authentication to iframe');
+                        }, 1000);
+                        
+                    }, 1000);
                     break;
                     
                 case 'CONSOLE_READY':
@@ -629,6 +710,27 @@
                     showStatus(`Error: ${event.data.error}`, 'error');
                     break;
                     
+                case 'AUTH_RECEIVED':
+                    console.log('🔐 Authentication received by iframe:', event.data.user);
+                    showStatus(`User authenticated: ${event.data.user.email}`, 'success');
+                    break;
+                    
+                case 'AUTH_STATUS':
+                    console.log('🔐 Authentication status:', event.data.status);
+                    if (event.data.status === 'authenticating') {
+                        showStatus(`Authenticating ${event.data.email}...`, 'info');
+                    } else if (event.data.status === 'authenticated') {
+                        showStatus(`${event.data.email} authenticated successfully`, 'success');
+                    } else if (event.data.status === 'failed') {
+                        showStatus(`Authentication failed: ${event.data.error || 'Unknown error'}`, 'error');
+                    }
+                    break;
+                    
+                case 'AUTH_REQUIRED':
+                    console.log('🔐 Authentication required:', event.data.message);
+                    showStatus(`Auth required for ${event.data.email}`, 'error');
+                    break;
+                    
                 default:
                     console.log('📨 Message from iframe:', event.data);
             }
@@ -638,7 +740,7 @@
         function showStatus(message, type = 'success') {
             const status = document.getElementById('status');
             status.textContent = message;
-            status.className = 'status' + (type === 'error' ? ' error' : '');
+            status.className = `status ${type}`;
             status.style.display = 'block';
             
             setTimeout(() => {
@@ -646,71 +748,20 @@
             }, 3000);
         }
         
-        // Message logging system
-        function logMessage(direction, type, data = null) {
-            const log = document.getElementById('message-log');
-            if (!log) return; // Skip if no debug log exists
-            
-            const timestamp = new Date().toLocaleTimeString();
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message-item ${direction}`;
-            
-            let content = `<span class="timestamp">[${timestamp}]</span> <strong>${type}</strong>`;
-            if (data) {
-                content += `<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
-            }
-            
-            messageDiv.innerHTML = content;
-            log.appendChild(messageDiv);
-            log.scrollTop = log.scrollHeight;
-            
-            messageCount++;
-            if (messageCount > 50) {
-                log.removeChild(log.firstChild);
-                messageCount--;
-            }
-        }
-        
-        // Debug functions
-        function sendTestMessage() {
-            const iframe = document.getElementById('storacha-iframe');
-            const testMessage = {
-                type: 'TEST_MESSAGE',
-                timestamp: Date.now(),
-                data: { test: true, source: 'email-provider' }
-            };
-            
-            iframe.contentWindow.postMessage(testMessage, '*');
-            logMessage('sent', 'TEST_MESSAGE', testMessage);
-        }
-        
-        function clearLog() {
-            document.getElementById('message-log').innerHTML = '';
-            messageCount = 0;
-            logMessage('system', 'Log cleared');
-        }
-        
-        function reloadIframe() {
-            const iframe = document.getElementById('storacha-iframe');
-            iframe.src = iframe.src;
-            logMessage('system', 'Iframe reloaded');
-        }
-        
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            logMessage('system', 'Email provider console initialized');
-            console.log('🚀 Email Provider Console loaded');
+            console.log('🚀 DMAIL Console loaded');
             console.log('📡 Listening for messages from Storacha Console...');
         });
         
         // Handle iframe load errors
         document.getElementById('storacha-iframe').addEventListener('error', (e) => {
-            logMessage('error', 'Iframe failed to load');
+            console.error('Iframe failed to load');
             showStatus('Failed to load Storacha Console', 'error');
         });
         
         document.getElementById('storacha-iframe').addEventListener('load', (e) => {
-            logMessage('system', 'Iframe loaded');
+            console.log('Iframe loaded');
         });
     </script>
 </body>
