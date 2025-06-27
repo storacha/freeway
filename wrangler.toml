@@ -193,6 +193,13 @@ GATEWAY_SERVICE_DID = "did:web:w3s.link"
 UPLOAD_SERVICE_DID = "did:web:web3.storage"
 UPLOAD_API_URL = "https://up.web3.storage"
 
+### KMS
+GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
+GOOGLE_KMS_PROJECT_ID = "storacha-staging"
+GOOGLE_KMS_LOCATION = "global"
+GOOGLE_KMS_KEYRING_NAME = "private-freeway-staging"
+GOOGLE_KMS_TOKEN = "<token>"
+
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"
 type = "ratelimit"
@@ -303,3 +310,33 @@ simple = { limit = 100, period = 60 }
 [[env.integration.kv_namespaces]]
 binding = "AUTH_TOKEN_METADATA"
 id = "a355501ee4f242b1affa32c1b335db2b"
+
+
+##### PRIVATE STORACHA LINK STAGING
+### Private Gateway to handle UCAN invocations for private spaces in Staging Environment
+
+# STAGING!
+[env.private-gateway-staging]
+workers_dev = true
+account_id = "fffa4b4363a7e5250af8357087263b3a"
+# route = { pattern = "https://private.storacha.link/*", zone_id = "TBD" }
+r2_buckets = []
+kv_namespaces = [
+  # TODO: add kv for space did and rsa keys
+]
+
+[env.private-gateway-staging.vars]
+# SERVICES
+GATEWAY_SERVICE_DID = "did:web:w3s.link"
+UPLOAD_API_URL = "https://up.web3.storage"
+
+# FEATURE FLAGS
+FF_DECRYPTION_ENABLED = "true"
+
+# KMS
+GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
+GOOGLE_KMS_PROJECT_ID = "storacha-staging"
+GOOGLE_KMS_LOCATION = "global"
+GOOGLE_KMS_KEYRING_NAME = "private-gateway-staging"
+# TODO: generate non expired token or use a service account
+GOOGLE_KMS_TOKEN = "<token>"

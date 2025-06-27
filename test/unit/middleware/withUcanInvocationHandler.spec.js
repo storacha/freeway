@@ -17,6 +17,7 @@ import { withUcanInvocationHandler } from '../../../src/middleware/withUcanInvoc
 const env =
   /** @satisfies {Environment} */
   ({
+    FF_DECRYPTION_ENABLED: 'false'
   })
 
 const gatewaySigner = (await ed25519.Signer.generate()).signer
@@ -24,6 +25,14 @@ const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
 const serviceStub = {
   access: {
     delegate: sinon.stub().resolves({ ok: {} })
+  },
+  space: {
+    encryption: {
+      setup: sinon.stub().resolves({ ok: {} }),
+      key: {
+        decrypt: sinon.stub().resolves({ ok: {} })
+      }
+    }
   }
 }
 const serverStub = {

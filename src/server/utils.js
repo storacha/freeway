@@ -31,3 +31,15 @@ export const extractContentServeDelegations = (capability, proofs) => {
   }
   return { ok: delegations }
 }
+
+/**
+ * Sanitizes a Space DID to create a valid Google KMS key ID
+ * Converts did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK 
+ * to z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK
+ * 
+ * @param {string} spaceDID - The Space DID to sanitize
+ * @returns {string} - Sanitized key ID safe for use in Google KMS
+ */
+export function sanitizeSpaceDIDForKMSKeyId(spaceDID) {
+  return spaceDID.replace(/^did:key:/, '')
+}
