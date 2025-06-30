@@ -2,7 +2,6 @@ import { ok, access, error } from '@ucanto/validator'
 import { Verifier } from '@ucanto/principal'
 import { sanitizeSpaceDIDForKMSKeyId } from '../utils.js'
 import { EncryptionSetup } from '../capabilities/privacy.js'
-import { email } from '@storacha/client/types'
 
 /**
  * @import { Environment } from '../../middleware/withUcanInvocationHandler.types.js'

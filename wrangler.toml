@@ -312,10 +312,10 @@ binding = "AUTH_TOKEN_METADATA"
 id = "a355501ee4f242b1affa32c1b335db2b"
 
 
-##### PRIVATE STORACHA LINK STAGING
+##### PRIVATE GATEWAY STAGING CONFIGS
 ### Private Gateway to handle UCAN invocations for private spaces in Staging Environment
 
-# STAGING!
+### STAGING!
 [env.private-gateway-staging]
 workers_dev = true
 account_id = "fffa4b4363a7e5250af8357087263b3a"
@@ -326,17 +326,32 @@ kv_namespaces = [
 ]
 
 [env.private-gateway-staging.vars]
-# SERVICES
-GATEWAY_SERVICE_DID = "did:web:w3s.link"
-UPLOAD_API_URL = "https://up.web3.storage"
+### SERVICES
+GATEWAY_SERVICE_DID = "did:web:private.staging.storacha.link"
+REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
+PLAN_SERVICE_URL = "https://up.web3.storage"
 
-# FEATURE FLAGS
+### FEATURE FLAGS
 FF_DECRYPTION_ENABLED = "true"
 
-# KMS
+### KMS CONFIG
 GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
 GOOGLE_KMS_PROJECT_ID = "storacha-staging"
 GOOGLE_KMS_LOCATION = "global"
 GOOGLE_KMS_KEYRING_NAME = "private-gateway-staging"
-# TODO: generate non expired token or use a service account
-GOOGLE_KMS_TOKEN = "<token>"
+
+### SECRETS
+# Secrets are not defined in wrangler.toml
+# Use wrangler secret put commands or .dev.vars file for local development
+[[env.private-gateway-staging.unsafe.bindings]]
+name = "GOOGLE_KMS_TOKEN"
+type = "secret"
+secret = "PRIVATE_GATEWAY_KMS_TOKEN"
+
+[[env.private-gateway-staging.unsafe.bindings]]
+name = "GATEWAY_PRINCIPAL_KEY"
+type = "secret"
+secret = "PRIVATE_GATEWAY_PRINCIPAL_KEY"
+
+
+### END OF PRIVATE GATEWAY STAGING CONFIGS
