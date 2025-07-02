@@ -4,8 +4,8 @@ import {
 } from '@web3-storage/capabilities'
 import { extractContentServeDelegations } from './utils.js'
 import { EncryptionSetup, KeyDecrypt } from './capabilities/privacy.js'
-import { handleEncryptionSetup } from './handlers/encryption.js'
-import { handleKeyDecryption } from './handlers/decryption.js'
+import { handleEncryptionSetup } from './handlers/encryptionSetup.js'
+import { handleKeyDecryption } from './handlers/keyDecryption.js'
 import { claim, Schema } from '@ucanto/validator'
 import * as UcantoServer from '@ucanto/server'
 import { ok } from '@ucanto/client'
@@ -67,7 +67,12 @@ export function createService (ctx, env) {
           handler: async ({ capability, invocation }) => {
             console.log('Encryption setup invoked')
             const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
-            return await handleEncryptionSetup(space, invocation, ctx, env)
+            const request = {
+              space,
+              location: capability.nb?.location,
+              keyring: capability.nb?.keyring
+            }
+            return await handleEncryptionSetup(request, invocation, ctx, env)
           }
         }),
         key: {
@@ -78,7 +83,13 @@ export function createService (ctx, env) {
               console.log('Key decryption invoked')
               const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
               const encryptedSymmetricKey = capability.nb?.encryptedSymmetricKey
-              return await handleKeyDecryption(space, encryptedSymmetricKey, invocation, ctx, env)
+              const keyReference = capability.nb?.keyReference
+              const request = {
+                space,
+                encryptedSymmetricKey,
+                keyReference
+              }
+              return await handleKeyDecryption(request, invocation, ctx, env)
             }
           })
         }

@@ -2,49 +2,45 @@ import { Environment as MiddlewareEnvironment, Context as MiddlewareContext } fr
 import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
 import { DelegationsStorageContext } from './withDelegationsStorage.types.js'
 import { Service } from '../server/api.types.js'
+import { KMSEnvironment, KMSService } from '../server/services/kms.types.js'
+import { RevocationStatusEnvironment, RevocationStatusService } from '../server/services/revocation.types.js'
+import { SubscriptionStatusEnvironment, SubscriptionStatusService } from '../server/services/subscription.types.js'
+import { UcanPrivacyValidationService } from '../server/services/ucanValidation.types.js'
 import * as Server from '@ucanto/server'
-export interface Environment extends MiddlewareEnvironment {
+export interface Environment extends MiddlewareEnvironment,
+  RevocationStatusEnvironment,
+  KMSEnvironment,
+  SubscriptionStatusEnvironment {
   /**
    * Feature flag for enabling decryption of symmetric keys using KMS asymmetric Space key.
    */
   FF_DECRYPTION_ENABLED: string
-
-  /**
-   * Google KMS base URL.
-   */
-  GOOGLE_KMS_BASE_URL?: string
-  /**
-   * Google KMS project ID.
-   */
-  GOOGLE_KMS_PROJECT_ID?: string
-  /**
-   * Google KMS location.
-   */
-  GOOGLE_KMS_LOCATION?: string
-  /**
-   * Google KMS keyring name.
-   */
-  GOOGLE_KMS_KEYRING_NAME?: string
-  /**
-   * Google KMS token.
-   */
-  GOOGLE_KMS_TOKEN?: string
-
-  /**
-   * Revocation status service URL.
-   */
-  REVOCATION_STATUS_SERVICE_URL?: string
-
-  /**
-   * URL of the plan service to check for provisioned spaces.
-   */
-  PLAN_SERVICE_URL?: string
 }
 
 export interface Context<T = unknown, U = unknown>
   extends MiddlewareContext,
   GatewayIdentityContext,
   DelegationsStorageContext {
+  /**
+   * KMS service for encryption/decryption operations
+   */
+  kms: KMSService
+
+  /**
+   * Revocation status service for UCAN delegation revocation checking
+   */
+  revocationStatusService: RevocationStatusService
+
+  /**
+   * Subscription status service for space plan validation
+   */
+  subscriptionStatusService: SubscriptionStatusService
+
+  /**
+   * UCAN privacy validation service for validating delegations
+   */
+  ucanPrivacyValidationService: UcanPrivacyValidationService
+
   /**
    * This is optional because the handler is responsible for creating the service if it is not provided.
    * 

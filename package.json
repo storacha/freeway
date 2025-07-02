@@ -32,8 +32,8 @@
     "start": "npm run dev",
     "test:integration": "npm run build:debug && mocha --experimental-vm-modules --recursive test/integration/**/*.spec.js --require test/fixtures/worker-fixture.js",
     "test:miniflare": "npm run build:debug && mocha --experimental-vm-modules --recursive test/miniflare/**/*.spec.js",
-    "test:unit": "npm run build:debug && mocha --experimental-vm-modules --recursive test/unit/**/*.spec.js",
-    "test:unit:only": "npm run build:debug && mocha --experimental-vm-modules"
+    "test:unit": "npm run build:debug && npx mocha --experimental-vm-modules --recursive 'test/unit/**/*.spec.js'",
+    "test:unit:only": "npm run build:debug && npx mocha --experimental-vm-modules"
   },
   "dependencies": {
     "@microlabs/otel-cf-workers": "^1.0.0-rc.48",

@@ -30,7 +30,7 @@ import {
   withDelegationsStorage,
   withDelegationStubs,
   withOptionsRequest,
-  withCarParkFetch
+  withCarParkFetch,
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base'

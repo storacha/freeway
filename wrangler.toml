@@ -329,7 +329,7 @@ kv_namespaces = [
 ### SERVICES
 GATEWAY_SERVICE_DID = "did:web:private.staging.storacha.link"
 REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
-PLAN_SERVICE_URL = "https://up.web3.storage"
+SUBSCRIPTION_PLAN_SERVICE_URL = "https://up.web3.storage"
 
 ### FEATURE FLAGS
 FF_DECRYPTION_ENABLED = "true"
