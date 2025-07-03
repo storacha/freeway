@@ -114,8 +114,7 @@ describe('UcanPrivacyValidationService', () => {
         principal,
         store,
       })
-      const space = await client.createSpace('test', {skipGatewayAuthorization: true})
-
+      const space = await client.createSpace('test', { skipGatewayAuthorization: true })
       // Create ContentDecrypt delegation from space owner to client
       const contentDecryptDelegation = await ContentDecrypt
         .delegate({
@@ -130,7 +129,7 @@ describe('UcanPrivacyValidationService', () => {
         .invoke({
           issuer: clientSigner,
           audience: gatewayIdentity,
-          with: spaceDID,
+          with: space.did(), // Use the same space DID as the delegation
           expiration: Infinity,
           nb: {
             encryptedSymmetricKey: 'test-key'
@@ -138,7 +137,7 @@ describe('UcanPrivacyValidationService', () => {
           proofs: [contentDecryptDelegation]
         }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDID, gatewayIdentity)
+      const result = await service.validateDecryption(invocation, space.did(), gatewayIdentity) // Use the same space DID
       console.log(result.error)
       expect(result.ok).to.exist
       expect(result.ok?.ok).to.be.true

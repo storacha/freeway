@@ -41,12 +41,14 @@ export async function handleEncryptionSetup(request, invocation, ctx, env) {
       return error(kmsResult.error.message)
     }
 
-    const publicKey = kmsResult?.ok?.publicKey
-    if (!publicKey) {
-      return error('Missing public key in encryption setup')
+    // Step 4: Validate KMS result
+    const { publicKey, algorithm, keyReference, provider } = kmsResult.ok
+    if (!publicKey || !algorithm || !keyReference || !provider) {
+      return error('Missing public key, algorithm, key reference, or provider in encryption setup')
     }
 
-    return ok({ publicKey })
+    // Step 5: Return KMS result
+    return ok({ provider, publicKey, keyReference, algorithm })
   } catch (err) {
     return error(err instanceof Error ? err.message : String(err))
   }

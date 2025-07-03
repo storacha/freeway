@@ -1,6 +1,17 @@
 import { Result } from '@ucanto/client'
 import { SpaceDID } from '@web3-storage/capabilities/types'
 
+export interface EncryptionSetupResult {
+  /** The public key for the space in PEM format */
+  publicKey: string
+  /** The algorithm used to encrypt the symmetric key */
+  algorithm: string
+  /** The full KMS key name reference for the space */
+  keyReference: string
+  /** The provider of the KMS key */
+  provider: string
+}
+
 export interface EncryptionSetupRequest {
   /** The space DID to create/retrieve key for */
   space: SpaceDID
@@ -26,7 +37,7 @@ export interface KMSService {
   setupKeyForSpace(
     request: EncryptionSetupRequest,
     env: KMSEnvironment
-  ): Promise<Result<{ publicKey: string; keyReference: string }, Error>>
+  ): Promise<Result<EncryptionSetupResult, Error>>
 
   /**
    * Decrypts a symmetric key using the space's KMS private key

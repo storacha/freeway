@@ -85,14 +85,17 @@ describe('GoogleKMSService', () => {
 
       // Mock public key retrieval (third fetch - get public key)
       fetchStub.onCall(2).resolves(new Response(JSON.stringify({
-        pem: mockPublicKey
+        pem: mockPublicKey,
+        algorithm: 'RSA_DECRYPT_OAEP_2048_SHA256'
       }), { status: 200 }))
 
       const result = await service.setupKeyForSpace({ space: spaceDID }, env)
 
       expect(result.ok).to.exist
       expect(result.ok?.publicKey).to.equal(mockPublicKey)
+      expect(result.ok?.algorithm).to.equal('RSA_DECRYPT_OAEP_2048_SHA256')
       expect(result.ok?.keyReference).to.include('cryptoKeyVersions/1')
+      expect(result.ok?.provider).to.equal('google-kms')
     })
 
     it('should return error when KMS returns success but missing public key', async () => {
@@ -163,14 +166,17 @@ describe('GoogleKMSService', () => {
 
       // Mock public key retrieval for version 1 (third fetch)
       fetchStub.onCall(2).resolves(new Response(JSON.stringify({
-        pem: mockPublicKey
+        pem: mockPublicKey,
+        algorithm: 'RSA_DECRYPT_OAEP_2048_SHA256'
       }), { status: 200 }))
 
       const result = await service.setupKeyForSpace({ space: spaceDID }, env)
 
       expect(result.ok).to.exist
       expect(result.ok?.publicKey).to.equal(mockPublicKey)
+      expect(result.ok?.algorithm).to.equal('RSA_DECRYPT_OAEP_2048_SHA256')
       expect(result.ok?.keyReference).to.include('cryptoKeyVersions/1')
+      expect(result.ok?.provider).to.equal('google-kms')
     })
 
     it('should handle network errors during public key retrieval', async () => {
@@ -221,14 +227,17 @@ describe('GoogleKMSService', () => {
 
       // Mock public key retrieval (third fetch - get public key)
       fetchStub.onCall(2).resolves(new Response(JSON.stringify({
-        pem: mockPublicKey
+        pem: mockPublicKey,
+        algorithm: 'RSA_DECRYPT_OAEP_2048_SHA256'
       }), { status: 200 }))
 
       const result = await service.setupKeyForSpace({ space: spaceDID }, env)
 
       expect(result.ok).to.exist
       expect(result.ok?.publicKey).to.equal(mockPublicKey)
+      expect(result.ok?.algorithm).to.equal('RSA_DECRYPT_OAEP_2048_SHA256')
       expect(result.ok?.keyReference).to.include('cryptoKeyVersions/1')
+      expect(result.ok?.provider).to.equal('google-kms')
       expect(fetchStub.callCount).to.equal(3)
     })
 
@@ -245,14 +254,17 @@ describe('GoogleKMSService', () => {
 
       // Mock public key retrieval for newly created key
       fetchStub.onCall(2).resolves(new Response(JSON.stringify({
-        pem: mockPublicKey
+        pem: mockPublicKey,
+        algorithm: 'RSA_DECRYPT_OAEP_2048_SHA256'
       }), { status: 200 }))
 
       const result = await service.setupKeyForSpace({ space: spaceDID }, env)
 
       expect(result.ok).to.exist
       expect(result.ok?.publicKey).to.equal(mockPublicKey)
+      expect(result.ok?.algorithm).to.equal('RSA_DECRYPT_OAEP_2048_SHA256')
       expect(result.ok?.keyReference).to.include('cryptoKeyVersions/1')
+      expect(result.ok?.provider).to.equal('google-kms')
       expect(fetchStub.callCount).to.equal(3)
     })
 
