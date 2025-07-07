@@ -338,7 +338,7 @@ FF_DECRYPTION_ENABLED = "true"
 GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
 GOOGLE_KMS_PROJECT_ID = "storacha-staging"
 GOOGLE_KMS_LOCATION = "global"
-GOOGLE_KMS_KEYRING_NAME = "private-gateway-staging"
+GOOGLE_KMS_KEYRING_NAME = "private-gateway"
 
 ### SECRETS
 # Secrets are not defined in wrangler.toml

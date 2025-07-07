@@ -1,6 +1,7 @@
 import { ok, error, access } from '@ucanto/validator'
 import { Verifier } from '@ucanto/principal'
 import { ContentDecrypt, KeyDecrypt, EncryptionSetup } from '../capabilities/privacy.js'
+import { AuditLogService } from './auditLog.js'
 
 /**
  * @import { UcanPrivacyValidationService } from './ucanValidation.types.js'
@@ -11,6 +12,19 @@ import { ContentDecrypt, KeyDecrypt, EncryptionSetup } from '../capabilities/pri
  * @implements {UcanPrivacyValidationService}
  */
 export class UcanPrivacyValidationServiceImpl {
+  /**
+   * Creates a new UCAN validation service
+   * @param {Object} [options] - Service options
+   * @param {AuditLogService} [options.auditLog] - Audit log service instance
+   * @param {string} [options.environment] - Environment name for audit logging
+   */
+  constructor(options = {}) {
+    this.auditLog = options.auditLog || new AuditLogService({
+      serviceName: 'ucan-validation-service',
+      environment: options.environment || 'unknown'
+    })
+    this.auditLog.logServiceInitialization('UcanPrivacyValidationService', true)
+  }
   /**
    * Validates an encryption setup invocation
    * 
@@ -26,11 +40,15 @@ export class UcanPrivacyValidationServiceImpl {
       )
 
       if (!setupCapability) {
-        return error(`Invocation does not contain ${EncryptionSetup.can} capability`)
+        const errorMsg = `Invocation does not contain ${EncryptionSetup.can} capability`
+        this.auditLog.logUCANValidationFailure(spaceDID, 'encryption', errorMsg)
+        return error(errorMsg)
       }
 
       if (setupCapability.with !== spaceDID) {
-        return error(`Invalid "with" in the invocation. Setup is allowed only for spaceDID: ${spaceDID}`)
+        const errorMsg = `Invalid "with" in the invocation. Setup is allowed only for spaceDID: ${spaceDID}`
+        this.auditLog.logUCANValidationFailure(spaceDID, 'encryption', errorMsg)
+        return error(errorMsg)
       }
 
       const authorization = await access(/** @type {any} */(invocation), {
@@ -41,12 +59,17 @@ export class UcanPrivacyValidationServiceImpl {
       })
 
       if (authorization.error) {
+        this.auditLog.logUCANValidationFailure(spaceDID, 'encryption', 'Authorization failed')
         return authorization
       }
 
+      // Success
+      this.auditLog.logUCANValidationSuccess(spaceDID, 'encryption')
       return ok({ ok: true })
     } catch (err) {
-      return error(err instanceof Error ? err.message : String(err))
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      this.auditLog.logUCANValidationFailure(spaceDID, 'encryption', errorMessage)
+      return error(errorMessage)
     }
   }
 
@@ -69,16 +92,22 @@ export class UcanPrivacyValidationServiceImpl {
         (cap) => cap.can === KeyDecrypt.can
       )
       if (!decryptCapability) {
-        return error(`Invocation does not contain ${KeyDecrypt.can} capability!`)
+        const errorMsg = `Invocation does not contain ${KeyDecrypt.can} capability!`
+        this.auditLog.logUCANValidationFailure(spaceDID, 'decryption', errorMsg)
+        return error(errorMsg)
       }
 
       if (decryptCapability.with !== spaceDID) {
-        return error(`Invalid "with" in the invocation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`)
+        const errorMsg = `Invalid "with" in the invocation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`
+        this.auditLog.logUCANValidationFailure(spaceDID, 'decryption', errorMsg)
+        return error(errorMsg)
       }
 
       // Check that we have exactly one delegation proof
       if (invocation.proofs.length !== 1) {
-        return error(`Expected exactly one delegation proof!`)
+        const errorMsg = `Expected exactly one delegation proof!`
+        this.auditLog.logUCANValidationFailure(spaceDID, 'decryption', errorMsg)
+        return error(errorMsg)
       }
 
       const delegation = /** @type {import('@ucanto/interface').Delegation} */ (invocation.proofs[0])
@@ -89,7 +118,9 @@ export class UcanPrivacyValidationServiceImpl {
           (c) => c.can === ContentDecrypt.can
         )
       ) {
-        return error(`Delegation does not contain ${ContentDecrypt.can} capability!`)
+        const errorMsg = `Delegation does not contain ${ContentDecrypt.can} capability!`
+        this.auditLog.logUCANValidationFailure(spaceDID, 'decryption', errorMsg)
+        return error(errorMsg)
       }
 
       // Check delegation is for the correct space
@@ -98,12 +129,16 @@ export class UcanPrivacyValidationServiceImpl {
           (c) => c.with === spaceDID && c.can === ContentDecrypt.can
         )
       ) {
-        return error(`Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`)
+        const errorMsg = `Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`
+        this.auditLog.logUCANValidationFailure(spaceDID, 'decryption', errorMsg)
+        return error(errorMsg)
       }
 
       // Check that the invocation issuer matches the delegation audience
       if (invocation.issuer.did() !== delegation.audience.did()) {
-        return error('The invoker must be equal to the delegated audience!')
+        const errorMsg = 'The invoker must be equal to the delegated audience!'
+        this.auditLog.logUCANValidationFailure(spaceDID, 'decryption', errorMsg)
+        return error(errorMsg)
       }
 
       // Validate the content decrypt delegation authorization
@@ -115,12 +150,17 @@ export class UcanPrivacyValidationServiceImpl {
       })
 
       if (authorization.error) {
+        this.auditLog.logUCANValidationFailure(spaceDID, 'decryption', 'Authorization failed')
         return authorization
       }
 
+      // Success
+      this.auditLog.logUCANValidationSuccess(spaceDID, 'decryption')
       return ok({ ok: true })
     } catch (err) {
-      return error(err instanceof Error ? err.message : String(err))
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      this.auditLog.logUCANValidationFailure(spaceDID, 'decryption', errorMessage)
+      return error(errorMessage)
     }
   }
 } 

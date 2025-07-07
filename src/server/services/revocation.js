@@ -1,4 +1,5 @@
 import { ok, error } from '@ucanto/validator'
+import { AuditLogService } from './auditLog.js'
 
 /**
  * @import { RevocationStatusService, RevocationStatusEnvironment } from './revocation.types.js'
@@ -11,6 +12,19 @@ import { ok, error } from '@ucanto/validator'
  */
 export class RevocationStatusServiceImpl {
   /**
+   * Creates a new revocation status service
+   * @param {Object} [options] - Service options
+   * @param {AuditLogService} [options.auditLog] - Audit log service instance
+   * @param {string} [options.environment] - Environment name for audit logging
+   */
+  constructor(options = {}) {
+    this.auditLog = options.auditLog || new AuditLogService({
+      serviceName: 'revocation-status-service',
+      environment: options.environment || 'unknown'
+    })
+    this.auditLog.logServiceInitialization('RevocationStatusService', true)
+  }
+  /**
    * Checks revocation status of UCAN delegations via Storage UCAN Service
    * 
    * @param {Ucanto.Proof[]} proofs - Array of UCAN proofs to check
@@ -18,9 +32,21 @@ export class RevocationStatusServiceImpl {
    * @returns {Promise<import('@ucanto/client').Result<{ ok: boolean }, Error>>}
    */
   async checkStatus(proofs, env) {
+    const safeProofs = proofs || []
+    
     try {
+      
       if (!env.REVOCATION_STATUS_SERVICE_URL) {
-        console.warn('No revocation service URL configured, skipping revocation check')
+        // Log that revocation service is unavailable (security concern)
+        this.auditLog.logSecurityEvent('revocation_service_unavailable', {
+          operation: 'revocation_check',
+          status: 'skipped',
+          metadata: { 
+            reason: 'service_not_configured',
+            proofsCount: safeProofs.length 
+          }
+        })
+        
         return ok({ ok: true })
       }
 
@@ -32,9 +58,30 @@ export class RevocationStatusServiceImpl {
       // 4. Return appropriate result
       
       // For now, return success (no revocations found)
+      // Log that revocation check was attempted but not fully implemented
+      this.auditLog.logSecurityEvent('revocation_check_success', {
+        operation: 'revocation_check',
+        status: 'success',
+        metadata: { 
+          implementation: 'stub',
+          proofsCount: safeProofs.length,
+          note: 'Not fully implemented - returns success by default'
+        }
+      })
+      
       return ok({ ok: true })
     } catch (err) {
-      return error(err instanceof Error ? err.message : String(err))
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      
+      // Log revocation check failure
+      this.auditLog.logSecurityEvent('revocation_check_failure', {
+        operation: 'revocation_check',
+        status: 'failure',
+        error: errorMessage,
+        metadata: { proofsCount: safeProofs.length }
+      })
+      
+      return error(errorMessage)
     }
   }
 

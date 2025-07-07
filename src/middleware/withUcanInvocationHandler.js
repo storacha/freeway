@@ -4,6 +4,7 @@ import { GoogleKMSService } from '../server/services/googleKms.js'
 import { RevocationStatusServiceImpl } from '../server/services/revocation.js'
 import { PlanSubscriptionServiceImpl } from '../server/services/subscription.js'
 import { UcanPrivacyValidationServiceImpl } from '../server/services/ucanValidation.js'
+import { AuditLogService } from '../server/services/auditLog.js'
 
 /**
  * @import { Middleware } from '@web3-storage/gateway-lib'
@@ -20,18 +21,27 @@ import { UcanPrivacyValidationServiceImpl } from '../server/services/ucanValidat
  *
  * @type {Middleware<UcanInvocationContext, UcanInvocationContext, Environment>}
  */
-export function withUcanInvocationHandler (handler) {
+export function withUcanInvocationHandler(handler) {
   return async (request, env, ctx) => {
     if (request.method !== 'POST' || new URL(request.url).pathname !== '/') {
       return handler(request, env, ctx)
     }
+    let newCtx = ctx
+    if (env.FF_DECRYPTION_ENABLED === 'true') {
+      // Create single audit log instance for this request
+      const auditLog = new AuditLogService({
+        serviceName: 'private-freeway-gateway',
+        environment: 'cloudflare-worker',
+        requestId: request.headers.get('cf-ray') || `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      })
 
-    const newCtx = {
-      ...ctx,
-      kms: new GoogleKMSService(),
-      revocationStatusService: new RevocationStatusServiceImpl(),
-      subscriptionStatusService: new PlanSubscriptionServiceImpl(),
-      ucanPrivacyValidationService: new UcanPrivacyValidationServiceImpl()
+      newCtx = {
+        ...ctx,
+        kms: new GoogleKMSService(env, { auditLog }),
+        revocationStatusService: new RevocationStatusServiceImpl({ auditLog }),
+        subscriptionStatusService: new PlanSubscriptionServiceImpl({ auditLog }),
+        ucanPrivacyValidationService: new UcanPrivacyValidationServiceImpl({ auditLog })
+      }
     }
     const service = ctx.service ?? createService(newCtx, env)
     const server = ctx.server ?? createServer(newCtx, service)

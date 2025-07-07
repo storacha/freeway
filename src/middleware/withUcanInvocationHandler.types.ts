@@ -24,17 +24,17 @@ export interface Context<T = unknown, U = unknown>
   /**
    * KMS service for encryption/decryption operations
    */
-  kms: KMSService
+  kms?: KMSService
 
   /**
    * Revocation status service for UCAN delegation revocation checking
    */
-  revocationStatusService: RevocationStatusService
+  revocationStatusService?: RevocationStatusService
 
   /**
    * Subscription status service for space plan validation
    */
-  subscriptionStatusService: SubscriptionStatusService
+  subscriptionStatusService?: SubscriptionStatusService
 
   /**
    * UCAN privacy validation service for validating delegations

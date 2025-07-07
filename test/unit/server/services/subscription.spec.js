@@ -30,12 +30,10 @@ describe('PlanSubscriptionService', () => {
     it('should return success when no plan service configured (dev mode)', async () => {
       env.SUBSCRIPTION_PLAN_SERVICE_URL = undefined
 
-      const consoleSpy = sandbox.spy(console, 'warn')
       const result = await service.isProvisioned(spaceDID, env)
 
       expect(result.ok).to.exist
       expect(result.ok?.ok).to.be.true
-      expect(consoleSpy.calledWith('No subscription plan service configured, allowing all spaces to be provisioned')).to.be.true
     })
 
     it('should return success for all spaces (current implementation)', async () => {

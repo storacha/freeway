@@ -33,13 +33,25 @@ export const extractContentServeDelegations = (capability, proofs) => {
 }
 
 /**
- * Sanitizes a Space DID to create a valid Google KMS key ID
- * Converts did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK 
- * to z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK
- * 
+ * Sanitizes a Space DID for use as a KMS key ID
  * @param {string} spaceDID - The Space DID to sanitize
- * @returns {string} - Sanitized key ID safe for use in Google KMS
+ * @returns {string} - The sanitized key ID
+ * @throws {Error} - If the Space DID format is invalid
  */
 export function sanitizeSpaceDIDForKMSKeyId(spaceDID) {
-  return spaceDID.replace(/^did:key:/, '')
+  // Remove the did:key: prefix
+  const keyId = spaceDID.replace(/^did:key:/, '')
+  
+  // Space DIDs are always exactly 48 characters after removing the prefix
+  // This is more restrictive than Google KMS's 1-63 limit, but matches the actual format
+  if (keyId.length !== 48) {
+    throw new Error('Invalid Space DID format. Expected exactly 48 characters after removing did:key: prefix.')
+  }
+  
+  // Validate character set (letters and numbers only)
+  if (!/^[a-zA-Z0-9]+$/.test(keyId)) {
+    throw new Error('Invalid Space DID format. Must contain only letters and numbers.')
+  }
+  
+  return keyId
 }

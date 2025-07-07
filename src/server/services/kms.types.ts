@@ -6,8 +6,6 @@ export interface EncryptionSetupResult {
   publicKey: string
   /** The algorithm used to encrypt the symmetric key */
   algorithm: string
-  /** The full KMS key name reference for the space */
-  keyReference: string
   /** The provider of the KMS key */
   provider: string
 }
@@ -24,8 +22,6 @@ export interface EncryptionSetupRequest {
 export interface DecryptionKeyRequest {
   /** Base64 encoded encrypted symmetric key */
   encryptedSymmetricKey: string
-  /** Optional full KMS key reference (falls back to space-derived key) */
-  keyReference?: string
   /** The space DID that owns the key */
   space: SpaceDID
 }
@@ -49,9 +45,9 @@ export interface KMSService {
 }
 
 export interface KMSEnvironment {
-  GOOGLE_KMS_BASE_URL?: string
-  GOOGLE_KMS_PROJECT_ID?: string
-  GOOGLE_KMS_LOCATION?: string
-  GOOGLE_KMS_KEYRING_NAME?: string
-  GOOGLE_KMS_TOKEN?: string
+  GOOGLE_KMS_BASE_URL: string
+  GOOGLE_KMS_PROJECT_ID: string
+  GOOGLE_KMS_LOCATION: string
+  GOOGLE_KMS_KEYRING_NAME: string
+  GOOGLE_KMS_TOKEN: string
 } 

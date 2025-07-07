@@ -36,12 +36,10 @@ describe('RevocationStatusService', () => {
     it('should return success when no revocation service URL configured', async () => {
       env.REVOCATION_STATUS_SERVICE_URL = undefined
 
-      const consoleSpy = sandbox.spy(console, 'warn')
       const result = await service.checkStatus(mockProofs, env)
 
       expect(result.ok).to.exist
       expect(result.ok?.ok).to.be.true
-      expect(consoleSpy.calledWith('No revocation service URL configured, skipping revocation check')).to.be.true
     })
 
     it('should return success when revocation service URL is configured (current implementation)', async () => {
@@ -130,13 +128,11 @@ describe('RevocationStatusService', () => {
 
     it('should handle environment without REVOCATION_STATUS_SERVICE_URL property', async () => {
       const envWithoutUrl = {}
-      const consoleSpy = sandbox.spy(console, 'warn')
       
       const result = await service.checkStatus(mockProofs, envWithoutUrl)
 
       expect(result.ok).to.exist
       expect(result.ok?.ok).to.be.true
-      expect(consoleSpy.calledWith('No revocation service URL configured, skipping revocation check')).to.be.true
     })
   })
 }) 

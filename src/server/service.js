@@ -83,11 +83,9 @@ export function createService (ctx, env) {
               console.log('Key decryption invoked')
               const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
               const encryptedSymmetricKey = capability.nb?.encryptedSymmetricKey
-              const keyReference = capability.nb?.keyReference
               const request = {
                 space,
                 encryptedSymmetricKey,
-                keyReference
               }
               return await handleKeyDecryption(request, invocation, ctx, env)
             }
