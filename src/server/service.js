@@ -8,7 +8,7 @@ import { handleEncryptionSetup } from './handlers/encryptionSetup.js'
 import { handleKeyDecryption } from './handlers/keyDecryption.js'
 import { claim, Schema } from '@ucanto/validator'
 import * as UcantoServer from '@ucanto/server'
-import { ok } from '@ucanto/client'
+import { ok, error } from '@ucanto/client'
 
 /**
  * @template T
@@ -65,14 +65,28 @@ export function createService (ctx, env) {
           capability: EncryptionSetup,
           audience: Schema.did({ method: 'web' }),
           handler: async ({ capability, invocation }) => {
-            console.log('Encryption setup invoked')
+            if (ctx.kmsRateLimiter) {
+              const rateLimitViolation = await ctx.kmsRateLimiter.checkRateLimit(invocation, 'space/encryption/setup', capability.with)
+              if (rateLimitViolation) {
+                return error(new Error(rateLimitViolation))
+              }
+            }
+            
             const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
             const request = {
               space,
               location: capability.nb?.location,
               keyring: capability.nb?.keyring
             }
-            return await handleEncryptionSetup(request, invocation, ctx, env)
+            
+            const result = await handleEncryptionSetup(request, invocation, ctx, env)
+            
+            // Record successful operation for rate limiting
+            if (result.ok && ctx.kmsRateLimiter) {
+              ctx.waitUntil(ctx.kmsRateLimiter.recordOperation(invocation, 'space/encryption/setup', capability.with))
+            }
+            
+            return result
           }
         }),
         key: {
@@ -80,14 +94,28 @@ export function createService (ctx, env) {
             capability: KeyDecrypt,
             audience: Schema.did({ method: 'web' }),
             handler: async ({ capability, invocation }) => {
-              console.log('Key decryption invoked')
+              if (ctx.kmsRateLimiter) {
+                const rateLimitViolation = await ctx.kmsRateLimiter.checkRateLimit(invocation, 'space/encryption/key/decrypt', capability.with)
+                if (rateLimitViolation) {
+                  return error(new Error(rateLimitViolation))
+                }
+              }
+              
               const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
               const encryptedSymmetricKey = capability.nb?.encryptedSymmetricKey
               const request = {
                 space,
                 encryptedSymmetricKey,
               }
-              return await handleKeyDecryption(request, invocation, ctx, env)
+              
+              const result = await handleKeyDecryption(request, invocation, ctx, env)
+              
+              // Record successful operation for rate limiting
+              if (result.ok && ctx.kmsRateLimiter) {
+                ctx.waitUntil(ctx.kmsRateLimiter.recordOperation(invocation, 'space/encryption/key/decrypt', capability.with))
+              }
+              
+              return result
             }
           })
         }

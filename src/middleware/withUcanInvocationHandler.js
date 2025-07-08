@@ -5,6 +5,7 @@ import { RevocationStatusServiceImpl } from '../server/services/revocation.js'
 import { PlanSubscriptionServiceImpl } from '../server/services/subscription.js'
 import { UcanPrivacyValidationServiceImpl } from '../server/services/ucanValidation.js'
 import { AuditLogService } from '../server/services/auditLog.js'
+import { KmsRateLimiter } from '../server/services/kmsRateLimiter.js'
 
 /**
  * @import { Middleware } from '@web3-storage/gateway-lib'
@@ -38,6 +39,7 @@ export function withUcanInvocationHandler(handler) {
       newCtx = {
         ...ctx,
         kms: new GoogleKMSService(env, { auditLog }),
+        kmsRateLimiter: new KmsRateLimiter(env, { auditLog }),
         revocationStatusService: new RevocationStatusServiceImpl({ auditLog }),
         subscriptionStatusService: new PlanSubscriptionServiceImpl({ auditLog }),
         ucanPrivacyValidationService: new UcanPrivacyValidationServiceImpl({ auditLog })

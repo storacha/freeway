@@ -323,6 +323,7 @@ account_id = "fffa4b4363a7e5250af8357087263b3a"
 r2_buckets = []
 kv_namespaces = [
   # TODO: add kv for space did and rsa keys
+  { binding = "KMS_RATE_LIMIT_KV", id = "TBD" } # Create KV namespace for KMS rate limiting
 ]
 
 [env.private-gateway-staging.vars]
@@ -333,6 +334,7 @@ SUBSCRIPTION_PLAN_SERVICE_URL = "https://up.web3.storage"
 
 ### FEATURE FLAGS
 FF_DECRYPTION_ENABLED = "true"
+FF_KMS_RATE_LIMITER_ENABLED = "true"
 
 ### KMS CONFIG
 GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
@@ -352,6 +354,5 @@ secret = "PRIVATE_GATEWAY_KMS_TOKEN"
 name = "GATEWAY_PRINCIPAL_KEY"
 type = "secret"
 secret = "PRIVATE_GATEWAY_PRINCIPAL_KEY"
-
 
 ### END OF PRIVATE GATEWAY STAGING CONFIGS

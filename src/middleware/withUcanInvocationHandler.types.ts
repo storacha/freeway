@@ -6,11 +6,14 @@ import { KMSEnvironment, KMSService } from '../server/services/kms.types.js'
 import { RevocationStatusEnvironment, RevocationStatusService } from '../server/services/revocation.types.js'
 import { SubscriptionStatusEnvironment, SubscriptionStatusService } from '../server/services/subscription.types.js'
 import { UcanPrivacyValidationService } from '../server/services/ucanValidation.types.js'
+import { KmsRateLimiter } from '../server/services/kmsRateLimiter.js'
+import { KmsRateLimiterEnvironment } from '../server/services/kmsRateLimiter.types.js'
 import * as Server from '@ucanto/server'
 export interface Environment extends MiddlewareEnvironment,
   RevocationStatusEnvironment,
   KMSEnvironment,
-  SubscriptionStatusEnvironment {
+  SubscriptionStatusEnvironment,
+  KmsRateLimiterEnvironment {
   /**
    * Feature flag for enabling decryption of symmetric keys using KMS asymmetric Space key.
    */
@@ -40,6 +43,11 @@ export interface Context<T = unknown, U = unknown>
    * UCAN privacy validation service for validating delegations
    */
   ucanPrivacyValidationService: UcanPrivacyValidationService
+
+  /**
+   * KMS rate limiter for controlling KMS operation frequency
+   */
+  kmsRateLimiter?: KmsRateLimiter
 
   /**
    * This is optional because the handler is responsible for creating the service if it is not provided.
