@@ -8,21 +8,21 @@ import { EncryptionSetup } from '../capabilities/privacy.js'
 
 /**
  * Handles space/encryption/setup - creates/retrieves RSA key pair from KMS
- * 
+ *
  * @param {import('../services/kms.types.js').EncryptionSetupRequest} request
  * @param {import('@ucanto/interface').Invocation} invocation
  * @param {import('../../middleware/withUcanInvocationHandler.types.js').Context} ctx
  * @param {Environment} env
- * @returns {Promise<import('@ucanto/client').Result<{publicKey: string}, Error>>}
+ * @returns {Promise<import('@ucanto/client').Result<{publicKey: string, algorithm: string, provider: string}, Error>>}
  */
-export async function handleEncryptionSetup(request, invocation, ctx, env) {
+export async function handleEncryptionSetup (request, invocation, ctx, env) {
   const auditLog = new AuditLogService({
     serviceName: 'encryption-setup-handler',
     environment: 'unknown'
   })
-  
+
   const startTime = Date.now()
-  
+
   try {
     if (env.FF_DECRYPTION_ENABLED !== 'true') {
       const errorMsg = 'Encryption setup is not enabled'
@@ -57,7 +57,7 @@ export async function handleEncryptionSetup(request, invocation, ctx, env) {
       auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, undefined, Date.now() - startTime)
       return error(errorMsg)
     }
-    
+
     const kmsResult = await ctx.kms.setupKeyForSpace(request, env)
     if (kmsResult?.error) {
       auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'KMS setup failed', undefined, Date.now() - startTime)
@@ -82,5 +82,3 @@ export async function handleEncryptionSetup(request, invocation, ctx, env) {
     return error(errorMessage)
   }
 }
-
-

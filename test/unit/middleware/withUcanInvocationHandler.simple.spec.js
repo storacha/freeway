@@ -1,3 +1,8 @@
+/* eslint-disable no-unused-expressions
+   ---
+   `no-unused-expressions` doesn't understand that several of Chai's assertions
+   are implemented as getters rather than explicit function calls; it thinks
+   the assertions are unused expressions. */
 import { describe, it, beforeEach, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
@@ -33,16 +38,16 @@ describe('withUcanInvocationHandler - Basic Functionality', () => {
       })
       const mockEnv = /** @type {any} */ ({})
       const mockCtx = /** @type {any} */ ({})
-      
+
       const middleware = withUcanInvocationHandler(mockInnerHandler)
       const response = await middleware(getRequest, mockEnv, mockCtx)
-      
+
       // Should call inner handler for GET requests
       expect(mockInnerHandler.calledOnce).to.be.true
       expect(mockInnerHandler.firstCall.args[0]).to.equal(getRequest)
       expect(mockInnerHandler.firstCall.args[1]).to.equal(mockEnv)
       expect(mockInnerHandler.firstCall.args[2]).to.equal(mockCtx)
-      
+
       expect(response).to.be.instanceOf(Response)
       expect(await response.text()).to.equal('OK from inner handler')
     })
@@ -54,10 +59,10 @@ describe('withUcanInvocationHandler - Basic Functionality', () => {
       })
       const mockEnv = /** @type {any} */ ({})
       const mockCtx = /** @type {any} */ ({})
-      
+
       const middleware = withUcanInvocationHandler(mockInnerHandler)
       const response = await middleware(putRequest, mockEnv, mockCtx)
-      
+
       expect(mockInnerHandler.calledOnce).to.be.true
       expect(response).to.be.instanceOf(Response)
     })
@@ -69,10 +74,10 @@ describe('withUcanInvocationHandler - Basic Functionality', () => {
       })
       const mockEnv = /** @type {any} */ ({})
       const mockCtx = /** @type {any} */ ({})
-      
+
       const middleware = withUcanInvocationHandler(mockInnerHandler)
       const response = await middleware(healthRequest, mockEnv, mockCtx)
-      
+
       expect(mockInnerHandler.calledOnce).to.be.true
       expect(response).to.be.instanceOf(Response)
     })
@@ -84,10 +89,10 @@ describe('withUcanInvocationHandler - Basic Functionality', () => {
       })
       const mockEnv = /** @type {any} */ ({})
       const mockCtx = /** @type {any} */ ({})
-      
+
       const middleware = withUcanInvocationHandler(mockInnerHandler)
       const response = await middleware(queryRequest, mockEnv, mockCtx)
-      
+
       expect(mockInnerHandler.calledOnce).to.be.true
       expect(response).to.be.instanceOf(Response)
     })
@@ -102,20 +107,20 @@ describe('withUcanInvocationHandler - Basic Functionality', () => {
         },
         body: new Uint8Array([1, 2, 3, 4])
       })
-      
+
       const mockEnv = /** @type {any} */ ({
         FF_DECRYPTION_ENABLED: 'false' // Disable to avoid service creation complexity
       })
       const mockCtx = /** @type {any} */ ({})
-      
+
       const middleware = withUcanInvocationHandler(mockInnerHandler)
-      
+
       try {
         const response = await middleware(postRequest, mockEnv, mockCtx)
-        
+
         // Should NOT call inner handler for POST requests to root
         expect(mockInnerHandler.called).to.be.false
-        
+
         // Should return a Response (even if it's an error)
         expect(response).to.be.instanceOf(Response)
       } catch (error) {
@@ -125,5 +130,4 @@ describe('withUcanInvocationHandler - Basic Functionality', () => {
       }
     })
   })
-
-}) 
+})

@@ -16,15 +16,15 @@ export class KmsRateLimiter {
    */
   static RATE_LIMITS = /** @type {Record<string, RateLimitConfig>} */ ({
     [EncryptionSetup.can]: {
-      perSpace: 1,      // 1 setup per space per 15min (since setup happens only once per space)
-      perUser: 20,      // 20 space setups per user per 15min (allows bulk space creation)
-      global: 500,      // 500 total setups per 15min across all users
+      perSpace: 1, // 1 setup per space per 15min (since setup happens only once per space)
+      perUser: 20, // 20 space setups per user per 15min (allows bulk space creation)
+      global: 500, // 500 total setups per 15min across all users
       windowMinutes: 15 // 15-minute windows
     },
     [KeyDecrypt.can]: {
-      perSpace: 2000,   // 2000 decrypts per space per 15min (~2.2 files/second)
-      perUser: 5000,    // 5000 decrypts per user per 15min (across all their spaces)
-      global: 50000,    // 50K total decrypts per 15min across all users
+      perSpace: 2000, // 2000 decrypts per space per 15min (~2.2 files/second)
+      perUser: 5000, // 5000 decrypts per user per 15min (across all their spaces)
+      global: 50000, // 50K total decrypts per 15min across all users
       windowMinutes: 15 // 15-minute windows
     }
   })
@@ -38,7 +38,7 @@ export class KmsRateLimiter {
    * @param {KmsRateLimiterEnvironment} env - Environment variables
    * @param {KmsRateLimiterOptions} [options] - Service options
    */
-  constructor(env, options = {}) {
+  constructor (env, options = {}) {
     this.#env = env
     this.#auditLog = options.auditLog
   }
@@ -50,7 +50,7 @@ export class KmsRateLimiter {
    * @param {string} spaceDID - Space DID
    * @returns {Promise<string | null>} - Returns error message if rate limited, null if allowed
    */
-  async checkRateLimit(invocation, operation, spaceDID) {
+  async checkRateLimit (invocation, operation, spaceDID) {
     if (this.#env.FF_KMS_RATE_LIMITER_ENABLED !== 'true' || !this.#env.KMS_RATE_LIMIT_KV) {
       return null
     }
@@ -111,7 +111,7 @@ export class KmsRateLimiter {
    * @param {string} operation - Operation type
    * @param {string} spaceDID - Space DID
    */
-  async recordOperation(invocation, operation, spaceDID) {
+  async recordOperation (invocation, operation, spaceDID) {
     if (this.#env.FF_KMS_RATE_LIMITER_ENABLED !== 'true' || !this.#env.KMS_RATE_LIMIT_KV) {
       return
     }
@@ -119,7 +119,7 @@ export class KmsRateLimiter {
     const limits = KmsRateLimiter.RATE_LIMITS[operation]
     if (!limits) return
 
-    // Extract user identifier from UCAN invocation  
+    // Extract user identifier from UCAN invocation
     const userIdentifier = invocation.issuer.did() || 'unknown'
     const now = Date.now()
     const windowMs = limits.windowMinutes * 60 * 1000
@@ -154,7 +154,7 @@ export class KmsRateLimiter {
    * @param {string} spaceDID - Space DID
    * @returns {Promise<{spaceCount: number, userCount: number, globalCount: number, limits: any}>}
    */
-  async getRateLimitStatus(invocation, operation, spaceDID) {
+  async getRateLimitStatus (invocation, operation, spaceDID) {
     if (!this.#env.KMS_RATE_LIMIT_KV) {
       return { spaceCount: 0, userCount: 0, globalCount: 0, limits: null }
     }
@@ -193,20 +193,20 @@ export class KmsRateLimiter {
    * @param {string} key - KV key
    * @returns {Promise<number>}
    */
-  async #getCountFromKV(key) {
+  async #getCountFromKV (key) {
     if (!this.#env.KMS_RATE_LIMIT_KV) return 0
 
     try {
       const value = await this.#env.KMS_RATE_LIMIT_KV.get(key)
       if (!value) return 0
-      
+
       const parsed = parseInt(value, 10)
       // Defensive handling of invalid numeric values
       if (isNaN(parsed) || parsed < 0) {
         console.warn(`Invalid KV count value for key ${key}: ${value}, treating as 0`)
         return 0
       }
-      
+
       return parsed
     } catch (err) {
       console.error(`Error getting count from KV for key ${key}:`, err)
@@ -219,7 +219,7 @@ export class KmsRateLimiter {
    * @param {string} key - KV key
    * @param {number} ttl - Time to live in seconds
    */
-  async #incrementCountInKV(key, ttl) {
+  async #incrementCountInKV (key, ttl) {
     if (!this.#env.KMS_RATE_LIMIT_KV) return
 
     try {
@@ -243,7 +243,7 @@ export class KmsRateLimiter {
    * @param {number} limit - Limit value
    * @param {number} retryAfterSeconds - Retry after time in seconds
    */
-  #logRateLimitExceeded(userIdentifier, operation, limitType, spaceDID, currentCount, limit, retryAfterSeconds) {
+  #logRateLimitExceeded (userIdentifier, operation, limitType, spaceDID, currentCount, limit, retryAfterSeconds) {
     if (this.#auditLog) {
       this.#auditLog.logRateLimitExceeded(userIdentifier, `kms_${operation}`, {
         operation,
@@ -266,7 +266,7 @@ export class KmsRateLimiter {
    * @param {string} spaceDID - Space DID
    * @param {Error} error - Error object
    */
-  #logKVError(eventType, userIdentifier, operation, spaceDID, error) {
+  #logKVError (eventType, userIdentifier, operation, spaceDID, error) {
     if (this.#auditLog) {
       this.#auditLog.logSecurityEvent(eventType, {
         operation,
@@ -290,7 +290,7 @@ export class KmsRateLimiter {
    * @param {string} operation - Operation type
    * @param {string} spaceDID - Space DID
    */
-  #logOperationRecorded(userIdentifier, operation, spaceDID) {
+  #logOperationRecorded (userIdentifier, operation, spaceDID) {
     if (this.#auditLog) {
       this.#auditLog.logSecurityEvent('kms_rate_limit_operation_recorded', {
         operation,
@@ -299,4 +299,4 @@ export class KmsRateLimiter {
       })
     }
   }
-} 
+}

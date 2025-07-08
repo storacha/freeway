@@ -1,3 +1,8 @@
+/* eslint-disable no-unused-expressions
+   ---
+   `no-unused-expressions` doesn't understand that several of Chai's assertions
+   are implemented as getters rather than explicit function calls; it thinks
+   the assertions are unused expressions. */
 import { describe, it, beforeEach, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
@@ -14,7 +19,7 @@ describe('AuditLogService', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     consoleLogStub = sandbox.stub(console, 'log')
-    
+
     auditService = new AuditLogService({
       serviceName: 'test-service',
       environment: 'test'
@@ -55,7 +60,7 @@ describe('AuditLogService', () => {
       const beforeTime = Date.now()
       const eventId = auditService.generateEventId()
       const afterTime = Date.now()
-      
+
       const [timestampPart] = eventId.split('-')
       const timestamp = parseInt(timestampPart)
       expect(timestamp).to.be.at.least(beforeTime)
@@ -66,7 +71,7 @@ describe('AuditLogService', () => {
   describe('logSecurityEvent', () => {
     it('should log a basic security event', () => {
       const spaceDID = 'did:key:z6Mko5igLB7NBgBcDYjM7MnRZDFKCLYAfbsEYAnx8HRJGJmu'
-      
+
       auditService.logSecurityEvent(SecurityEventType.KMS_DECRYPT_SUCCESS, {
         space: spaceDID,
         operation: 'test_operation',
@@ -75,7 +80,7 @@ describe('AuditLogService', () => {
 
       expect(consoleLogStub.calledOnce).to.be.true
       const loggedData = JSON.parse(consoleLogStub.firstCall.args[0])
-      
+
       expect(loggedData.eventType).to.equal(SecurityEventType.KMS_DECRYPT_SUCCESS)
       expect(loggedData.service).to.equal('test-service')
       expect(loggedData.environment).to.equal('test')
@@ -278,9 +283,9 @@ describe('AuditLogService', () => {
   describe('security violation logging', () => {
     it('should log security violation', () => {
       const spaceDID = 'did:key:z6Mko5igLB7NBgBcDYjM7MnRZDFKCLYAfbsEYAnx8HRJGJmu'
-      
-      auditService.logSecurityViolation('path_traversal', 'Attempted path traversal attack', spaceDID, { 
-        attempt: '../../../etc/passwd' 
+
+      auditService.logSecurityViolation('path_traversal', 'Attempted path traversal attack', spaceDID, {
+        attempt: '../../../etc/passwd'
       })
 
       expect(consoleLogStub.calledOnce).to.be.true
@@ -296,7 +301,7 @@ describe('AuditLogService', () => {
 
   describe('rate limit logging', () => {
     it('should log rate limit exceeded', () => {
-      auditService.logRateLimitExceeded('192.168.1.1', 'ip_rate_limit', { 
+      auditService.logRateLimitExceeded('192.168.1.1', 'ip_rate_limit', {
         requestsPerMinute: 100,
         limit: 60
       })
@@ -339,4 +344,4 @@ describe('AuditLogService', () => {
       })
     })
   })
-}) 
+})

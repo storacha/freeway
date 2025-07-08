@@ -8,21 +8,21 @@ import { KeyDecrypt } from '../capabilities/privacy.js'
 
 /**
  * Handles space/encryption/key/decrypt delegation to decrypt symmetric key using the Space's KMS Asymmetric Key.
- * 
+ *
  * @param {import('../services/kms.types.js').DecryptionKeyRequest} request
  * @param {import('@ucanto/interface').Invocation} invocation
  * @param {import('../../middleware/withUcanInvocationHandler.types.js').Context} ctx
  * @param {Environment} env
  * @returns {Promise<import('@ucanto/client').Result<{decryptedSymmetricKey: string}, Error>>}
  */
-export async function handleKeyDecryption(request, invocation, ctx, env) {
+export async function handleKeyDecryption (request, invocation, ctx, env) {
   const auditLog = new AuditLogService({
     serviceName: 'key-decryption-handler',
     environment: 'unknown'
   })
-  
+
   const startTime = Date.now()
-  
+
   try {
     if (env.FF_DECRYPTION_ENABLED !== 'true') {
       const errorMsg = 'Decryption is not enabled'
@@ -62,7 +62,7 @@ export async function handleKeyDecryption(request, invocation, ctx, env) {
       auditLog.logInvocation(request.space, KeyDecrypt.can, false, errorMsg, undefined, Date.now() - startTime)
       return error(errorMsg)
     }
-    
+
     const kmsResult = await ctx.kms.decryptSymmetricKey(request, env)
     if (kmsResult?.error) {
       auditLog.logInvocation(request.space, KeyDecrypt.can, false, 'KMS decryption failed', undefined, Date.now() - startTime)
@@ -85,5 +85,3 @@ export async function handleKeyDecryption(request, invocation, ctx, env) {
     return error(errorMessage)
   }
 }
-
-

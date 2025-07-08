@@ -1,5 +1,3 @@
-
-
 import { ok, fail, Schema, DID } from '@ucanto/validator'
 import { capability } from '@ucanto/server'
 
@@ -7,12 +5,11 @@ import { capability } from '@ucanto/server'
  * @import { Environment } from '../../middleware/withUcanInvocationHandler.types.js'
  */
 
-
 /**
  * "Decrypt symmetric keys for encrypted content owned by the subject Space."
  *
- * A Principal who may `space/encryption/key/decrypt` is permitted to decrypt 
- * the symmetric keys for any encrypted content owned by the Space. This capability 
+ * A Principal who may `space/encryption/key/decrypt` is permitted to decrypt
+ * the symmetric keys for any encrypted content owned by the Space. This capability
  * is used by the gateway to validate that a client has permission to access encrypted
  * content and receive the decrypted Data Encryption Keys (DEKs).
  *
@@ -26,7 +23,7 @@ export const KeyDecrypt = capability({
     /**
      * @description The encrypted symmetric key to be decrypted
      */
-    encryptedSymmetricKey: Schema.string(),
+    encryptedSymmetricKey: Schema.string()
   }),
   derives: (child, parent) => {
     if (child.with !== parent.with) {
@@ -35,7 +32,7 @@ export const KeyDecrypt = capability({
       )
     }
     return ok({})
-  },
+  }
 })
 
 // TODO: import from @web3-storage/capabilities
@@ -49,7 +46,7 @@ export const ContentDecrypt = capability({
       )
     }
     return ok({})
-  },
+  }
 })
 
 /**
@@ -77,7 +74,7 @@ export const EncryptionSetup = capability({
     /**
      * @description The keyring of the KMS key to use for encryption. If not provided, the gateway will use the default keyring.
      */
-    keyring: Schema.string().optional(),
+    keyring: Schema.string().optional()
   }),
   derives: (child, parent) => {
     if (child.with !== parent.with) {
@@ -86,5 +83,5 @@ export const EncryptionSetup = capability({
       )
     }
     return ok({})
-  },
+  }
 })

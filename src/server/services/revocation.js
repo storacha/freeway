@@ -17,36 +17,36 @@ export class RevocationStatusServiceImpl {
    * @param {AuditLogService} [options.auditLog] - Audit log service instance
    * @param {string} [options.environment] - Environment name for audit logging
    */
-  constructor(options = {}) {
+  constructor (options = {}) {
     this.auditLog = options.auditLog || new AuditLogService({
       serviceName: 'revocation-status-service',
       environment: options.environment || 'unknown'
     })
     this.auditLog.logServiceInitialization('RevocationStatusService', true)
   }
+
   /**
    * Checks revocation status of UCAN delegations via Storage UCAN Service
-   * 
+   *
    * @param {Ucanto.Proof[]} proofs - Array of UCAN proofs to check
    * @param {RevocationStatusEnvironment} env - Environment configuration
    * @returns {Promise<import('@ucanto/client').Result<{ ok: boolean }, Error>>}
    */
-  async checkStatus(proofs, env) {
+  async checkStatus (proofs, env) {
     const safeProofs = proofs || []
-    
+
     try {
-      
       if (!env.REVOCATION_STATUS_SERVICE_URL) {
         // Log that revocation service is unavailable (security concern)
         this.auditLog.logSecurityEvent('revocation_service_unavailable', {
           operation: 'revocation_check',
           status: 'skipped',
-          metadata: { 
+          metadata: {
             reason: 'service_not_configured',
-            proofsCount: safeProofs.length 
+            proofsCount: safeProofs.length
           }
         })
-        
+
         return ok({ ok: true })
       }
 
@@ -56,23 +56,23 @@ export class RevocationStatusServiceImpl {
       // 2. Call the revocation service API with the delegation CIDs
       // 3. Parse the response to determine if any delegations are revoked
       // 4. Return appropriate result
-      
+
       // For now, return success (no revocations found)
       // Log that revocation check was attempted but not fully implemented
       this.auditLog.logSecurityEvent('revocation_check_success', {
         operation: 'revocation_check',
         status: 'success',
-        metadata: { 
+        metadata: {
           implementation: 'stub',
           proofsCount: safeProofs.length,
           note: 'Not fully implemented - returns success by default'
         }
       })
-      
+
       return ok({ ok: true })
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err)
-      
+
       // Log revocation check failure
       this.auditLog.logSecurityEvent('revocation_check_failure', {
         operation: 'revocation_check',
@@ -80,9 +80,8 @@ export class RevocationStatusServiceImpl {
         error: errorMessage,
         metadata: { proofsCount: safeProofs.length }
       })
-      
+
       return error(errorMessage)
     }
   }
-
-} 
+}

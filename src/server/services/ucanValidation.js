@@ -18,22 +18,23 @@ export class UcanPrivacyValidationServiceImpl {
    * @param {AuditLogService} [options.auditLog] - Audit log service instance
    * @param {string} [options.environment] - Environment name for audit logging
    */
-  constructor(options = {}) {
+  constructor (options = {}) {
     this.auditLog = options.auditLog || new AuditLogService({
       serviceName: 'ucan-validation-service',
       environment: options.environment || 'unknown'
     })
     this.auditLog.logServiceInitialization('UcanPrivacyValidationService', true)
   }
+
   /**
    * Validates an encryption setup invocation
-   * 
+   *
    * @param {import('@ucanto/interface').Invocation} invocation
    * @param {import('@web3-storage/capabilities/types').SpaceDID} spaceDID
    * @param {import('@ucanto/interface').Verifier} gatewayIdentity
    * @returns {Promise<import('@ucanto/client').Result<{ok: boolean}, Error>>}
    */
-  async validateEncryption(invocation, spaceDID, gatewayIdentity) {
+  async validateEncryption (invocation, spaceDID, gatewayIdentity) {
     try {
       const setupCapability = invocation.capabilities.find(
         /** @param {{can: string}} cap */(cap) => cap.can === EncryptionSetup.can
@@ -79,13 +80,13 @@ export class UcanPrivacyValidationServiceImpl {
    * The delegation proof should contain space/content/decrypt capability.
    * The issuer of the invocation must be in the audience of the delegation.
    * The provided space must be the same as the space in the delegation.
-   * 
+   *
    * @param {import('@ucanto/interface').Invocation} invocation
    * @param {import('@web3-storage/capabilities/types').SpaceDID} spaceDID
    * @param {import('@ucanto/interface').Verifier} gatewayIdentity
    * @returns {Promise<import('@ucanto/client').Result<{ok: boolean}, Error>>}
    */
-  async validateDecryption(invocation, spaceDID, gatewayIdentity) {
+  async validateDecryption (invocation, spaceDID, gatewayIdentity) {
     try {
       // Check invocation has the key decrypt capability
       const decryptCapability = invocation.capabilities.find(
@@ -105,7 +106,7 @@ export class UcanPrivacyValidationServiceImpl {
 
       // Check that we have exactly one delegation proof
       if (invocation.proofs.length !== 1) {
-        const errorMsg = `Expected exactly one delegation proof!`
+        const errorMsg = 'Expected exactly one delegation proof!'
         this.auditLog.logUCANValidationFailure(spaceDID, 'decryption', errorMsg)
         return error(errorMsg)
       }
@@ -163,4 +164,4 @@ export class UcanPrivacyValidationServiceImpl {
       return error(errorMessage)
     }
   }
-} 
+}

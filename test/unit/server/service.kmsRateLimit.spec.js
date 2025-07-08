@@ -1,3 +1,8 @@
+/* eslint-disable no-unused-expressions
+   ---
+   `no-unused-expressions` doesn't understand that several of Chai's assertions
+   are implemented as getters rather than explicit function calls; it thinks
+   the assertions are unused expressions. */
 import { describe, it, beforeEach, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
@@ -18,18 +23,16 @@ describe('Service Integration - KMS Rate Limiting', () => {
   /** @type {any} */
   let mockKms
   /** @type {any} */
-  let mockAuditLog
-  /** @type {any} */
   let service
 
   beforeEach(async () => {
     sandbox = sinon.createSandbox()
-    
+
     mockKV = {
       get: sandbox.stub(),
       put: sandbox.stub()
     }
-    
+
     mockEnv = {
       FF_DECRYPTION_ENABLED: 'true',
       KMS_RATE_LIMIT_KV: mockKV,
@@ -39,23 +42,18 @@ describe('Service Integration - KMS Rate Limiting', () => {
       GOOGLE_KMS_TOKEN: 'test-token',
       GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1'
     }
-    
-    mockAuditLog = {
-      logInvocation: sandbox.stub(),
-      logSecurityEvent: sandbox.stub()
-    }
-    
+
     mockRateLimiter = {
       checkRateLimit: sandbox.stub(),
       recordOperation: sandbox.stub(),
       getRateLimitStatus: sandbox.stub()
     }
-    
+
     mockKms = {
       setupKeyForSpace: sandbox.stub(),
       decryptSymmetricKey: sandbox.stub()
     }
-    
+
     mockContext = {
       kmsRateLimiter: mockRateLimiter,
       kms: mockKms,
@@ -72,7 +70,7 @@ describe('Service Integration - KMS Rate Limiting', () => {
       },
       waitUntil: sandbox.stub()
     }
-    
+
     service = createService(mockContext, mockEnv)
   })
 
@@ -88,7 +86,7 @@ describe('Service Integration - KMS Rate Limiting', () => {
       expect(service.space.encryption).to.have.property('setup')
       expect(service.space.encryption).to.have.property('key')
       expect(service.space.encryption.key).to.have.property('decrypt')
-      
+
       // These are UCANTO service providers (async functions), not objects
       expect(service.space.encryption.setup).to.be.a('function')
       expect(service.space.encryption.key.decrypt).to.be.a('function')
@@ -105,9 +103,9 @@ describe('Service Integration - KMS Rate Limiting', () => {
         kmsRateLimiter: undefined
       }
       delete contextWithoutRateLimiter.kmsRateLimiter
-      
+
       const serviceWithoutRateLimiter = createService(contextWithoutRateLimiter, mockEnv)
-      
+
       expect(serviceWithoutRateLimiter).to.be.an('object')
       expect(serviceWithoutRateLimiter.space.encryption.setup).to.be.a('function')
       expect(serviceWithoutRateLimiter.space.encryption.key.decrypt).to.be.a('function')
@@ -139,7 +137,7 @@ describe('Service Integration - KMS Rate Limiting', () => {
       expect(service).to.be.an('object')
       expect(service.space.encryption.setup).to.be.a('function')
       expect(service.space.encryption.key.decrypt).to.be.a('function')
-      
+
       // The service should have proper UCANTO async function structure
       expect(service.space.encryption.setup).to.exist
       expect(service.space.encryption.key.decrypt).to.exist
@@ -153,9 +151,9 @@ describe('Service Integration - KMS Rate Limiting', () => {
         kmsRateLimiter: undefined
       }
       delete contextWithoutRateLimiter.kmsRateLimiter
-      
+
       const serviceWithoutRateLimiter = createService(contextWithoutRateLimiter, mockEnv)
-      
+
       // Should still create service successfully
       expect(serviceWithoutRateLimiter).to.be.an('object')
       expect(serviceWithoutRateLimiter.space.encryption.setup).to.be.a('function')
@@ -167,7 +165,7 @@ describe('Service Integration - KMS Rate Limiting', () => {
       expect(service).to.be.an('object')
       expect(service.space.encryption.setup).to.be.a('function')
       expect(service.space.encryption.key.decrypt).to.be.a('function')
-      
+
       // The context should have the rate limiter
       expect(mockContext.kmsRateLimiter).to.exist
       expect(mockContext.kmsRateLimiter).to.equal(mockRateLimiter)
@@ -177,10 +175,10 @@ describe('Service Integration - KMS Rate Limiting', () => {
   describe('Service Method Validation', () => {
     it('should have correct capability definitions for encryption setup', () => {
       const setupService = service.space.encryption.setup
-      
+
       // Verify the service is a UCANTO async function handler
       expect(setupService).to.be.a('function')
-      
+
       // We cannot directly access the capability from the async function,
       // but we can verify the service was created successfully
       expect(setupService).to.exist
@@ -188,14 +186,13 @@ describe('Service Integration - KMS Rate Limiting', () => {
 
     it('should have correct capability definitions for key decryption', () => {
       const decryptService = service.space.encryption.key.decrypt
-      
+
       // Verify the service is a UCANTO async function handler
       expect(decryptService).to.be.a('function')
-      
+
       // We cannot directly access the capability from the async function,
       // but we can verify the service was created successfully
       expect(decryptService).to.exist
     })
   })
-
-}) 
+})

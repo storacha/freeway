@@ -71,21 +71,21 @@ export function createService (ctx, env) {
                 return error(new Error(rateLimitViolation))
               }
             }
-            
+
             const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
             const request = {
               space,
               location: capability.nb?.location,
               keyring: capability.nb?.keyring
             }
-            
+
             const result = await handleEncryptionSetup(request, invocation, ctx, env)
-            
+
             // Record successful operation for rate limiting
             if (result.ok && ctx.kmsRateLimiter) {
               ctx.waitUntil(ctx.kmsRateLimiter.recordOperation(invocation, 'space/encryption/setup', capability.with))
             }
-            
+
             return result
           }
         }),
@@ -100,21 +100,21 @@ export function createService (ctx, env) {
                   return error(new Error(rateLimitViolation))
                 }
               }
-              
+
               const space = /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (capability.with)
               const encryptedSymmetricKey = capability.nb?.encryptedSymmetricKey
               const request = {
                 space,
-                encryptedSymmetricKey,
+                encryptedSymmetricKey
               }
-              
+
               const result = await handleKeyDecryption(request, invocation, ctx, env)
-              
+
               // Record successful operation for rate limiting
               if (result.ok && ctx.kmsRateLimiter) {
                 ctx.waitUntil(ctx.kmsRateLimiter.recordOperation(invocation, 'space/encryption/key/decrypt', capability.with))
               }
-              
+
               return result
             }
           })

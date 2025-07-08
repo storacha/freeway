@@ -13,7 +13,7 @@ import { AuditLogService } from './auditLog.js'
  * Securely clears sensitive data from memory
  * @param {string | Uint8Array | Buffer} data - Sensitive data to clear
  */
-function secureClear(data) {
+function secureClear (data) {
   if (typeof data === 'string') {
     // For strings, we can't directly clear them (they're immutable),
     // but we can create a buffer and clear that to avoid references
@@ -30,9 +30,9 @@ function secureClear(data) {
  */
 class SecureString {
   /**
-   * @param {string} value 
+   * @param {string} value
    */
-  constructor(value) {
+  constructor (value) {
     this._buffer = Buffer.from(value, 'utf8')
     this._disposed = false
   }
@@ -41,7 +41,7 @@ class SecureString {
    * Get the string value (should be used sparingly)
    * @returns {string}
    */
-  getValue() {
+  getValue () {
     if (this._disposed) {
       throw new Error('SecureString has been disposed')
     }
@@ -51,7 +51,7 @@ class SecureString {
   /**
    * Securely dispose of the sensitive data
    */
-  dispose() {
+  dispose () {
     if (!this._disposed) {
       this._buffer.fill(0)
       this._disposed = true
@@ -61,7 +61,7 @@ class SecureString {
   /**
    * Auto-dispose when garbage collected
    */
-  [Symbol.dispose]() {
+  [Symbol.dispose] () {
     this.dispose()
   }
 }
@@ -109,22 +109,22 @@ const KMSEnvironmentSchema = z.object({
 export class GoogleKMSService {
   /**
    * Creates a new GoogleKMSService instance with validated configuration
-   * 
+   *
    * @param {KMSEnvironment} env - Environment configuration
    * @param {Object} [options] - Service options
    * @param {string} [options.environment] - Environment name for audit logging
    * @param {import('./auditLog.js').AuditLogService} [options.auditLog] - Shared audit log service instance
    * @throws {Error} If configuration validation fails when decryption is enabled
    */
-  constructor(env, options = {}) {
+  constructor (env, options = {}) {
     try {
       this.validateConfiguration(env)
-      
+
       this.auditLog = options.auditLog || new AuditLogService({
         serviceName: 'google-kms-service',
         environment: options.environment || 'unknown'
       })
-      
+
       this.auditLog.logServiceInitialization('GoogleKMSService', true)
     } catch (error) {
       // Log initialization failure
@@ -140,12 +140,12 @@ export class GoogleKMSService {
 
   /**
    * Validates the KMS environment configuration using Zod schema
-   * 
+   *
    * @private
    * @param {KMSEnvironment} env - Environment configuration
    * @throws {Error} If configuration validation fails
    */
-  validateConfiguration(env) {
+  validateConfiguration (env) {
     try {
       KMSEnvironmentSchema.parse({
         GOOGLE_KMS_BASE_URL: env.GOOGLE_KMS_BASE_URL,
@@ -165,14 +165,15 @@ export class GoogleKMSService {
       throw new Error(`Google KMS configuration validation failed: ${message}`)
     }
   }
+
   /**
    * Creates or retrieves an RSA key pair in KMS for the space and returns the public key and key reference
-   * 
+   *
    * @param {EncryptionSetupRequest} request - The encryption setup request
    * @param {KMSEnvironment} env - Environment configuration
    * @returns {Promise<import('@ucanto/client').Result<EncryptionSetupResult, Error>>}
    */
-  async setupKeyForSpace(request, env) {
+  async setupKeyForSpace (request, env) {
     const startTime = Date.now()
     try {
       const actualLocation = request.location || env.GOOGLE_KMS_LOCATION
@@ -181,7 +182,7 @@ export class GoogleKMSService {
       const keyName = `projects/${env.GOOGLE_KMS_PROJECT_ID}/locations/${actualLocation}/keyRings/${actualKeyring}/cryptoKeys/${sanitizedKeyId}`
       const getResponse = await fetch(`${env.GOOGLE_KMS_BASE_URL}/${keyName}`, {
         headers: {
-          'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`
+          Authorization: `Bearer ${env.GOOGLE_KMS_TOKEN}`
         }
       })
 
@@ -191,7 +192,7 @@ export class GoogleKMSService {
         if (result.ok) {
           const duration = Date.now() - startTime
           this.auditLog.logKMSKeySetupSuccess(
-            request.space, 
+            request.space,
             result.ok.algorithm || 'RSA_DECRYPT_OAEP_3072_SHA256',
             'existing',
             duration
@@ -204,7 +205,7 @@ export class GoogleKMSService {
         if (result.ok) {
           const duration = Date.now() - startTime
           this.auditLog.logKMSKeySetupSuccess(
-            request.space, 
+            request.space,
             result.ok.algorithm || 'RSA_DECRYPT_OAEP_3072_SHA256',
             '1',
             duration
@@ -215,7 +216,7 @@ export class GoogleKMSService {
         // Other error (permissions, etc.)
         const errorText = await getResponse.text()
         const duration = Date.now() - startTime
-        
+
         // Log audit event with generic error
         this.auditLog.logKMSKeySetupFailure(
           request.space,
@@ -223,7 +224,7 @@ export class GoogleKMSService {
           getResponse.status,
           duration
         )
-        
+
         // Log detailed error internally for debugging
         console.error(`KMS key access failed: ${getResponse.status} - ${errorText}`, {
           operation: 'setupKeyForSpace',
@@ -237,7 +238,7 @@ export class GoogleKMSService {
     } catch (err) {
       const duration = Date.now() - startTime
       const errorMessage = err instanceof Error ? err.message : String(err)
-      
+
       // Log audit event
       this.auditLog.logKMSKeySetupFailure(
         request.space,
@@ -245,23 +246,23 @@ export class GoogleKMSService {
         undefined,
         duration
       )
-      
+
       return error(errorMessage)
     }
   }
 
   /**
    * Decrypts a symmetric key using the space's KMS private key
-   * 
+   *
    * @param {DecryptionKeyRequest} request - The decryption request
    * @param {KMSEnvironment} env - Environment configuration
    * @returns {Promise<import('@ucanto/client').Result<{ decryptedKey: string }, Error>>}
    */
-  async decryptSymmetricKey(request, env) {
+  async decryptSymmetricKey (request, env) {
     const startTime = Date.now()
     let secureToken = null
     let secureDecryptedKey = null
-    
+
     try {
       // Sanitize space DID to match the key ID format used in encryption setup
       const sanitizedKeyId = sanitizeSpaceDIDForKMSKeyId(request.space)
@@ -286,11 +287,11 @@ export class GoogleKMSService {
 
       // Wrap sensitive token in SecureString for better memory hygiene
       secureToken = new SecureString(env.GOOGLE_KMS_TOKEN)
-      
+
       const response = await fetch(kmsUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${secureToken.getValue()}`,
+          Authorization: `Bearer ${secureToken.getValue()}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -301,7 +302,7 @@ export class GoogleKMSService {
       if (!response.ok) {
         const errorText = await response.text()
         const duration = Date.now() - startTime
-        
+
         // Log audit event with generic error
         this.auditLog.logKMSDecryptFailure(
           request.space,
@@ -309,7 +310,7 @@ export class GoogleKMSService {
           response.status,
           duration
         )
-        
+
         // Log detailed error internally for debugging
         console.error(`KMS decryption failed: ${response.status} - ${errorText}`, {
           operation: 'decryptSymmetricKey',
@@ -324,7 +325,7 @@ export class GoogleKMSService {
       const result = await response.json()
       if (!result.plaintext) {
         const duration = Date.now() - startTime
-        
+
         // Log audit event
         this.auditLog.logKMSDecryptFailure(
           request.space,
@@ -332,7 +333,7 @@ export class GoogleKMSService {
           undefined,
           duration
         )
-        
+
         // Log detailed error internally for debugging
         console.error('KMS decryption response missing plaintext', {
           operation: 'decryptSymmetricKey',
@@ -353,17 +354,17 @@ export class GoogleKMSService {
 
       // Wrap decrypted key in SecureString for better memory hygiene
       secureDecryptedKey = new SecureString(result.plaintext)
-      
+
       // The plaintext is returned as a base64 encoded string, so we just return it
       // Note: We need to return the raw string here as that's what the interface expects
       // The sensitive data will be cleared when this function exits
       const decryptedKey = secureDecryptedKey.getValue()
-      
+
       return ok({ decryptedKey })
     } catch (err) {
       const duration = Date.now() - startTime
       const errorMessage = err instanceof Error ? err.message : String(err)
-      
+
       // Log audit event
       this.auditLog.logKMSDecryptFailure(
         request.space,
@@ -371,7 +372,7 @@ export class GoogleKMSService {
         undefined,
         duration
       )
-      
+
       return error(errorMessage)
     } finally {
       // Securely clear sensitive data from memory
@@ -386,18 +387,18 @@ export class GoogleKMSService {
 
   /**
    * Gets the primary key version for a KMS key
-   * 
+   *
    * @private
    * @param {string} keyName - The full KMS key name reference
    * @param {KMSEnvironment} env - Environment configuration
    * @param {SpaceDID} space - The space DID for error messages
    * @returns {Promise<import('@ucanto/client').Result<{ primaryVersion: string }, Error>>}
    */
-  async _getPrimaryKeyVersion(keyName, env, space) {
+  async _getPrimaryKeyVersion (keyName, env, space) {
     try {
       const keyDataResponse = await fetch(`${env.GOOGLE_KMS_BASE_URL}/${keyName}`, {
         headers: {
-          'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`
+          Authorization: `Bearer ${env.GOOGLE_KMS_TOKEN}`
         }
       })
 
@@ -406,7 +407,7 @@ export class GoogleKMSService {
         // Log detailed error internally for debugging
         console.error(`KMS key data retrieval failed: ${keyDataResponse.status} - ${errorText}`, {
           operation: '_getPrimaryKeyVersion',
-          space: space,
+          space,
           status: keyDataResponse.status,
           error: errorText
         })
@@ -422,8 +423,8 @@ export class GoogleKMSService {
         // Log detailed error internally for debugging
         console.error('No primary key version available', {
           operation: '_getPrimaryKeyVersion',
-          space: space,
-          keyData: keyData
+          space,
+          keyData
         })
         // Return generic error to client
         return error('Key operation failed')
@@ -437,14 +438,14 @@ export class GoogleKMSService {
 
   /**
    * Retrieves the public key for an existing KMS key
-   * 
+   *
    * @private
    * @param {string} keyName - The full KMS key name reference
    * @param {KMSEnvironment} env - Environment configuration
    * @param {SpaceDID} space - The space DID for error messages
-   * @returns {Promise<import('@ucanto/client').Result<EncryptionSetupResult, Error>>}    
+   * @returns {Promise<import('@ucanto/client').Result<EncryptionSetupResult, Error>>}
    */
-  async _retrieveExistingPublicKey(keyName, env, space) {
+  async _retrieveExistingPublicKey (keyName, env, space) {
     try {
       // Get the primary key version securely
       const primaryVersionResult = await this._getPrimaryKeyVersion(keyName, env, space)
@@ -462,7 +463,7 @@ export class GoogleKMSService {
 
   /**
    * Creates a new KMS key and returns its public key and key reference
-   * 
+   *
    * @private
    * @param {string} sanitizedKeyId - The sanitized key ID
    * @param {string} keyName - The full KMS key name
@@ -472,7 +473,7 @@ export class GoogleKMSService {
    * @param {string | undefined} keyring - The keyring to use for key creation
    * @returns {Promise<import('@ucanto/client').Result<EncryptionSetupResult, Error>>}
    */
-  async _createNewKey(sanitizedKeyId, keyName, env, space, location, keyring) {
+  async _createNewKey (sanitizedKeyId, keyName, env, space, location, keyring) {
     try {
       const encodedKeyId = encodeURIComponent(sanitizedKeyId)
       const actualLocation = location || env.GOOGLE_KMS_LOCATION
@@ -482,7 +483,7 @@ export class GoogleKMSService {
       const createResponse = await fetch(createKeyUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`,
+          Authorization: `Bearer ${env.GOOGLE_KMS_TOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -498,7 +499,7 @@ export class GoogleKMSService {
         // Log detailed error internally for debugging
         console.error(`KMS key creation failed: ${createResponse.status} - ${errorText}`, {
           operation: '_createNewKey',
-          space: space,
+          space,
           status: createResponse.status,
           error: errorText
         })
@@ -520,7 +521,7 @@ export class GoogleKMSService {
 
   /**
    * Fetches and validates a public key from KMS
-   * 
+   *
    * @private
    * @param {string} publicKeyUrl - The URL to fetch the public key from
    * @param {string} keyName - The key name for the response
@@ -528,13 +529,13 @@ export class GoogleKMSService {
    * @param {SpaceDID} space - The space DID for error messages
    * @returns {Promise<import('@ucanto/client').Result<EncryptionSetupResult, Error>>}
    */
-  async _fetchAndValidatePublicKey(publicKeyUrl, keyName, env, space) {
+  async _fetchAndValidatePublicKey (publicKeyUrl, keyName, env, space) {
     let securePem = null
-    
+
     try {
       const pubKeyResponse = await fetch(publicKeyUrl, {
         headers: {
-          'Authorization': `Bearer ${env.GOOGLE_KMS_TOKEN}`
+          Authorization: `Bearer ${env.GOOGLE_KMS_TOKEN}`
         }
       })
 
@@ -543,7 +544,7 @@ export class GoogleKMSService {
         // Log detailed error internally for debugging
         console.error(`KMS public key retrieval failed: ${pubKeyResponse.status} - ${errorText}`, {
           operation: '_fetchAndValidatePublicKey',
-          space: space,
+          space,
           status: pubKeyResponse.status,
           error: errorText
         })
@@ -561,7 +562,7 @@ export class GoogleKMSService {
         // Log detailed error internally for debugging
         console.error('Invalid public key format received from KMS', {
           operation: '_fetchAndValidatePublicKey',
-          space: space,
+          space,
           hasPem: !!pubKeyData.pem,
           pemPrefix: pubKeyData.pem ? pubKeyData.pem.substring(0, 30) : 'none'
         })
@@ -579,7 +580,7 @@ export class GoogleKMSService {
           // Log detailed error internally for debugging
           console.error('Public key integrity check failed', {
             operation: '_fetchAndValidatePublicKey',
-            space: space,
+            space,
             expectedCrc32c: pubKeyData.pemCrc32c,
             pemLength: securePem.getValue().length
           })
@@ -592,7 +593,7 @@ export class GoogleKMSService {
       const publicKey = securePem.getValue()
 
       return ok({
-        publicKey: publicKey,
+        publicKey,
         algorithm: pubKeyData.algorithm,
         provider: 'google-kms'
       })
@@ -608,15 +609,15 @@ export class GoogleKMSService {
 
   /**
    * Validates the integrity of a public key using CRC32C checksum
-   * 
+   *
    * @static
    * @param {string} pem - The PEM-encoded public key
    * @param {string} expectedCrc32c - The expected CRC32C checksum as a string
    * @returns {boolean} - True if the integrity check passes
    */
-  static validatePublicKeyIntegrity(pem, expectedCrc32c) {
+  static validatePublicKeyIntegrity (pem, expectedCrc32c) {
     let pemBuffer = null
-    
+
     try {
       // Step 1. Convert PEM to Buffer for CRC32C calculation
       pemBuffer = Buffer.from(pem, 'utf8')

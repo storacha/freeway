@@ -1,11 +1,14 @@
+/* eslint-disable no-unused-expressions
+   ---
+   `no-unused-expressions` doesn't understand that several of Chai's assertions
+   are implemented as getters rather than explicit function calls; it thinks
+   the assertions are unused expressions. */
 import { describe, it, beforeEach, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
 import * as ed25519 from '@ucanto/principal/ed25519'
 import { UcanPrivacyValidationServiceImpl } from '../../../../src/server/services/ucanValidation.js'
 import { EncryptionSetup, KeyDecrypt, ContentDecrypt } from '../../../../src/server/capabilities/privacy.js'
-import { create as createClient } from '@storacha/client'
-import { StoreMemory } from '@storacha/client/stores'
 
 describe('UcanPrivacyValidationService', () => {
   /** @type {sinon.SinonSandbox} */
@@ -215,7 +218,7 @@ describe('UcanPrivacyValidationService', () => {
           issuer: spaceOwnerSigner,
           audience: clientSigner,
           with: spaceDIDForTest,
-          expiration: Infinity,
+          expiration: Infinity
         })
 
       // Create KeyDecrypt invocation from client to gateway with content decrypt delegation as proof
@@ -232,7 +235,7 @@ describe('UcanPrivacyValidationService', () => {
         }).buildIPLDView()
 
       const result = await service.validateDecryption(invocation, spaceDIDForTest, gatewayIdentity)
-      
+
       expect(result.ok).to.exist
       expect(result.ok?.ok).to.be.true
     })
@@ -275,14 +278,14 @@ describe('UcanPrivacyValidationService', () => {
         issuer: spaceOwnerSigner,
         audience: clientSigner,
         with: spaceDIDForTest,
-        expiration: Infinity,
+        expiration: Infinity
       })
 
       const delegation2 = await ContentDecrypt.delegate({
         issuer: spaceOwnerSigner,
         audience: clientSigner,
         with: spaceDIDForTest,
-        expiration: Infinity,
+        expiration: Infinity
       })
 
       const invocation = await KeyDecrypt.invoke({
@@ -341,7 +344,7 @@ describe('UcanPrivacyValidationService', () => {
         issuer: otherSpaceSigner,
         audience: clientSigner,
         with: otherSpaceDID, // Wrong space DID
-        expiration: Infinity,
+        expiration: Infinity
       })
 
       const invocation = await KeyDecrypt.invoke({
@@ -370,7 +373,7 @@ describe('UcanPrivacyValidationService', () => {
         issuer: spaceOwnerSigner,
         audience: clientSigner, // Delegated to clientSigner
         with: spaceDIDForTest,
-        expiration: Infinity,
+        expiration: Infinity
       })
 
       // But create invocation from different client
@@ -419,7 +422,7 @@ describe('UcanPrivacyValidationService', () => {
         issuer: spaceOwnerSigner,
         audience: intermediateSigner,
         with: spaceDIDForTest,
-        expiration: Infinity,
+        expiration: Infinity
       })
 
       // Second level: Intermediate delegates content decrypt to client
@@ -458,7 +461,7 @@ describe('UcanPrivacyValidationService', () => {
         issuer: spaceOwnerSigner,
         audience: clientSigner,
         with: spaceDIDForTest,
-        expiration: expiredTime,
+        expiration: expiredTime
       })
 
       const invocation = await KeyDecrypt.invoke({
@@ -485,7 +488,7 @@ describe('UcanPrivacyValidationService', () => {
         issuer: spaceOwnerSigner,
         audience: clientSigner,
         with: spaceDIDForTest,
-        expiration: Infinity,
+        expiration: Infinity
       })
 
       // Test with different encrypted key formats
@@ -509,7 +512,7 @@ describe('UcanPrivacyValidationService', () => {
         }).buildIPLDView()
 
         const result = await service.validateDecryption(invocation, spaceDIDForTest, gatewayIdentity)
-        
+
         expect(result.ok).to.exist
         expect(result.ok?.ok).to.be.true
       }
@@ -547,12 +550,12 @@ describe('UcanPrivacyValidationService', () => {
 
       // Test edge cases around current time
       const boundaryTimes = [
-        currentTime - 1,    // Just expired
-        currentTime,        // Exactly now
-        currentTime + 1,    // Just valid
+        currentTime - 1, // Just expired
+        currentTime, // Exactly now
+        currentTime + 1, // Just valid
         currentTime + 3600, // Valid for 1 hour
-        0,                  // Invalid (epoch)
-        -1                  // Invalid (negative)
+        0, // Invalid (epoch)
+        -1 // Invalid (negative)
       ]
 
       for (const expTime of boundaryTimes) {
@@ -561,7 +564,7 @@ describe('UcanPrivacyValidationService', () => {
             issuer: spaceOwnerSigner,
             audience: clientSigner,
             with: spaceDIDForTest,
-            expiration: expTime,
+            expiration: expTime
           })
 
           const invocation = await KeyDecrypt.invoke({
@@ -576,7 +579,7 @@ describe('UcanPrivacyValidationService', () => {
           }).buildIPLDView()
 
           const result = await service.validateDecryption(invocation, spaceDIDForTest, gatewayIdentity)
-          
+
           // For expired or invalid times, expect failure
           if (expTime <= currentTime || expTime <= 0) {
             expect(result.error).to.exist
@@ -627,7 +630,7 @@ describe('UcanPrivacyValidationService', () => {
       // Create invalid invocation that will cause internal errors
       const malformedInvocation = {
         capabilities: [{ can: KeyDecrypt.can, with: spaceDIDForTest }],
-        proofs: [{ 
+        proofs: [{
           // This is not a proper delegation object, should cause internal errors
           capabilities: 'not-an-array',
           issuer: { did: () => 'invalid' },
@@ -649,12 +652,12 @@ describe('UcanPrivacyValidationService', () => {
     it('should document revocation service integration gap', () => {
       // This test documents the critical security gap identified in the audit report
       // The revocation service is currently a stub that always returns success
-      
+
       // TODO: Implement actual revocation checking
       // TODO: Add tests for revoked delegations
       // TODO: Add tests for revocation service failures
       // TODO: Add tests for revocation caching
-      
+
       expect(true).to.be.true // Placeholder test to document the gap
     })
 

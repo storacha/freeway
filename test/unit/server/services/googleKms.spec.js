@@ -1,3 +1,8 @@
+/* eslint-disable no-unused-expressions
+   ---
+   `no-unused-expressions` doesn't understand that several of Chai's assertions
+   are implemented as getters rather than explicit function calls; it thinks
+   the assertions are unused expressions. */
 import { describe, it, beforeEach, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
@@ -16,7 +21,7 @@ describe('GoogleKMSService', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     fetchStub = sandbox.stub(globalThis, 'fetch')
-    
+
     env = {
       GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
       GOOGLE_KMS_PROJECT_ID: 'test-project',
@@ -24,7 +29,7 @@ describe('GoogleKMSService', () => {
       GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
       GOOGLE_KMS_TOKEN: 'valid_token_1234567890'
     }
-    
+
     // Create service instance with valid environment
     service = new GoogleKMSService(env)
   })
@@ -114,7 +119,7 @@ describe('GoogleKMSService', () => {
 
       // Mock key data retrieval with no primary version (second fetch)
       fetchStub.onCall(1).resolves(new Response(JSON.stringify({
-        name: `projects/test-project/locations/global/keyRings/test-keyring/cryptoKeys/${spaceDID}`,
+        name: `projects/test-project/locations/global/keyRings/test-keyring/cryptoKeys/${spaceDID}`
         // No primary field - should fail securely instead of defaulting to version 1
       }), { status: 200 }))
 
@@ -344,7 +349,7 @@ describe('GoogleKMSService', () => {
     it('should return error when no primary key version is available (security enhancement)', async () => {
       // Mock key data retrieval with no primary version (first fetch)
       fetchStub.onCall(0).resolves(new Response(JSON.stringify({
-        name: `projects/test-project/locations/global/keyRings/test-keyring/cryptoKeys/${spaceDID}`,
+        name: `projects/test-project/locations/global/keyRings/test-keyring/cryptoKeys/${spaceDID}`
         // No primary field - should fail securely
       }), { status: 200 }))
 
@@ -461,7 +466,7 @@ describe('GoogleKMSService', () => {
 
     it('should accept valid GCP regions', () => {
       const validRegions = ['global', 'us-central1', 'europe-west1', 'asia-east1']
-      
+
       validRegions.forEach(region => {
         const validEnv = {
           FF_DECRYPTION_ENABLED: 'true',
@@ -487,6 +492,7 @@ describe('GoogleKMSService', () => {
       }
 
       try {
+        // eslint-disable-next-line no-new
         new GoogleKMSService(invalidEnv)
         expect.fail('Should have thrown validation error')
       } catch (/** @type {*} */ error) {
@@ -499,16 +505,14 @@ describe('GoogleKMSService', () => {
     })
   })
 
-
-
   describe('CRC32C Integrity Validation (Security Enhancement)', () => {
     it('should successfully validate public key with correct CRC32C checksum', async () => {
       const testPem = '-----BEGIN PUBLIC KEY-----\nMOCK_KEY_DATA\n-----END PUBLIC KEY-----'
-      
+
       // Calculate the expected CRC32C using the same library
       const crc32c = (await import('fast-crc32c')).default
       const expectedCrc32c = crc32c.calculate(Buffer.from(testPem, 'utf8')).toString()
-      
+
       const result = GoogleKMSService.validatePublicKeyIntegrity(testPem, expectedCrc32c)
       expect(result).to.be.true
     })
@@ -516,7 +520,7 @@ describe('GoogleKMSService', () => {
     it('should fail validation with incorrect CRC32C checksum', () => {
       const testPem = '-----BEGIN PUBLIC KEY-----\nMOCK_KEY_DATA\n-----END PUBLIC KEY-----'
       const wrongCrc32c = '12345'
-      
+
       const result = GoogleKMSService.validatePublicKeyIntegrity(testPem, wrongCrc32c)
       expect(result).to.be.false
     })
@@ -524,7 +528,7 @@ describe('GoogleKMSService', () => {
     it('should fail validation with empty CRC32C checksum', () => {
       const testPem = '-----BEGIN PUBLIC KEY-----\nMOCK_KEY_DATA\n-----END PUBLIC KEY-----'
       const emptyCrc32c = ''
-      
+
       const result = GoogleKMSService.validatePublicKeyIntegrity(testPem, emptyCrc32c)
       expect(result).to.be.false
     })
@@ -532,7 +536,7 @@ describe('GoogleKMSService', () => {
     it('should fail validation when different length checksums', () => {
       const testPem = '-----BEGIN PUBLIC KEY-----\nMOCK_KEY_DATA\n-----END PUBLIC KEY-----'
       const shortCrc32c = '123'
-      
+
       const result = GoogleKMSService.validatePublicKeyIntegrity(testPem, shortCrc32c)
       expect(result).to.be.false
     })
@@ -545,15 +549,15 @@ describe('GoogleKMSService', () => {
 
     it('should validate with different checksums', () => {
       const testPem = '-----BEGIN PUBLIC KEY-----\nMOCK_KEY_DATA\n-----END PUBLIC KEY-----'
-      
+
       // Test with different checksums
       const wrongCrc1 = '1234567890'
       const wrongCrc2 = '1234567891'
-      
+
       // Both should fail
       const result1 = GoogleKMSService.validatePublicKeyIntegrity(testPem, wrongCrc1)
       const result2 = GoogleKMSService.validatePublicKeyIntegrity(testPem, wrongCrc2)
-      
+
       expect(result1).to.be.false
       expect(result2).to.be.false
     })
@@ -567,11 +571,11 @@ CDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF12345678
 90ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234
 567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF
 -----END PUBLIC KEY-----`
-      
+
       // Calculate the expected CRC32C
       const crc32c = (await import('fast-crc32c')).default
       const expectedCrc32c = crc32c.calculate(Buffer.from(realPem, 'utf8')).toString()
-      
+
       const result = GoogleKMSService.validatePublicKeyIntegrity(realPem, expectedCrc32c)
       expect(result).to.be.true
     })

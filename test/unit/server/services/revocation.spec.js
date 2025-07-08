@@ -1,3 +1,8 @@
+/* eslint-disable no-unused-expressions
+   ---
+   `no-unused-expressions` doesn't understand that several of Chai's assertions
+   are implemented as getters rather than explicit function calls; it thinks
+   the assertions are unused expressions. */
 import { describe, it, beforeEach, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
@@ -16,7 +21,7 @@ describe('RevocationStatusService', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     service = new RevocationStatusServiceImpl()
-    
+
     env = {
       REVOCATION_STATUS_SERVICE_URL: 'https://revocation.service.test'
     }
@@ -59,22 +64,21 @@ describe('RevocationStatusService', () => {
     it('should handle null or undefined proofs gracefully', async () => {
       // @ts-ignore - Testing error handling for invalid inputs
       const resultNull = await service.checkStatus(null, env)
-      // @ts-ignore - Testing error handling for invalid inputs  
+      // @ts-ignore - Testing error handling for invalid inputs
       const resultUndefined = await service.checkStatus(undefined, env)
 
       expect(resultNull.ok).to.exist
       expect(resultNull.ok?.ok).to.be.true
-      expect(resultUndefined.ok).to.exist  
+      expect(resultUndefined.ok).to.exist
       expect(resultUndefined.ok?.ok).to.be.true
     })
 
     it('should handle errors gracefully', async () => {
       // Create a service that will test error handling
       const errorService = new RevocationStatusServiceImpl()
-      
+
       // Override the checkStatus method to test the error handling path
-      const originalCheckStatus = errorService.checkStatus
-      errorService.checkStatus = async function(proofs, env) {
+      errorService.checkStatus = async function (proofs, env) {
         try {
           // Force an error to test the catch block
           throw new Error('Service error')
@@ -94,12 +98,12 @@ describe('RevocationStatusService', () => {
     it('should handle non-Error exceptions', async () => {
       // Create a service that will test non-Error exception handling
       const errorService = new RevocationStatusServiceImpl()
-      
+
       // Override the checkStatus method to test the error handling path
-      errorService.checkStatus = async function(proofs, env) {
+      errorService.checkStatus = async function (proofs, env) {
         try {
           // Force a non-Error exception to test the catch block
-          throw 'String error'
+          throw new Error('String error')
         } catch (err) {
           // This should trigger the error handling logic
           const { error } = await import('@ucanto/validator')
@@ -119,7 +123,7 @@ describe('RevocationStatusService', () => {
       // Should be a Result type with either ok or error property
       expect(result).to.be.an('object')
       expect(result.ok || result.error).to.exist
-      
+
       if (result.ok) {
         expect(result.ok).to.have.property('ok')
         expect(result.ok.ok).to.be.a('boolean')
@@ -128,11 +132,11 @@ describe('RevocationStatusService', () => {
 
     it('should handle environment without REVOCATION_STATUS_SERVICE_URL property', async () => {
       const envWithoutUrl = {}
-      
+
       const result = await service.checkStatus(mockProofs, envWithoutUrl)
 
       expect(result.ok).to.exist
       expect(result.ok?.ok).to.be.true
     })
   })
-}) 
+})

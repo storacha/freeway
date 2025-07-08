@@ -4,10 +4,9 @@ import { sanitizeSpaceDIDForKMSKeyId } from '../../../src/server/utils.js'
 
 describe('Server Utils', () => {
   describe('sanitizeSpaceDIDForKMSKeyId', () => {
-    
     describe('Valid DID keys (real examples)', () => {
       const validExamples = [
-        'did:key:z6MkhaFjCbGGPG6LyFz28drtvGTt1gTX3KRByq6PnVPJpvKj', 
+        'did:key:z6MkhaFjCbGGPG6LyFz28drtvGTt1gTX3KRByq6PnVPJpvKj',
         'did:key:z6MkqYqWjZKcGkxsFiQ1v7oomSbCfqRoc13aerkxh4rfj4pX',
         'did:key:z6MkiD35ATPMkcMnZed6uKF2kyDG7b5qpMdPd8FdKGynqmDj',
         'did:key:z6Mkvy7Mawx4va2SWKvQcuSwofXUMnee1WZ3DvAxuVstyGX4',
@@ -15,23 +14,23 @@ describe('Server Utils', () => {
         'did:key:z6MksCeeYP58ocuwqNHAXpsatxNpHvvguF75rSSBXJkrABco',
         'did:key:z6MkecZQXjwXiRiiVnZkDcdTVxJVmQGTaewBBdeNHBksnEZw',
         'did:key:z6Mkr1MG8CUyfhXhxgRo4kMGQFmEj4DXdPejFua4bwwJ95FH',
-        'did:key:z6MkqEmYPaAt54cKqU15smvRosE4DL2DTAaTTYXe51EYMHjx',
+        'did:key:z6MkqEmYPaAt54cKqU15smvRosE4DL2DTAaTTYXe51EYMHjx'
       ]
 
       validExamples.forEach((spaceDID, index) => {
         it(`should successfully sanitize valid DID key example ${index + 1}`, () => {
           const result = sanitizeSpaceDIDForKMSKeyId(spaceDID)
-          
+
           // Should remove the did:key: prefix
           expect(result).to.not.include('did:key:')
           expect(result).to.equal(spaceDID.replace(/^did:key:/, ''))
-          
+
           // Should be exactly 48 characters (Space DID format)
           expect(result.length).to.equal(48)
-          
+
           // Should only contain valid characters (alphanumeric only)
           expect(result).to.match(/^[a-zA-Z0-9]+$/)
-          
+
           // Specific validation for this example
           if (spaceDID.includes('z6MkhaFjCbGGPG6LyFz28drtvGTt1gTX3KRByq6PnVPJpvKj')) {
             expect(result).to.equal('z6MkhaFjCbGGPG6LyFz28drtvGTt1gTX3KRByq6PnVPJpvKj')
@@ -60,17 +59,16 @@ describe('Server Utils', () => {
       it('should NOT allow underscores and hyphens (only alphanumeric)', () => {
         const keyWithUnderscore = 'z6MkhaFjCbGGPG6LyFz28drtvGTt1gTX3KRByq6PnVPJ_abc' // 48 chars with underscore
         const keyWithHyphen = 'z6MkhaFjCbGGPG6LyFz28drtvGTt1gTX3KRByq6PnVPJ-abc' // 48 chars with hyphen
-        
+
         expect(() => sanitizeSpaceDIDForKMSKeyId(`did:key:${keyWithUnderscore}`))
           .to.throw('Invalid Space DID format. Must contain only letters and numbers.')
-        
+
         expect(() => sanitizeSpaceDIDForKMSKeyId(`did:key:${keyWithHyphen}`))
           .to.throw('Invalid Space DID format. Must contain only letters and numbers.')
       })
     })
 
     describe('Invalid DID keys - Security tests', () => {
-      
       it('should throw error for path traversal attempt with ../', () => {
         const maliciousDID = 'did:key:../../../etc/passwd'
         expect(() => sanitizeSpaceDIDForKMSKeyId(maliciousDID))
@@ -97,7 +95,7 @@ describe('Server Utils', () => {
 
       it('should throw error for special characters', () => {
         const invalidChars = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', ';', ':', '"', "'", '<', '>', ',', '.', '?', '/', '~', '`', '_', '-']
-        
+
         invalidChars.forEach(char => {
           // Create 48-character string with invalid character
           const validPrefix = 'z6MkhaFjCbGGPG6LyFz28drtvGTt1gTX3KRByq6PnVPJ'
@@ -204,4 +202,4 @@ describe('Server Utils', () => {
       })
     })
   })
-}) 
+})

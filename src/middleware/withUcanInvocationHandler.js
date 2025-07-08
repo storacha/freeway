@@ -22,7 +22,7 @@ import { KmsRateLimiter } from '../server/services/kmsRateLimiter.js'
  *
  * @type {Middleware<UcanInvocationContext, UcanInvocationContext, Environment>}
  */
-export function withUcanInvocationHandler(handler) {
+export function withUcanInvocationHandler (handler) {
   return async (request, env, ctx) => {
     if (request.method !== 'POST' || new URL(request.url).pathname !== '/') {
       return handler(request, env, ctx)

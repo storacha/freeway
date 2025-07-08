@@ -1,3 +1,8 @@
+/* eslint-disable no-unused-expressions
+   ---
+   `no-unused-expressions` doesn't understand that several of Chai's assertions
+   are implemented as getters rather than explicit function calls; it thinks
+   the assertions are unused expressions. */
 import { describe, it, beforeEach, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
@@ -14,7 +19,7 @@ describe('PlanSubscriptionService', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     service = new PlanSubscriptionServiceImpl()
-    
+
     env = {
       SUBSCRIPTION_PLAN_SERVICE_URL: 'https://plan.service.test'
     }
@@ -46,9 +51,9 @@ describe('PlanSubscriptionService', () => {
     it('should handle errors gracefully', async () => {
       // Create a service that will test error handling
       const errorService = new PlanSubscriptionServiceImpl()
-      
+
       // Override the isProvisioned method to test the error handling path
-      errorService.isProvisioned = async function(space, env) {
+      errorService.isProvisioned = async function (space, env) {
         try {
           // Force an error to test the catch block
           throw new Error('Service error')
