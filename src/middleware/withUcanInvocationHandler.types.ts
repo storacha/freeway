@@ -42,7 +42,7 @@ export interface Context<T = unknown, U = unknown>
   /**
    * UCAN privacy validation service for validating delegations
    */
-  ucanPrivacyValidationService: UcanPrivacyValidationService
+  ucanPrivacyValidationService?: UcanPrivacyValidationService
 
   /**
    * KMS rate limiter for controlling KMS operation frequency

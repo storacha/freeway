@@ -17,7 +17,13 @@ import { withUcanInvocationHandler } from '../../../src/middleware/withUcanInvoc
 const env =
   /** @satisfies {Environment} */
   ({
-    FF_DECRYPTION_ENABLED: 'false'
+    FF_DECRYPTION_ENABLED: 'false',
+    GOOGLE_KMS_BASE_URL: 'https://kms.googleapis.com',
+    GOOGLE_KMS_PROJECT_ID: 'test-project',
+    GOOGLE_KMS_LOCATION: 'us-central1',
+    GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
+    GOOGLE_KMS_TOKEN: 'test-token',
+    FF_KMS_RATE_LIMITER_ENABLED: 'false'
   })
 
 const gatewaySigner = (await ed25519.Signer.generate()).signer
@@ -43,6 +49,9 @@ const serverStub = {
   }),
   id: gatewayIdentity,
   service: serviceStub,
+  ucanPrivacyValidationService: {
+    validate: sinon.stub()
+  },
   codec: { accept: sinon.stub() },
   validateAuthorization: sinon.stub()
 }
@@ -62,6 +71,10 @@ const ctx =
     delegationsStorage: {
       find: sinon.stub(),
       store: sinon.stub()
+    },
+    ucanPrivacyValidationService: {
+      validateEncryption: sinon.stub(),
+      validateDecryption: sinon.stub()
     }
   })
 
