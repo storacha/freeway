@@ -154,10 +154,8 @@ async function initializeHandler (env) {
   return async (request, env, ctx) => {
     const response = await finalHandler(request, env, ctx)
     if (env.DEBUG === 'true') {
-      console.log('Response headers:')
-      for (const [k, v] of response.headers) {
-        console.log(`  ${k}: ${v}`)
-      }
+      const lines = [...response.headers].map(([k, v]) => `${k}: ${v}`)
+      console.log(`Response headers:\n  ${lines.join('\n  ')}`)
     }
     return response
   }
