@@ -153,7 +153,7 @@ async function initializeHandler (env) {
     : baseHandler
   return async (request, env, ctx) => {
     const response = await finalHandler(request, env, ctx)
-    if (env.DEBUG) {
+    if (env.DEBUG === 'true') {
       console.log('Response headers:')
       for (const [k, v] of response.headers) {
         console.log(`  ${k}: ${v}`)
