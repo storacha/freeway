@@ -157,6 +157,8 @@ async function initializeHandler (env) {
       const lines = [...response.headers].map(([k, v]) => `${k}: ${v}`)
       console.log(`Response headers:\n  ${lines.join('\n  ')}`)
     }
+    const cacheControl = response.headers.get('Cache-Control') ?? ''
+    response.headers.set('Cache-Control', cacheControl ? `${cacheControl}, no-transform` : 'no-transform')
     return response
   }
 }
