@@ -151,7 +151,16 @@ async function initializeHandler (env) {
   const finalHandler = env.FF_TELEMETRY_ENABLED === 'true'
     ? /** @type {Handler<Context, Environment>} */(instrument({ fetch: baseHandler }, config).fetch)
     : baseHandler
-  return finalHandler
+  return async (request, env, ctx) => {
+    const response = await finalHandler(request, env, ctx)
+    if (env.DEBUG) {
+      console.log('Response headers:')
+      for (const [k, v] of response.headers) {
+        console.log(`  ${k}: ${v}`)
+      }
+    }
+    return response
+  }
 }
 
 const handler = {
