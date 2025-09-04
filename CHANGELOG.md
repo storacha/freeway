@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.9](https://github.com/storacha/freeway/compare/v2.28.8...v2.28.9) (2025-09-04)
+
+
+### Bug Fixes
+
+* try upgrade compatibility date ([beda586](https://github.com/storacha/freeway/commit/beda58638ff0f5a19198ddec1693f9864b81920c))
+
 ## [2.28.8](https://github.com/storacha/freeway/compare/v2.28.7...v2.28.8) (2025-05-16)
 
 
