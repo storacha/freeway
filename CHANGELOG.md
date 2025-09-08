@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.29.0](https://github.com/storacha/freeway/compare/v2.28.9...v2.29.0) (2025-09-08)
+
+
+### Features
+
+* better DEBUG var check ([b570ef4](https://github.com/storacha/freeway/commit/b570ef42ddb00eb9086c91ba17c338073243ceed))
+* log response headers if in DEBUG mode ([2d81b2a](https://github.com/storacha/freeway/commit/2d81b2a4c9c6c456746d9247fc08c02dc264a4f7))
+
+
+### Bug Fixes
+
+* add no-transform cache-control header ([572f5c4](https://github.com/storacha/freeway/commit/572f5c4bca8dc4c0bcc142f5b54a0a486f55b1d2))
+* revert accidental change to staging GATEWAY_SERVICE_DID ([7038965](https://github.com/storacha/freeway/commit/7038965c7b93ed099f2ca77e55b00cda4c4d9833))
+* revert debugging changes ([09dd765](https://github.com/storacha/freeway/commit/09dd765a5e20980a7baf8508c7c735876ef3f6e0))
+* single log line ([0d1fbd3](https://github.com/storacha/freeway/commit/0d1fbd352d318a8bf1524c51e5aad1a1a25f7055))
+* try setting no-transform ([ec9ee2a](https://github.com/storacha/freeway/commit/ec9ee2aed3501cd2dd7549d0e023bf8d076f0464))
+
 ## [2.28.9](https://github.com/storacha/freeway/compare/v2.28.8...v2.28.9) (2025-09-04)
 
 
