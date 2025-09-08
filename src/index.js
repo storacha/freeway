@@ -151,7 +151,12 @@ async function initializeHandler (env) {
   const finalHandler = env.FF_TELEMETRY_ENABLED === 'true'
     ? /** @type {Handler<Context, Environment>} */(instrument({ fetch: baseHandler }, config).fetch)
     : baseHandler
-  return finalHandler
+  return async (request, env, ctx) => {
+    const response = await finalHandler(request, env, ctx)
+    const cacheControl = response.headers.get('Cache-Control') ?? ''
+    response.headers.set('Cache-Control', cacheControl ? `${cacheControl}, no-transform` : 'no-transform')
+    return response
+  }
 }
 
 const handler = {
