@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.30.0](https://github.com/storacha/freeway/compare/v2.29.0...v2.30.0) (2025-09-10)
+
+
+### Features
+
+* update dependencies for dag-json and dag-cbor preview rendering ([ee0cba5](https://github.com/storacha/freeway/commit/ee0cba51849d2cb71559d36d08b5f44f78b248ef))
+
+
+### Bug Fixes
+
+* content-type for dag-cbor and dag-json renders ([c46be60](https://github.com/storacha/freeway/commit/c46be60714e4e8597bf75d1d569930e8bce2112d))
+* dag-cbor and dag-json rendering ([4e0a615](https://github.com/storacha/freeway/commit/4e0a615d70083b0434827ff1764d36439c218355))
+
 ## [2.29.0](https://github.com/storacha/freeway/compare/v2.28.9...v2.29.0) (2025-09-08)
 
 
