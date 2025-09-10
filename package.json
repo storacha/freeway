@@ -32,8 +32,8 @@
     "start": "npm run dev",
     "test:integration": "npm run build:debug && mocha --experimental-vm-modules --recursive test/integration/**/*.spec.js --require test/fixtures/worker-fixture.js",
     "test:miniflare": "npm run build:debug && mocha --experimental-vm-modules --recursive test/miniflare/**/*.spec.js",
-    "test:unit": "npm run build:debug && mocha --experimental-vm-modules --recursive test/unit/**/*.spec.js",
-    "test:unit:only": "npm run build:debug && mocha --experimental-vm-modules"
+    "test:unit": "npm run build:debug && npx mocha --experimental-vm-modules --recursive 'test/unit/**/*.spec.js'",
+    "test:unit:only": "npm run build:debug && npx mocha --experimental-vm-modules"
   },
   "dependencies": {
     "@microlabs/otel-cf-workers": "^1.0.0-rc.48",
@@ -47,15 +47,18 @@
     "@web3-storage/capabilities": "^17.4.1",
     "@web3-storage/gateway-lib": "^5.2.2",
     "dagula": "^8.0.0",
+    "fast-crc32c": "^2.0.0",
     "http-range-parse": "^1.0.0",
     "lnmap": "^2.0.0",
-    "multiformats": "^13.0.1"
+    "multiformats": "^13.0.1",
+    "zod": "^3.25.75"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
     "@storacha/cli": "^1.0.1",
     "@storacha/client": "^1.0.5",
     "@types/chai": "^5.0.0",
+    "@types/fast-crc32c": "^2.0.2",
     "@types/mocha": "^10.0.9",
     "@types/node-fetch": "^2.6.11",
     "@types/sinon": "^17.0.3",
@@ -66,14 +69,14 @@
     "chai": "^5.1.1",
     "esbuild": "^0.24.0",
     "files-from-path": "^0.2.6",
-    "miniflare": "^3.20240909.5",
+    "miniflare": "^3.20250408.2",
     "mocha": "^10.7.3",
     "multipart-byte-range": "^3.0.1",
     "sinon": "^19.0.2",
     "standard": "^17.1.0",
     "tree-kill": "^1.2.2",
     "typescript": "^5.6.3",
-    "wrangler": "^3.90.0"
+    "wrangler": "3.114.10"
   },
   "standard": {
     "ignore": [

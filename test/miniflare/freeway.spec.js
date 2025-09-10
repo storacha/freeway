@@ -15,7 +15,7 @@ import { mockBucketService } from '../helpers/bucket.js'
 import { fromShardArchives } from '@web3-storage/blob-index/util'
 import { CAR_CODE } from '../../src/constants.js'
 import http from 'node:http'
-/** @import { Block, Position } from 'carstream' */
+/** @import { Block, Position } from 'carstream/api' */
 
 /**
  * @param {{ arrayBuffer: () => Promise<ArrayBuffer> }} a
@@ -66,7 +66,7 @@ describe('freeway', () => {
       scriptPath: 'dist/worker.mjs',
       modules: true,
       compatibilityFlags: ['nodejs_compat'],
-      compatibilityDate: '2024-09-23',
+      compatibilityDate: '2025-04-08',
       r2Buckets: ['CARPARK'],
       kvNamespaces: ['DAGPB_CONTENT_CACHE']
     })
