@@ -39,6 +39,7 @@
     "@microlabs/otel-cf-workers": "^1.0.0-rc.48",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^1.27.0",
+    "@storacha/encrypt-upload-client": "^0.0.34",
     "@storacha/indexing-service-client": "^2.1.0",
     "@ucanto/client": "^9.0.1",
     "@ucanto/principal": "^9.0.1",
