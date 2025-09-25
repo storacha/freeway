@@ -13,3 +13,4 @@ export { withGatewayIdentity } from './withGatewayIdentity.js'
 export { withUcanInvocationHandler } from './withUcanInvocationHandler.js'
 export { withDelegationsStorage } from './withDelegationsStorage.js'
 export { withOptionsRequest } from './withOptionsRequest.js'
+

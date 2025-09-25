@@ -125,7 +125,7 @@ function config (env, _trigger) {
     }
   }
   return {
-    spanProcessors: new NoopSpanProcessor(),
+    spanProcessors: /** @type {any} */ (new NoopSpanProcessor()),
     service: { name: 'freeway' }
   }
 }

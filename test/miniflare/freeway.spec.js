@@ -15,7 +15,7 @@ import { mockBucketService } from '../helpers/bucket.js'
 import { fromShardArchives } from '@web3-storage/blob-index/util'
 import { CAR_CODE } from '../../src/constants.js'
 import http from 'node:http'
-/** @import { Block, Position } from 'carstream' */
+/** @import { Block, Position } from 'carstream/api' */
 
 /**
  * @param {{ arrayBuffer: () => Promise<ArrayBuffer> }} a
@@ -33,7 +33,7 @@ describe('freeway', () => {
   let builder
   /** @type {import('../helpers/content-claims.js').MockClaimsService} */
   let claimsService
-  /** @type {import('miniflare').ReplaceWorkersTypes<import('@cloudflare/workers-types/experimental').R2Bucket>} */
+  /** @type {import('miniflare').ReplaceWorkersTypes<import('@cloudflare/workers-types').R2Bucket>} */
   let bucket
   /** @type {http.Server} */
   let server
@@ -71,7 +71,7 @@ describe('freeway', () => {
       kvNamespaces: ['DAGPB_CONTENT_CACHE']
     })
 
-    bucket = await miniflare.getR2Bucket('CARPARK')
+    bucket = /** @type {any} */ (await miniflare.getR2Bucket('CARPARK'))
     bucketService = await mockBucketService(
       /** @type {import('@web3-storage/public-bucket').Bucket} */
       (bucket), server
