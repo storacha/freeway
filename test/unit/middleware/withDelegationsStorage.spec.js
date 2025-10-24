@@ -9,9 +9,9 @@ import sinon from 'sinon'
 import { ed25519 } from '@ucanto/principal'
 import * as raw from 'multiformats/codecs/raw'
 import { withDelegationsStorage } from '../../../src/middleware/withDelegationsStorage.js'
-import { contentServe } from '@web3-storage/capabilities/space'
+import { contentServe } from '@storacha/capabilities/space'
 import { sha256 } from 'multiformats/hashes/sha2'
-import { Link } from '@web3-storage/capabilities/store'
+import { Link } from '@storacha/capabilities/store'
 import { randomBytes } from 'node:crypto'
 
 const kvStoreMock = {
@@ -74,8 +74,12 @@ describe('withDelegationsStorage', async () => {
         delegationsStorage: undefined
       })
       expect(mockHandler.calledOnce).to.be.true
-      expect(mockHandler.firstCall.args[2]).to.have.property('delegationsStorage')
-      expect(mockHandler.firstCall.args[2].delegationsStorage).to.be.an('object')
+      expect(mockHandler.firstCall.args[2]).to.have.property(
+        'delegationsStorage'
+      )
+      expect(mockHandler.firstCall.args[2].delegationsStorage).to.be.an(
+        'object'
+      )
     })
 
     it('should call the find method of the delegationsStorage and return the delegation', async () => {
@@ -87,7 +91,7 @@ describe('withDelegationsStorage', async () => {
 
       const request = new Request('http://example.com/')
 
-      /** @type {import('@web3-storage/capabilities/types').SpaceDID} */
+      /** @type {import('@storacha/capabilities/types').SpaceDID} */
       const space = 'did:key:z6MkeTvzPkRVhu4HcGu95ZCP23pMdtk3p144umfsPE68tZ4a'
       const alice = await ed25519.Signer.generate()
 
@@ -120,7 +124,9 @@ describe('withDelegationsStorage', async () => {
       // Simulate external request to the KV store
       kvStoreMock.list.callsFake(async () => {
         // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 100))
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.random() * 100)
+        )
         return {
           keys: delegations.map((d) => ({ name: d.id }))
         }
@@ -134,7 +140,11 @@ describe('withDelegationsStorage', async () => {
         CONTENT_SERVE_DELEGATIONS_STORE: kvStoreMock // simulate results
       }
 
-      const response = await withDelegationsStorage(mockHandler)(request, env, ctx)
+      const response = await withDelegationsStorage(mockHandler)(
+        request,
+        env,
+        ctx
+      )
       const result = await response.json()
       const delegationsFound = result.ok
       // Assert results
@@ -142,10 +152,14 @@ describe('withDelegationsStorage', async () => {
       expect(delegationsFound.length).to.equal(3)
 
       // Assert KV calls
-      expect(kvStoreMock.list.firstCall.calledWith({ prefix: space })).to.be.true
-      expect(kvStoreMock.get.firstCall.calledWith(delegations[0].id)).to.be.true
-      expect(kvStoreMock.get.secondCall.calledWith(delegations[1].id)).to.be.true
-      expect(kvStoreMock.get.thirdCall.calledWith(delegations[2].id)).to.be.true
+      expect(kvStoreMock.list.firstCall.calledWith({ prefix: space })).to.be
+        .true
+      expect(kvStoreMock.get.firstCall.calledWith(delegations[0].id)).to.be
+        .true
+      expect(kvStoreMock.get.secondCall.calledWith(delegations[1].id)).to.be
+        .true
+      expect(kvStoreMock.get.thirdCall.calledWith(delegations[2].id)).to.be
+        .true
     })
   })
 
@@ -164,7 +178,9 @@ describe('withDelegationsStorage', async () => {
     })
 
     expect(mockHandler.calledOnce).to.be.true
-    expect(mockHandler.firstCall.args[2]).to.have.property('delegationsStorage')
+    expect(mockHandler.firstCall.args[2]).to.have.property(
+      'delegationsStorage'
+    )
     expect(mockHandler.firstCall.args[2].delegationsStorage).to.be.undefined
   })
 })

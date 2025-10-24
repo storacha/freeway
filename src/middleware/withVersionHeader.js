@@ -1,4 +1,4 @@
-import { version } from '../../package.json'
+import conf from '../../package.json'
 
 /**
  * @import { Middleware, Context } from '@web3-storage/gateway-lib'
@@ -10,7 +10,7 @@ import { version } from '../../package.json'
 export function withVersionHeader (handler) {
   return async (request, env, ctx) => {
     const response = await handler(request, env, ctx)
-    response.headers.set('x-freeway-version', version)
+    response.headers.set('x-freeway-version', conf.version)
     return response
   }
 }

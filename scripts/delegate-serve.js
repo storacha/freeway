@@ -1,7 +1,7 @@
 import sade from 'sade'
 import { Schema } from '@ucanto/core'
 import { getClient } from '@storacha/cli/lib.js'
-import { Space } from '@web3-storage/capabilities'
+import { Space } from '@storacha/capabilities'
 
 const MailtoDID =
   /** @type {import('@ucanto/validator').StringSchema<`did:mailto:${string}:${string}`, unknown>} */ (

@@ -8,11 +8,20 @@ import * as raw from 'multiformats/codecs/raw'
 import { equals } from 'multiformats/bytes'
 import { Map as LinkMap } from 'lnmap'
 import { CARReaderStream } from 'carstream'
-import { MultipartByteRangeDecoder, decodePartHeader, getBoundary } from 'multipart-byte-range/decoder'
+import {
+  MultipartByteRangeDecoder,
+  decodePartHeader,
+  getBoundary
+} from 'multipart-byte-range/decoder'
 import { Builder, toBlobKey } from '../helpers/builder.js'
-import { generateBlockLocationClaims, mockClaimsService, generateLocationClaim, generateIndexClaim } from '../helpers/content-claims.js'
+import {
+  generateBlockLocationClaims,
+  mockClaimsService,
+  generateLocationClaim,
+  generateIndexClaim
+} from '../helpers/content-claims.js'
 import { mockBucketService } from '../helpers/bucket.js'
-import { fromShardArchives } from '@web3-storage/blob-index/util'
+import { fromShardArchives } from '@storacha/blob-index/util'
 import { CAR_CODE } from '../../src/constants.js'
 import http from 'node:http'
 /** @import { Block, Position } from 'carstream' */
@@ -33,7 +42,7 @@ describe('freeway', () => {
   let builder
   /** @type {import('../helpers/content-claims.js').MockClaimsService} */
   let claimsService
-  /** @type {import('miniflare').ReplaceWorkersTypes<import('@cloudflare/workers-types/experimental').R2Bucket>} */
+  /** @type {import('miniflare').ReplaceWorkersTypes<R2Bucket>} */
   let bucket
   /** @type {http.Server} */
   let server
@@ -71,10 +80,12 @@ describe('freeway', () => {
       kvNamespaces: ['DAGPB_CONTENT_CACHE']
     })
 
+    // @ts-expect-error miniflare types are not compatible
     bucket = await miniflare.getR2Bucket('CARPARK')
     bucketService = await mockBucketService(
       /** @type {import('@web3-storage/public-bucket').Bucket} */
-      (bucket), server
+      (bucket),
+      server
     )
     builder = new Builder(bucket)
   })
@@ -105,11 +116,18 @@ describe('freeway', () => {
       const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
-      const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
+      const claims = await generateBlockLocationClaims(
+        claimsService.signer,
+        shard,
+        res.body,
+        location
+      )
       claimsService.addClaims(claims)
     }
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}`)
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}`
+    )
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
     assertBlobEqual(input, await res.blob())
@@ -130,7 +148,15 @@ describe('freeway', () => {
       const shardContents = new Uint8Array(await res.arrayBuffer())
       archives.push(shardContents)
       const blocks = claims.get(shard) || []
-      blocks.push(await generateLocationClaim(claimsService.signer, shard, location, 0, shardContents.length))
+      blocks.push(
+        await generateLocationClaim(
+          claimsService.signer,
+          shard,
+          location,
+          0,
+          shardContents.length
+        )
+      )
       claims.set(shard, blocks)
     }
     // build sharded dag index
@@ -146,17 +172,29 @@ describe('freeway', () => {
     // generate location claim for the index
     const blocks = claims.get(indexLink) || []
     const location = new URL(toBlobKey(indexLink.multihash), url)
-    blocks.push(await generateLocationClaim(claimsService.signer, indexLink, location, 0, indexArchive.ok.length))
+    blocks.push(
+      await generateLocationClaim(
+        claimsService.signer,
+        indexLink,
+        location,
+        0,
+        indexArchive.ok.length
+      )
+    )
     claims.set(indexLink, blocks)
 
     // generate index claim
     const indexBlocks = claims.get(root) || []
-    indexBlocks.push(await generateIndexClaim(claimsService.signer, root, indexLink))
+    indexBlocks.push(
+      await generateIndexClaim(claimsService.signer, root, indexLink)
+    )
     claims.set(root, indexBlocks)
 
     claimsService.addClaims(claims)
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}`)
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}`
+    )
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
     assertBlobEqual(input, await res.blob())
@@ -189,12 +227,16 @@ describe('freeway', () => {
 
     // generate index claim
     const indexBlocks = claims.get(root) || []
-    indexBlocks.push(await generateIndexClaim(claimsService.signer, root, indexLink))
+    indexBlocks.push(
+      await generateIndexClaim(claimsService.signer, root, indexLink)
+    )
     claims.set(root, indexBlocks)
 
     claimsService.addClaims(claims)
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}`)
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}`
+    )
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
     assertBlobEqual(input, await res.blob())
@@ -211,11 +253,18 @@ describe('freeway', () => {
       const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
-      const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
+      const claims = await generateBlockLocationClaims(
+        claimsService.signer,
+        shard,
+        res.body,
+        location
+      )
       claimsService.addClaims(claims)
     }
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}/${input[0].name}`)
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}/${input[0].name}`
+    )
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
     assertBlobEqual(input[0], await res.blob())
@@ -229,11 +278,18 @@ describe('freeway', () => {
       const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
-      const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
+      const claims = await generateBlockLocationClaims(
+        claimsService.signer,
+        shard,
+        res.body,
+        location
+      )
       claimsService.addClaims(claims)
     }
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}/${input[0].name}`)
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}/${input[0].name}`
+    )
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
     assertBlobEqual(input[0], await res.blob())
@@ -247,13 +303,21 @@ describe('freeway', () => {
       const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
-      const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
+      const claims = await generateBlockLocationClaims(
+        claimsService.signer,
+        shard,
+        res.body,
+        location
+      )
       claimsService.addClaims(claims)
     }
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}`, {
-      headers: { Accept: 'application/vnd.ipld.car;order=dfs;' }
-    })
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}`,
+      {
+        headers: { Accept: 'application/vnd.ipld.car;order=dfs;' }
+      }
+    )
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
 
     const contentType = res.headers.get('Content-Type')
@@ -273,7 +337,9 @@ describe('freeway', () => {
     const { root, shards } = await builder.add(input)
     assert.equal(shards.length, 1)
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${shards[0]}`)
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${shards[0]}`
+    )
     assert(res.ok)
 
     assert(res.body)
@@ -282,9 +348,13 @@ describe('freeway', () => {
 
     /** @type {(Block & Position)[]} */
     const blocks = []
-    await source.pipeThrough(carStream).pipeTo(new WritableStream({
-      write: (block) => { blocks.push(block) }
-    }))
+    await source.pipeThrough(carStream).pipeTo(
+      new WritableStream({
+        write: (block) => {
+          blocks.push(block)
+        }
+      })
+    )
     assert.equal(blocks.length, 1)
     assert.equal(blocks[0].cid.toString(), root.toString())
 
@@ -300,7 +370,10 @@ describe('freeway', () => {
     assert(obj)
 
     assert.equal(contentLength, obj.size)
-    assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.car; version=1;')
+    assert.equal(
+      res.headers.get('Content-Type'),
+      'application/vnd.ipld.car; version=1;'
+    )
     assert.equal(res.headers.get('Etag'), `"${shards[0]}"`)
   })
 
@@ -309,9 +382,12 @@ describe('freeway', () => {
     const { shards } = await builder.add(input)
     assert.equal(shards.length, 1)
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${shards[0]}`, {
-      method: 'HEAD'
-    })
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${shards[0]}`,
+      {
+        method: 'HEAD'
+      }
+    )
     assert(res.ok)
 
     const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
@@ -341,20 +417,29 @@ describe('freeway', () => {
 
     /** @type {(Block & Position)[]} */
     const blocks = []
-    await source.pipeThrough(carStream).pipeTo(new WritableStream({
-      write: (block) => { blocks.push(block) }
-    }))
+    await source.pipeThrough(carStream).pipeTo(
+      new WritableStream({
+        write: (block) => {
+          blocks.push(block)
+        }
+      })
+    )
     assert.equal(blocks.length, 1)
     assert.equal(blocks[0].cid.toString(), root.toString())
 
-    const rootBlock = blocks.find(e => e.cid.toString() === root.toString())
+    const rootBlock = blocks.find((e) => e.cid.toString() === root.toString())
     assert(rootBlock)
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${shards[0]}`, {
-      headers: {
-        Range: `bytes=${rootBlock.blockOffset}-${rootBlock.blockOffset + rootBlock.blockLength - 1}`
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${shards[0]}`,
+      {
+        headers: {
+          Range: `bytes=${rootBlock.blockOffset}-${
+            rootBlock.blockOffset + rootBlock.blockLength - 1
+          }`
+        }
       }
-    })
+    )
     assert(res.ok)
 
     const bytes = new Uint8Array(await res.arrayBuffer())
@@ -363,8 +448,16 @@ describe('freeway', () => {
     const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
     assert(contentLength)
     assert.equal(contentLength, rootBlock.bytes.length)
-    assert.equal(res.headers.get('Content-Range'), `bytes ${rootBlock.blockOffset}-${rootBlock.blockOffset + rootBlock.blockLength - 1}/${obj.size}`)
-    assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.car; version=1;')
+    assert.equal(
+      res.headers.get('Content-Range'),
+      `bytes ${rootBlock.blockOffset}-${
+        rootBlock.blockOffset + rootBlock.blockLength - 1
+      }/${obj.size}`
+    )
+    assert.equal(
+      res.headers.get('Content-Type'),
+      'application/vnd.ipld.car; version=1;'
+    )
     assert.equal(res.headers.get('Etag'), `"${shards[0]}"`)
   })
 
@@ -377,10 +470,18 @@ describe('freeway', () => {
     await carpark.put(blobKey, input)
 
     const location = new URL(blobKey, url)
-    const claim = await generateLocationClaim(claimsService.signer, root, location, 0, input.length)
+    const claim = await generateLocationClaim(
+      claimsService.signer,
+      root,
+      location,
+      0,
+      input.length
+    )
     claimsService.addClaims(new LinkMap([[root, [claim]]]))
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}?format=raw`)
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}?format=raw`
+    )
     assert(res.ok)
 
     const output = new Uint8Array(await res.arrayBuffer())
@@ -402,12 +503,21 @@ describe('freeway', () => {
     await carpark.put(blobKey, input)
 
     const location = new URL(blobKey, url)
-    const claim = await generateLocationClaim(claimsService.signer, cid, location, 0, input.length)
+    const claim = await generateLocationClaim(
+      claimsService.signer,
+      cid,
+      location,
+      0,
+      input.length
+    )
     claimsService.addClaims(new LinkMap([[cid, [claim]]]))
 
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${cid}?format=raw`, {
-      method: 'HEAD'
-    })
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${cid}?format=raw`,
+      {
+        method: 'HEAD'
+      }
+    )
     assert(res.ok)
 
     const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
@@ -423,33 +533,52 @@ describe('freeway', () => {
     const { shards } = await builder.add(input)
 
     const location = new URL(toBlobKey(shards[0].multihash), url)
-    const claim = await generateLocationClaim(claimsService.signer, shards[0], location, 0, input[0].size)
+    const claim = await generateLocationClaim(
+      claimsService.signer,
+      shards[0],
+      location,
+      0,
+      input[0].size
+    )
     claimsService.addClaims(new LinkMap([[shards[0], [claim]]]))
 
     const res = await fetch(location)
     assert(res.ok)
     assert(res.body)
 
-    await res.body
-      .pipeThrough(new CARReaderStream())
-      .pipeTo(new WritableStream({
+    await res.body.pipeThrough(new CARReaderStream()).pipeTo(
+      new WritableStream({
         async write ({ bytes, blockOffset, blockLength }) {
-          const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${shards[0]}?format=raw`, {
-            headers: {
-              Range: `bytes=${blockOffset}-${blockOffset + blockLength - 1}`
+          const res = await miniflare.dispatchFetch(
+            `http://localhost:8787/ipfs/${shards[0]}?format=raw`,
+            {
+              headers: {
+                Range: `bytes=${blockOffset}-${blockOffset + blockLength - 1}`
+              }
             }
-          })
+          )
           assert(res.ok)
           assert(equals(new Uint8Array(await res.arrayBuffer()), bytes))
 
-          const contentLength = parseInt(res.headers.get('Content-Length') ?? '0')
+          const contentLength = parseInt(
+            res.headers.get('Content-Length') ?? '0'
+          )
           assert(contentLength)
           assert.equal(contentLength, bytes.length)
-          assert.equal(res.headers.get('Content-Range'), `bytes ${blockOffset}-${blockOffset + blockLength - 1}/${input[0].size}`)
-          assert.equal(res.headers.get('Content-Type'), 'application/vnd.ipld.raw')
+          assert.equal(
+            res.headers.get('Content-Range'),
+            `bytes ${blockOffset}-${blockOffset + blockLength - 1}/${
+              input[0].size
+            }`
+          )
+          assert.equal(
+            res.headers.get('Content-Type'),
+            'application/vnd.ipld.raw'
+          )
           assert.equal(res.headers.get('Etag'), `"${shards[0]}.raw"`)
         }
-      }))
+      })
+    )
   })
 
   it('should GET a multipart byte range of raw block', async () => {
@@ -457,7 +586,13 @@ describe('freeway', () => {
     const { shards } = await builder.add(input)
 
     const location = new URL(toBlobKey(shards[0].multihash), url)
-    const claim = await generateLocationClaim(claimsService.signer, shards[0], location, 0, input[0].size)
+    const claim = await generateLocationClaim(
+      claimsService.signer,
+      shards[0],
+      location,
+      0,
+      input[0].size
+    )
     claimsService.addClaims(new LinkMap([[shards[0], [claim]]]))
 
     const res0 = await fetch(location)
@@ -466,15 +601,24 @@ describe('freeway', () => {
 
     /** @type {Array<import('carstream/api').Block & import('carstream/api').Position>} */
     const blocks = []
-    await res0.body
-      .pipeThrough(new CARReaderStream())
-      .pipeTo(new WritableStream({ write (block) { blocks.push(block) } }))
+    await res0.body.pipeThrough(new CARReaderStream()).pipeTo(
+      new WritableStream({
+        write (block) {
+          blocks.push(block)
+        }
+      })
+    )
 
-    const res1 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${shards[0]}?format=raw`, {
-      headers: {
-        Range: `bytes=${blocks.map(b => `${b.blockOffset}-${b.blockOffset + b.blockLength - 1}`).join(',')}`
+    const res1 = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${shards[0]}?format=raw`,
+      {
+        headers: {
+          Range: `bytes=${blocks
+            .map((b) => `${b.blockOffset}-${b.blockOffset + b.blockLength - 1}`)
+            .join(',')}`
+        }
       }
-    })
+    )
     assert(res1.ok)
     assert(res1.body)
 
@@ -484,16 +628,27 @@ describe('freeway', () => {
     let partsCount = 0
     await /** @type {ReadableStream<Uint8Array>} */ (res1.body)
       .pipeThrough(new MultipartByteRangeDecoder(boundary))
-      .pipeTo(new WritableStream({
-        write (part) {
-          const block = blocks[partsCount]
-          const range = [block.blockOffset, block.blockOffset + block.blockLength - 1]
-          const headers = decodePartHeader(part.header)
-          assert.equal(headers.get('content-type'), 'application/vnd.ipld.raw')
-          assert.equal(headers.get('content-range'), `bytes ${range[0]}-${range[1]}/${input[0].size}`)
-          partsCount++
-        }
-      }))
+      .pipeTo(
+        new WritableStream({
+          write (part) {
+            const block = blocks[partsCount]
+            const range = [
+              block.blockOffset,
+              block.blockOffset + block.blockLength - 1
+            ]
+            const headers = decodePartHeader(part.header)
+            assert.equal(
+              headers.get('content-type'),
+              'application/vnd.ipld.raw'
+            )
+            assert.equal(
+              headers.get('content-range'),
+              `bytes ${range[0]}-${range[1]}/${input[0].size}`
+            )
+            partsCount++
+          }
+        })
+      )
   })
 
   it('should be faster to get a file in a directory when the protobuf directory structure is cached', async () => {
@@ -505,14 +660,23 @@ describe('freeway', () => {
     ]
     // Adding to the builder will generate the unixfs file header block
     const { root, shards } = await builder.add(input)
-    assert.equal(root.code, 112, 'Root should be a protobuf directory code 112')
+    assert.equal(
+      root.code,
+      112,
+      'Root should be a protobuf directory code 112'
+    )
 
     // Generate claims for the shards
     for (const shard of shards) {
       const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
-      const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
+      const claims = await generateBlockLocationClaims(
+        claimsService.signer,
+        shard,
+        res.body,
+        location
+      )
       claimsService.addClaims(claims)
     }
 
@@ -523,30 +687,42 @@ describe('freeway', () => {
 
     // First request adds the file to the cache, so it takes longer
     const start = performance.now()
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}/${input[2].name}`, {
-      headers: {
-        'Cache-Control': 'no-cache'
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}/${input[2].name}`,
+      {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       }
-    })
+    )
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
     const end = performance.now()
     assertBlobEqual(input[2], await res.blob())
 
     const cachedContent2 = await dagpb.list()
-    assert(cachedContent2.keys.length > 0, 'Cache should have one or more keys')
+    assert(
+      cachedContent2.keys.length > 0,
+      'Cache should have one or more keys'
+    )
 
     // Second request retrieves the file from the cache, so it should take less time than the first request
     const start2 = performance.now()
     console.log('SECOND REQUEST')
-    const res2 = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}/${input[2].name}`, {
-      headers: {
-        'Cache-Control': 'no-cache'
+    const res2 = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}/${input[2].name}`,
+      {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       }
-    })
+    )
     if (!res2.ok) assert.fail(`unexpected response: ${await res2.text()}`)
     const end2 = performance.now()
     assertBlobEqual(input[2], await res2.blob())
-    assert(end2 - start2 < end - start, 'Second request should take less time than the first request')
+    assert(
+      end2 - start2 < end - start,
+      'Second request should take less time than the first request'
+    )
   })
 
   it('should not cache content if it is not dag protobuf content', async () => {
@@ -560,7 +736,12 @@ describe('freeway', () => {
       const location = new URL(toBlobKey(shard.multihash), url)
       const res = await fetch(location)
       assert(res.body)
-      const claims = await generateBlockLocationClaims(claimsService.signer, shard, res.body, location)
+      const claims = await generateBlockLocationClaims(
+        claimsService.signer,
+        shard,
+        res.body,
+        location
+      )
       claimsService.addClaims(claims)
     }
 
@@ -570,11 +751,14 @@ describe('freeway', () => {
     assert.equal(cachedContent.keys.length, 0, 'Cache should be empty')
 
     // It should not add the file to the cache, because it is not dag protobuf content
-    const res = await miniflare.dispatchFetch(`http://localhost:8787/ipfs/${root}`, {
-      headers: {
-        'Cache-Control': 'no-cache'
+    const res = await miniflare.dispatchFetch(
+      `http://localhost:8787/ipfs/${root}`,
+      {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       }
-    })
+    )
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
     assertBlobEqual(input, await res.blob())
     assert.equal(cachedContent.keys.length, 0, 'Cache should be empty')
