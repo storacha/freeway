@@ -1,8 +1,8 @@
 import * as UCantoClient from '@ucanto/client'
 import * as CAR from '@ucanto/transport/car'
-import { SpaceDID } from '@web3-storage/capabilities/utils'
+import { SpaceDID } from '@storacha/capabilities/utils'
 import { HTTP } from '@ucanto/transport'
-import { Space } from '@web3-storage/capabilities'
+import { Space } from '@storacha/capabilities'
 import { DID } from '@ucanto/core'
 
 /**
@@ -46,7 +46,6 @@ async function create (env, ctx) {
      */
     record: async (space, resource, bytes, servedAt) =>
       record(space, resource, bytes, servedAt, env, ctx)
-
   }
 }
 

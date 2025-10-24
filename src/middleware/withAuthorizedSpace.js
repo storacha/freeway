@@ -2,7 +2,7 @@ import { Verifier } from '@ucanto/principal'
 import { ok, access, Unauthorized } from '@ucanto/validator'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as serve from '../capabilities/serve.js'
-import { SpaceDID } from '@web3-storage/capabilities/utils'
+import { SpaceDID } from '@storacha/capabilities/utils'
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
@@ -100,9 +100,9 @@ export function withAuthorizedSpace (handler) {
  * authorizing delegations in the
  * {@link DelegationsStorageContext.delegationsStorage}.
  *
- * @param {import('@web3-storage/capabilities/types').SpaceDID} space
+ * @param {import('@storacha/capabilities/types').SpaceDID} space
  * @param {AuthTokenContext & DelegationsStorageContext & GatewayIdentityContext} ctx
- * @returns {Promise<Ucanto.Result<{space: import('@web3-storage/capabilities/types').SpaceDID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
+ * @returns {Promise<Ucanto.Result<{space: import('@storacha/capabilities/types').SpaceDID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
  */
 const authorize = async (space, ctx) => {
   // Look up delegations that might authorize us to serve the content.

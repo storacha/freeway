@@ -3,7 +3,6 @@ import { RATE_LIMIT_EXCEEDED } from '../constants.js'
 
 /**
  * @import { Middleware } from '@web3-storage/gateway-lib'
- * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
  * @import {
  *   Environment,
  *   Context,
@@ -112,7 +111,9 @@ async function getTokenMetadata (env, authToken, ctx) {
   const tokenMetadata = await locateTokenMetadata(authToken)
   if (tokenMetadata) {
     // NOTE: non-blocking call to the auth token metadata cache
-    ctx.waitUntil(env.AUTH_TOKEN_METADATA.put(authToken, encode(tokenMetadata)))
+    ctx.waitUntil(
+      env.AUTH_TOKEN_METADATA.put(authToken, encode(tokenMetadata))
+    )
     return tokenMetadata
   }
 

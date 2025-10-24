@@ -1,6 +1,5 @@
 import { CID } from '@web3-storage/gateway-lib/handlers'
 import { IpfsUrlContext, Environment as MiddlewareEnvironment } from '@web3-storage/gateway-lib'
-import { KVNamespace, RateLimit } from '@cloudflare/workers-types'
 import { RATE_LIMIT_EXCEEDED } from '../constants.js'
 
 export interface Environment extends MiddlewareEnvironment {

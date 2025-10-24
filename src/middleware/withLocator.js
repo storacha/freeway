@@ -31,19 +31,24 @@ export function withLocator (handler) {
       span.setAttribute('legacyRequest', legacyRequest)
     }
 
-    const client = !legacyRequest && useIndexingService
-      ? new Client({
-        serviceURL: env.INDEXING_SERVICE_URL
-          ? new URL(env.INDEXING_SERVICE_URL)
-          : undefined
-      })
-      : new ContentClaimsClient({
-        serviceURL: env.CONTENT_CLAIMS_SERVICE_URL
-          ? new URL(env.CONTENT_CLAIMS_SERVICE_URL)
-          : undefined,
-        carpark: !legacyRequest ? env.CARPARK : undefined,
-        carparkPublicBucketURL: !legacyRequest && env.CARPARK_PUBLIC_BUCKET_URL ? new URL(env.CARPARK_PUBLIC_BUCKET_URL) : undefined
-      })
+    const client =
+      !legacyRequest && useIndexingService
+        ? new Client({
+          serviceURL: env.INDEXING_SERVICE_URL
+            ? new URL(env.INDEXING_SERVICE_URL)
+            : undefined
+        })
+        : new ContentClaimsClient({
+          serviceURL: env.CONTENT_CLAIMS_SERVICE_URL
+            ? new URL(env.CONTENT_CLAIMS_SERVICE_URL)
+            : undefined,
+          // @ts-expect-error not yet sure how to square with types in libraries
+          carpark: !legacyRequest ? env.CARPARK : undefined,
+          carparkPublicBucketURL:
+              !legacyRequest && env.CARPARK_PUBLIC_BUCKET_URL
+                ? new URL(env.CARPARK_PUBLIC_BUCKET_URL)
+                : undefined
+        })
 
     const locator = Locator.create({ client })
     return handler(request, env, { ...ctx, locator })
@@ -64,7 +69,9 @@ function isIndexingServiceEnabled (request, env) {
   const withIndexingServicesArg = new URL(request.url).searchParams
     .getAll('ff')
     .includes('indexing-service')
-  const probability = env.FF_RAMP_UP_PROBABILITY ? Number(env.FF_RAMP_UP_PROBABILITY) : 0
+  const probability = env.FF_RAMP_UP_PROBABILITY
+    ? Number(env.FF_RAMP_UP_PROBABILITY)
+    : 0
   const withIndexerEnabled = Math.random() * 100 <= probability
   return withIndexingServicesArg || withIndexerEnabled
 }

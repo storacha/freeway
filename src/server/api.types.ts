@@ -1,6 +1,6 @@
 import { InferInvokedCapability, ServiceMethod, Unit } from '@ucanto/interface';
 import { Failure } from '@ucanto/interface';
-import { Access as AccessCapabilities } from '@web3-storage/capabilities';
+import { Access as AccessCapabilities } from '@storacha/capabilities';
 
 export type AccessDelegation = InferInvokedCapability<typeof AccessCapabilities.delegate>
 

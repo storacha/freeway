@@ -1,6 +1,6 @@
 import * as Ucanto from '@ucanto/interface'
 import { Context as MiddlewareContext } from '@web3-storage/gateway-lib'
-import { SpaceDID } from '@web3-storage/capabilities/types'
+import { SpaceDID } from '@storacha/capabilities/types'
 export interface DelegationProofsContext extends MiddlewareContext {
   /**
    * The delegation proofs to use for the egress record

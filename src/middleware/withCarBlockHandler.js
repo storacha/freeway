@@ -8,7 +8,6 @@ import httpRangeParse from 'http-range-parse'
 import { base58btc } from 'multiformats/bases/base58'
 
 /**
- * @import { R2Bucket, KVNamespace, RateLimit } from '@cloudflare/workers-types'
  * @import {
  *   IpfsUrlContext,
  *   Middleware,
@@ -36,11 +35,13 @@ export function withCarBlockHandler (handler) {
     // if not CAR codec, or if trusted gateway format has been requested...
     const formatParam = searchParams.get('format')
     const acceptHeader = request.headers.get('Accept')
-    if (dataCid.code !== CAR_CODE ||
+    if (
+      dataCid.code !== CAR_CODE ||
       formatParam === 'car' ||
       acceptHeader === 'application/vnd.ipld.car' ||
       formatParam === 'raw' ||
-      acceptHeader === 'application/vnd.ipld.raw') {
+      acceptHeader === 'application/vnd.ipld.raw'
+    ) {
       return handler(request, env, ctx) // pass to other handlers
     }
 
@@ -132,15 +133,17 @@ export async function handleCarBlock (request, env, ctx) {
   }
   headers.set('Content-Length', contentLength.toString())
 
-  // @ts-expect-error ReadableStream types incompatible
-  return new Response(obj.body.pipeThrough(new FixedLengthStream(contentLength)), { status, headers })
+  return new Response(
+    obj.body.pipeThrough(new FixedLengthStream(contentLength)),
+    { status, headers }
+  )
 }
 
 /** @param {import('multiformats').UnknownLink} cid */
-const toCARKey = cid => `${cid}/${cid}.car`
+const toCARKey = (cid) => `${cid}/${cid}.car`
 
 /** @param {import('multiformats').MultihashDigest} digest */
-const toBlobKey = digest => {
+const toBlobKey = (digest) => {
   const mhStr = base58btc.encode(digest.bytes)
   return `${mhStr}/${mhStr}.blob`
 }

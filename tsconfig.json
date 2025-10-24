@@ -10,12 +10,13 @@
     "checkJs": true,
     "strict": true,
     "esModuleInterop": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "node16",
+    "moduleResolution": "node16",
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "target": "ES2022",
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["./worker-configuration.d.ts", "node"]
   }
 }

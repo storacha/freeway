@@ -1,9 +1,8 @@
 import * as Ucanto from '@ucanto/interface'
 import { Environment as MiddlewareEnvironment, Context as MiddlewareContext } from '@web3-storage/gateway-lib'
-import { KVNamespace } from '@cloudflare/workers-types'
 import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
 import { StoreOperationFailed, DelegationNotFound } from './withDelegationsStorage.js'
-import { SpaceDID } from '@web3-storage/capabilities/types'
+import { SpaceDID } from '@storacha/capabilities/types'
 
 export interface DelegationsStorageEnvironment extends MiddlewareEnvironment {
   CONTENT_SERVE_DELEGATIONS_STORE: KVNamespace
@@ -20,7 +19,7 @@ export interface DelegationsStorage {
   /**
    * Finds the delegation proofs for the given space
    * 
-   * @param {import('@web3-storage/capabilities/types').SpaceDID} space 
+   * @param {import('@storacha/capabilities/types').SpaceDID} space 
    * @returns {Promise<Ucanto.Result<Ucanto.Delegation<Ucanto.Capabilities>[], DelegationNotFound | Ucanto.Failure>>}
    */
   find: (
@@ -30,7 +29,7 @@ export interface DelegationsStorage {
   /**
    * Stores the delegation proofs for the given space
    * 
-   * @param {import('@web3-storage/capabilities/types').SpaceDID} space 
+   * @param {import('@storacha/capabilities/types').SpaceDID} space 
    * @param {Ucanto.Delegation<Ucanto.Capabilities>} delegation
    * @returns {Promise<Ucanto.Result<Ucanto.Unit, StoreOperationFailed | Ucanto.Failure>>}
    */
