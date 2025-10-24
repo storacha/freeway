@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.31.0](https://github.com/storacha/freeway/compare/v2.30.0...v2.31.0) (2025-10-24)
+
+
+### Features
+
+* **freeway:** upgrade dependencies, wrangler, typescript, others ([#184](https://github.com/storacha/freeway/issues/184)) ([137fc87](https://github.com/storacha/freeway/commit/137fc87f773731ccae27b4a9d4909e838cf2c0d1))
+
 ## [2.30.0](https://github.com/storacha/freeway/compare/v2.29.0...v2.30.0) (2025-09-10)
 
 
