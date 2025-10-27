@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.31.1](https://github.com/storacha/freeway/compare/v2.31.0...v2.31.1) (2025-10-27)
+
+
+### Bug Fixes
+
+* **middleware:** use compressed format for raw requests ([#186](https://github.com/storacha/freeway/issues/186)) ([ef32fa9](https://github.com/storacha/freeway/commit/ef32fa964728223cb15f16e6fb33a1abf4dff934))
+
 ## [2.31.0](https://github.com/storacha/freeway/compare/v2.30.0...v2.31.0) (2025-10-24)
 
 
