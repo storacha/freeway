@@ -5,8 +5,8 @@ import { trace } from '@opentelemetry/api'
 
 /**
  * @import {
+ *   IpfsUrlContext,
  *   Middleware,
- *   Context as MiddlewareContext
  * } from '@web3-storage/gateway-lib'
  * @import {
  *   LocatorContext,
@@ -18,7 +18,7 @@ import { trace } from '@opentelemetry/api'
  * Adds {@link LocatorContext.locator} to the context which connects to the
  * {@link LocatorEnvironment.INDEXING_SERVICE_URL}.
  *
- * @type {Middleware<LocatorContext, MiddlewareContext, LocatorEnvironment>}
+ * @type {Middleware<LocatorContext, IpfsUrlContext, LocatorEnvironment>}
  */
 export function withLocator (handler) {
   return async (request, env, ctx) => {
@@ -50,7 +50,13 @@ export function withLocator (handler) {
                 : undefined
         })
 
-    const locator = Locator.create({ client })
+    const { headers } = request
+    const { searchParams } = ctx
+    if (!searchParams) throw new Error('missing URL search params')
+    const compressed =
+      searchParams.get('format') === 'raw' ||
+      headers.get('Accept')?.includes('application/vnd.ipld.raw')
+    const locator = Locator.create({ client, compressed })
     return handler(request, env, { ...ctx, locator })
   }
 }
