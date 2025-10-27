@@ -2,6 +2,7 @@ import { Locator } from '@web3-storage/blob-fetcher'
 import {
   Environment as MiddlewareEnvironment,
   Context as MiddlewareContext,
+  IpfsUrlContext,
 } from '@web3-storage/gateway-lib'
 
 export interface LocatorEnvironment extends MiddlewareEnvironment {
@@ -12,6 +13,6 @@ export interface LocatorEnvironment extends MiddlewareEnvironment {
   FF_RAMP_UP_PROBABILITY?: string
 }
 
-export interface LocatorContext extends MiddlewareContext {
+export interface LocatorContext extends IpfsUrlContext {
   locator: Locator
 }
