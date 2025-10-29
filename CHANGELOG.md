@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.31.2](https://github.com/storacha/freeway/compare/v2.31.1...v2.31.2) (2025-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update blob-storage ([d261946](https://github.com/storacha/freeway/commit/d261946e4e8c0b91683c854a18973670fe7fdd9c))
+
 ## [2.31.1](https://github.com/storacha/freeway/compare/v2.31.0...v2.31.1) (2025-10-27)
 
 
