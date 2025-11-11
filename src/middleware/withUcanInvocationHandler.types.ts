@@ -4,6 +4,7 @@ import { DelegationsStorageContext } from './withDelegationsStorage.types.js'
 import { Service } from '../server/api.types.js'
 import * as Server from '@ucanto/server'
 export interface Environment extends MiddlewareEnvironment {
+  GATEWAY_VALIDATOR_PROOF?: string
 }
 
 export interface Context<T = unknown, U = unknown>

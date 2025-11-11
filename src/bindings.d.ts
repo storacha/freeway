@@ -26,4 +26,5 @@ export interface Environment
   HONEYCOMB_API_KEY: string
   FF_TELEMETRY_ENABLED: string
   TELEMETRY_RATIO: string
+  GATEWAY_VALIDATOR_PROOF?: string
 }
