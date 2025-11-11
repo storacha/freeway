@@ -1,16 +1,18 @@
 import { Verifier } from '@ucanto/principal'
 import { ok, access, Unauthorized } from '@ucanto/validator'
+import { resolveDIDKey, getValidatorProofs } from '../server/index.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as serve from '../capabilities/serve.js'
 import { SpaceDID } from '@storacha/capabilities/utils'
+ 
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
  * @import { IpfsUrlContext, Middleware } from '@web3-storage/gateway-lib'
  * @import { LocatorContext } from './withLocator.types.js'
- * @import { AuthTokenContext } from './withAuthToken.types.js'
+ * @import { AuthTokenContext, Environment } from './withAuthToken.types.js'
  * @import { SpaceContext } from './withAuthorizedSpace.types.js'
- * @import { DelegationsStorageContext } from './withDelegationsStorage.types.js'
+ * @import { DelegationsStorageContext, DelegationsStorageEnvironment } from './withDelegationsStorage.types.js'
  * @import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
  * @import { DelegationProofsContext } from './withAuthorizedSpace.types.js'
  */
@@ -61,7 +63,8 @@ export function withAuthorizedSpace (handler) {
       // First space to successfully authorize is the one we'll use.
       const { space: selectedSpace, delegationProofs } = await Promise.any(
         spaces.map(async (space) => {
-          const result = await authorize(SpaceDID.from(space), ctx)
+          // @ts-ignore
+          const result = await authorize(SpaceDID.from(space), ctx, env)
           if (result.error) throw result.error
           return result.ok
         })
@@ -102,9 +105,10 @@ export function withAuthorizedSpace (handler) {
  *
  * @param {import('@storacha/capabilities/types').SpaceDID} space
  * @param {AuthTokenContext & DelegationsStorageContext & GatewayIdentityContext} ctx
+ * @param {import('./withRateLimit.types.js').Environment} env
  * @returns {Promise<Ucanto.Result<{space: import('@storacha/capabilities/types').SpaceDID, delegationProofs: Ucanto.Delegation[]}, Ucanto.Failure>>}
  */
-const authorize = async (space, ctx) => {
+const authorize = async (space, ctx, env) => {
   // Look up delegations that might authorize us to serve the content.
   const relevantDelegationsResult = await ctx.delegationsStorage.find(space)
   if (relevantDelegationsResult.error) return relevantDelegationsResult
@@ -121,12 +125,15 @@ const authorize = async (space, ctx) => {
       proofs: delegationProofs
     })
     .delegate()
-
-  // Validate the invocation.
+  
+  // Load validator proofs and validate the invocation
+  const validatorProofs = await getValidatorProofs(env)
   const accessResult = await access(invocation, {
     capability: serve.transportHttp,
     authority: ctx.gatewayIdentity,
     principal: Verifier,
+    proofs: validatorProofs,
+    resolveDIDKey,
     validateAuthorization: () => ok({})
   })
   if (accessResult.error) {

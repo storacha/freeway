@@ -7,6 +7,7 @@ import { SpaceDID } from '@storacha/capabilities/types'
 export interface DelegationsStorageEnvironment extends MiddlewareEnvironment {
   CONTENT_SERVE_DELEGATIONS_STORE: KVNamespace
   FF_DELEGATIONS_STORAGE_ENABLED: string
+  GATEWAY_VALIDATOR_PROOF?: string
 }
 
 export interface DelegationsStorageContext
@@ -35,6 +36,6 @@ export interface DelegationsStorage {
    */
   store: (
     space: SpaceDID,
-    delegation: Ucanto.Delegation<Ucanto.Capabilities>
+    delegation: Ucanto.Delegation<Ucanto.Capabilities>,
   ) => Promise<Ucanto.Result<Ucanto.Unit, StoreOperationFailed | Ucanto.Failure>>
 }

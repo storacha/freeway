@@ -17,11 +17,12 @@ export function createService (ctx) {
     access: {
       delegate: UcantoServer.provideAdvanced({
         capability: AccessCapabilities.delegate,
-        audience: Schema.did({ method: 'web' }),
+        audience: Schema.did({ method: 'web' }).or(Schema.did({ method: 'key' })),
         handler: async ({ capability, invocation, context }) => {
-          const result = extractContentServeDelegations(
+          console.log('extracting delegations: ', capability)
+          const result = await extractContentServeDelegations(
             capability,
-            invocation.proofs
+            invocation
           )
           if (result.error) {
             console.error('error while extracting delegation', result.error)
@@ -29,6 +30,7 @@ export function createService (ctx) {
           }
 
           const delegations = result.ok
+          console.log('executing claim for delegations: ', delegations)
           const validationResults = await Promise.all(
             delegations.map(async (delegation) => {
               const validationResult = await claim(
@@ -36,7 +38,7 @@ export function createService (ctx) {
                 [delegation],
                 {
                   ...context,
-                  authority: ctx.gatewayIdentity
+                  authority: ctx.gatewayIdentity,
                 }
               )
               if (validationResult.error) {

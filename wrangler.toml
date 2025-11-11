@@ -156,16 +156,22 @@ account_id = "fffa4b4363a7e5250af8357087263b3a"
 # r2_buckets = [
 #  { binding = "CARPARK", bucket_name = "carpark-fforbeck-0", preview_bucket_name = "carpark-fforbeck-preview-0" }
 # ]
-# r2_buckets = [
-#   { binding = "CARPARK", bucket_name = "carpark-staging-0" }
-# ]
+#r2_buckets = [
+#  { binding = "CARPARK", bucket_name = "carpark-prod-0", preview_bucket_name = "carpark-prod-0" }
+#]
+#kv_namespaces = [
+#  { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
+#  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "26cc47fec09749bb9ee42bc6407f9a9d" },
+#  { binding = "DAGPB_CONTENT_CACHE", id = "3f0c253b90fc48c1b384f1563ede54f9" }
+#]
+# Copied from STAGING env
 r2_buckets = [
-  { binding = "CARPARK", bucket_name = "carpark-prod-0", preview_bucket_name = "carpark-prod-0" }
+  { binding = "CARPARK", bucket_name = "carpark-staging-0" }
 ]
 kv_namespaces = [
   { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
-  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "26cc47fec09749bb9ee42bc6407f9a9d" },
-  { binding = "DAGPB_CONTENT_CACHE", id = "3f0c253b90fc48c1b384f1563ede54f9" }
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "99ae45f8b5b3478a9df09302c27e81a3" },
+  { binding = "DAGPB_CONTENT_CACHE", id = "c70a74363e7a4f06ad39fa3022aab7c7" }
 ]
 
 [env.fforbeck.vars]
@@ -187,17 +193,28 @@ TELEMETRY_RATIO = 1.0
 #UPLOAD_API_URL = "https://staging.up.web3.storage"
 #INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
 ### prod
-CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
+CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
 # CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
-GATEWAY_SERVICE_DID = "did:web:w3s.link"
-UPLOAD_SERVICE_DID = "did:web:web3.storage"
-UPLOAD_API_URL = "https://up.web3.storage"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
+# gateway validator proof (gateway -> gateway)
+GATEWAY_VALIDATOR_PROOF = "mAYIEAI0DOqJlcm9vdHOB2CpYJQABcRIg5a/pcyEeJn5snQZHm+wVBzeFbY8RTlfwETn+nMMiCqlndmVyc2lvbgH2AQFxEiD8LRCZwMMfTVlGtNX85n0aVxjp54oE0/G/WTG/dsOOA6dhc1hE7aEDQCEy4qAv4dybXYh/iipwdOLf4DlYjZGFopGvvfDZbVq6Q4MIY5PY9XXHP9D6ELs6qjcvSLfP/nbew/IWbG55RAJhdmUwLjkuMWNhdHSBomNjYW5rdWNhbi9hdHRlc3Rkd2l0aHgYZGlkOndlYjpzdGFnaW5nLnczcy5saW5rY2F1ZFghnRp3ZWI6c3RhZ2luZy51cC5zdG9yYWNoYS5uZXR3b3JrY2V4cPZjaXNzVp0ad2ViOnN0YWdpbmcudzNzLmxpbmtjcHJmgFkBcRIg5a/pcyEeJn5snQZHm+wVBzeFbY8RTlfwETn+nMMiCqmhanVjYW5AMC45LjHYKlglAAFxEiD8LRCZwMMfTVlGtNX85n0aVxjp54oE0/G/WTG/dsOOAw"
+# up validator proof (gateway -> upload-service)
+#GATEWAY_VALIDATOR_PROOF = "mAYIEAJgDOqJlcm9vdHOB2CpYJQABcRIgN620cPucqWQBOpxv6IdEa2h9qIjbLjuVeX5EjKZYntlndmVyc2lvbgGBAgFxEiCZ8EADJu8q8uWgve3nZa/+mzdDfX1IyQ4riBFs3lOiP6dhc1hE7aEDQNWyV/OoO65h7E1sJhiVj/PtTd5rKWmgWRjct8CvfSsoEILycg7GF5CdF7KR/oryw5mjIiYqm1CNmaZr1o7c2ANhdmUwLjkuMWNhdHSBomNjYW5rdWNhbi9hdHRlc3Rkd2l0aHgjZGlkOndlYjpzdGFnaW5nLnVwLnN0b3JhY2hhLm5ldHdvcmtjYXVkVp0ad2ViOnN0YWdpbmcudzNzLmxpbmtjZXhw9mNpc3NYIZ0ad2ViOnN0YWdpbmcudXAuc3RvcmFjaGEubmV0d29ya2NwcmaAWQFxEiA3rbRw+5ypZAE6nG/oh0RraH2oiNsuO5V5fkSMplie2aFqdWNhbkAwLjkuMdgqWCUAAXESIJnwQAMm7yry5aC97edlr/6bN0N9fUjJDiuIEWzeU6I/"
 
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"
 type = "ratelimit"
 namespace_id = "0"
 simple = { limit = 5, period = 60 }
+
+[env.fforbeck.observability]
+[env.fforbeck.observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = false
 
 [env.hannahhoward]
 name = "freeway-hannahhoward"
