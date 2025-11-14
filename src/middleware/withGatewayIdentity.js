@@ -20,6 +20,10 @@ export function withGatewayIdentity (handler) {
     const gatewayIdentity = gatewaySigner.withDID(
       Schema.DID.from(env.GATEWAY_SERVICE_DID)
     )
-    return handler(req, env, { ...ctx, gatewaySigner, gatewayIdentity })
+    return handler(req, env, {
+      ...ctx,
+      gatewaySigner: gatewayIdentity,
+      gatewayIdentity
+    })
   }
 }
