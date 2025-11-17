@@ -4,7 +4,6 @@ import { resolveDIDKey, getValidatorProofs } from '../server/index.js'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as serve from '../capabilities/serve.js'
 import { SpaceDID } from '@storacha/capabilities/utils'
- 
 
 /**
  * Extracts a SpaceDID string from various space object formats.
@@ -198,7 +197,7 @@ const authorize = async (space, ctx, env) => {
       proofs: delegationProofs
     })
     .delegate()
-  
+
   // Load validator proofs and validate the invocation
   const validatorProofs = await getValidatorProofs(env)
   const accessResult = await access(invocation, {

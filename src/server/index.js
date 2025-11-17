@@ -9,14 +9,20 @@ import * as Proof from '@storacha/client/proof'
  */
 const knownWebDIDs = {
   // Production
-  'did:web:up.storacha.network': 'did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi',
-  'did:web:web3.storage': 'did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi',
-  'did:web:w3s.link': 'did:key:z6Mkha3NLZ38QiZXsUHKRHecoumtha3LnbYEL21kXYBFXvo5',
-  
+  'did:web:up.storacha.network':
+    'did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi',
+  'did:web:web3.storage':
+    'did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi',
+  'did:web:w3s.link':
+    'did:key:z6Mkha3NLZ38QiZXsUHKRHecoumtha3LnbYEL21kXYBFXvo5',
+
   // Staging
-  'did:web:staging.up.storacha.network': 'did:key:z6MkhcbEpJpEvNVDd3n5RurquVdqs5dPU16JDU5VZTDtFgnn',
-  'did:web:staging.web3.storage': 'did:key:z6MkhcbEpJpEvNVDd3n5RurquVdqs5dPU16JDU5VZTDtFgnn',
-  'did:web:staging.w3s.link': 'did:key:z6MkqK1d4thaCEXSGZ6EchJw3tDPhQriwynWDuR55ayATMNf',
+  'did:web:staging.up.storacha.network':
+    'did:key:z6MkhcbEpJpEvNVDd3n5RurquVdqs5dPU16JDU5VZTDtFgnn',
+  'did:web:staging.web3.storage':
+    'did:key:z6MkhcbEpJpEvNVDd3n5RurquVdqs5dPU16JDU5VZTDtFgnn',
+  'did:web:staging.w3s.link':
+    'did:key:z6MkqK1d4thaCEXSGZ6EchJw3tDPhQriwynWDuR55ayATMNf'
 }
 
 /**
@@ -26,7 +32,7 @@ const knownWebDIDs = {
 export const resolveDIDKey = async (did) => {
   if (knownWebDIDs[did]) {
     const didKey = /** @type {`did:key:${string}`} */ (knownWebDIDs[did])
-    return Server.ok([didKey])  // Return array of did:keys
+    return Server.ok([didKey]) // Return array of did:keys
   }
   return Server.error(new DIDResolutionError(did))
 }
@@ -39,7 +45,7 @@ let cachedValidatorProofs
 /**
  * Loads validator proofs from environment variable.
  * These proofs allow the gateway to validate ucan/attest delegations.
- * 
+ *
  * @param {{ GATEWAY_VALIDATOR_PROOF?: string }} env
  * @returns {Promise<import('@ucanto/interface').Delegation[]>}
  */
@@ -51,8 +57,12 @@ export const getValidatorProofs = async (env) => {
   if (env.GATEWAY_VALIDATOR_PROOF) {
     try {
       const proof = await Proof.parse(env.GATEWAY_VALIDATOR_PROOF)
-      const delegation = /** @type {import('@ucanto/interface').Delegation} */ (proof)
-      console.log(`Gateway validator proof loaded: [issuer: ${delegation.issuer.did()}, audience: ${delegation.audience.did()}]`)
+      const delegation = /** @type {import('@ucanto/interface').Delegation} */ (
+        proof
+      )
+      console.log(
+        `Gateway validator proof loaded: [issuer: ${delegation.issuer.did()}, audience: ${delegation.audience.did()}]`
+      )
       cachedValidatorProofs = [delegation]
     } catch (error) {
       console.error('Failed to parse GATEWAY_VALIDATOR_PROOF:', error)
@@ -76,7 +86,10 @@ export async function createServer (ctx, service, env) {
     console.log('First proof details:', {
       issuer: proofs[0].issuer.did(),
       audience: proofs[0].audience.did(),
-      capabilities: proofs[0].capabilities.map(c => ({ can: c.can, with: c.with })),
+      capabilities: proofs[0].capabilities.map((c) => ({
+        can: c.can,
+        with: c.with
+      })),
       cid: proofs[0].cid.toString()
     })
   }
@@ -84,10 +97,10 @@ export async function createServer (ctx, service, env) {
     id: ctx.gatewaySigner,
     codec: CAR.inbound,
     service,
-    catch: err => console.error(err),
+    catch: (err) => console.error(err),
     // TODO: wire into revocations
     validateAuthorization: () => ({ ok: {} }),
     resolveDIDKey,
-    proofs,
+    proofs
   })
 }

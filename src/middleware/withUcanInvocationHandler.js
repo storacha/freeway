@@ -1,6 +1,7 @@
+import { ed25519 } from '@ucanto/principal'
 import { createServer } from '../server/index.js'
 import { createService } from '../server/service.js'
-
+import { Schema } from '@ucanto/core'
 /**
  * @import { Middleware } from '@web3-storage/gateway-lib'
  * @import {
@@ -22,8 +23,16 @@ export function withUcanInvocationHandler (handler) {
       return handler(request, env, ctx)
     }
 
-    const service = ctx.service ?? await createService(ctx, env)
-    const server = ctx.server ?? await createServer(ctx, service, env)
+    const contentServeAuthority =
+      env.CONTENT_SERVE_AUTHORITY_PUB_KEY && env.CONTENT_SERVE_AUTHORITY_DID
+        ? ed25519.Verifier.parse(env.CONTENT_SERVE_AUTHORITY_PUB_KEY).withDID(
+          Schema.DID.from(env.CONTENT_SERVE_AUTHORITY_DID)
+        )
+        : ctx.gatewayIdentity
+
+    const service =
+      ctx.service ?? (await createService(ctx, contentServeAuthority))
+    const server = ctx.server ?? (await createServer(ctx, service, env))
 
     const { headers, body, status } = await server.request({
       body: new Uint8Array(await request.arrayBuffer()),
