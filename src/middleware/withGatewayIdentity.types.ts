@@ -8,6 +8,6 @@ export interface Environment extends MiddlewareEnvironment {
 }
 
 export interface GatewayIdentityContext extends MiddlewareContext {
-  gatewaySigner: EdSigner
+  gatewaySigner: Ucanto.Signer
   gatewayIdentity: Ucanto.Signer
 }

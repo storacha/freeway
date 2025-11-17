@@ -33,7 +33,6 @@ import * as Link from 'multiformats/link'
 // The private key must be the upload-service private key. This makes the
 // gateway trust attestations issued by the upload-service.
 
-
 const uploadServiceDIDWeb = process.argv[2]
 const uploadServicePrivateKey = process.argv[3]
 const gatewayDIDWeb = process.argv[4]
@@ -64,8 +63,8 @@ const audience = DID.parse(gatewayDIDWeb)
 // and "gateway" is actually the audience (upload service in our case)
 // The 'with' should be the issuer's DID per colleague's instructions
 const delegation = await delegate({
-  issuer: issuer,
-  audience: audience,
+  issuer,
+  audience,
   capabilities: [{ can: 'ucan/attest', with: issuer.did() }],
   expiration: Infinity
 })
