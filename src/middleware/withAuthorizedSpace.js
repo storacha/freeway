@@ -33,13 +33,21 @@ import { SpaceDID } from '@storacha/capabilities/utils'
 export function withAuthorizedSpace (handler) {
   return async (request, env, ctx) => {
     const { locator, dataCid } = ctx
+    
+    console.log(`[withAuthorizedSpace] Locating content: ${dataCid}`)
     const locRes = await locator.locate(dataCid.multihash)
     if (locRes.error) {
+      console.log(`[withAuthorizedSpace] Location failed:`, locRes.error)
       if (locRes.error.name === 'NotFound') {
         throw new HttpError('Not Found', { status: 404, cause: locRes.error })
       }
       throw new Error(`failed to locate: ${dataCid}`, { cause: locRes.error })
     }
+
+    console.log(`[withAuthorizedSpace] Location result:`, {
+      sites: locRes.ok.site.length,
+      spaces: locRes.ok.site.map(s => s.space).filter(Boolean)
+    })
 
     // Legacy behavior: Site results which have no Space attached are from
     // before we started authorizing serving content explicitly. For these, we
@@ -50,6 +58,7 @@ export function withAuthorizedSpace (handler) {
       ctx.authToken === null
 
     if (shouldServeLegacy) {
+      console.log(`[withAuthorizedSpace] Using legacy path (no space)`)
       return handler(request, env, ctx)
     }
 
@@ -57,17 +66,25 @@ export function withAuthorizedSpace (handler) {
     const spaces = locRes.ok.site
       .map((site) => site.space)
       .filter((s) => s !== undefined)
+    
+    console.log(`[withAuthorizedSpace] Found ${spaces.length} space(s):`, spaces)
 
     try {
       // First space to successfully authorize is the one we'll use.
       const { space: selectedSpace, delegationProofs } = await Promise.any(
         spaces.map(async (space) => {
+          console.log(`[withAuthorizedSpace] Attempting to authorize space: ${space}`)
           // @ts-ignore
           const result = await authorize(SpaceDID.from(space), ctx, env)
-          if (result.error) throw result.error
+          if (result.error) {
+            console.log(`[withAuthorizedSpace] Authorization failed for ${space}:`, result.error.message)
+            throw result.error
+          }
+          console.log(`[withAuthorizedSpace] ✅ Authorization succeeded for space: ${space}`)
           return result.ok
         })
       )
+      console.log(`[withAuthorizedSpace] Selected space for egress tracking: ${selectedSpace}`)
       return handler(request, env, {
         ...ctx,
         space: SpaceDID.from(selectedSpace),
@@ -112,6 +129,19 @@ const authorize = async (space, ctx, env) => {
   const relevantDelegationsResult = await ctx.delegationsStorage.find(space)
   if (relevantDelegationsResult.error) return relevantDelegationsResult
   const delegationProofs = relevantDelegationsResult.ok
+  
+  // Get the content serve authority (upload service) from environment
+  // @ts-ignore - env has these properties from wrangler.toml
+  const contentServeAuthority =
+    env.CONTENT_SERVE_AUTHORITY_PUB_KEY && env.CONTENT_SERVE_AUTHORITY_DID
+      ? 
+        // @ts-ignore
+        Verifier.parse(env.CONTENT_SERVE_AUTHORITY_PUB_KEY).withDID(
+          // @ts-ignore
+          env.CONTENT_SERVE_AUTHORITY_DID
+        )
+      : ctx.gatewayIdentity
+  
   // Create an invocation of the serve capability.
   const invocation = await serve.transportHttp
     .invoke({
@@ -129,7 +159,7 @@ const authorize = async (space, ctx, env) => {
   const validatorProofs = await getValidatorProofs(env)
   const accessResult = await access(invocation, {
     capability: serve.transportHttp,
-    authority: ctx.gatewayIdentity,
+    authority: contentServeAuthority, // Use upload service as authority
     principal: Verifier,
     proofs: validatorProofs,
     resolveDIDKey,
