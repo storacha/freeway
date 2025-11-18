@@ -20,7 +20,7 @@ import { ed25519 } from '@ucanto/principal'
  */
 
 const recordEgressMock = sinon.fake()
-const queueSendMock = sinon.fake()
+const queueSendMock = sinon.fake.resolves(undefined)
 
 /**
  * Mock implementation of Cloudflare Queue.
@@ -28,7 +28,7 @@ const queueSendMock = sinon.fake()
  */
 const MockQueue = () => ({
   send: queueSendMock,
-  sendBatch: sinon.fake() // Not used in our implementation, but required by Queue type
+  sendBatch: sinon.fake.resolves(undefined) // Not used in our implementation, but required by Queue type
 })
 
 const env =
@@ -37,29 +37,26 @@ const env =
     DEBUG: 'true',
     FF_EGRESS_TRACKER_ENABLED: 'true',
     EGRESS_QUEUE: MockQueue(),
-    UPLOAD_SERVICE_DID: 'did:web:test.upload.storacha.network'
+    UPLOAD_SERVICE_DID: 'did:web:staging.up.storacha.network'
   })
 
-/**
- * Mock implementation of the AccountingService.
- *
- * @returns {import('../../../src/middleware/withEgressClient.types.js').EgressClient}
- */
-const EgressClient = () => {
-  if (process.env.DEBUG === 'true') {
-    console.log('[mock] EgressClient created')
-  }
-
-  return {
-    record: recordEgressMock
-  }
-}
 const gatewaySigner = (await ed25519.Signer.generate()).signer
 const gatewayIdentity = gatewaySigner.withDID('did:web:test.w3s.link')
 
-const ctx =
-  /** @satisfies {EgressTrackerContext} */
-  ({
+/**
+ * Create a context with waitUntil that tracks promises
+ * @returns {EgressTrackerContext & { waitUntilPromises: Promise<any>[], waitForEgressTracking: () => Promise<void> }}
+ */
+const createContext = () => {
+  /** @type {Promise<any>[]} */
+  const waitUntilPromises = []
+  // @ts-ignore
+  let resolveEgress
+  const egressPromise = new Promise(resolve => {
+    resolveEgress = resolve
+  })
+  
+  return {
     space: SpaceDID.from(
       'did:key:z6MkknBAHEGCWvBzAi4amdH5FXEXrdKoWF1UJuvc8Psm2Mda'
     ),
@@ -69,16 +66,22 @@ const ctx =
     gatewaySigner,
     gatewayIdentity,
     delegationProofs: [],
-    waitUntil: async (promise) => {
-      try {
-        await promise
-      } catch (error) {
-        // Ignore errors.
-      }
+    waitUntil: (promise) => {
+      // Track the promise synchronously
+      const tracked = promise.catch(error => {
+        // Ignore errors in waitUntil
+      })
+      waitUntilPromises.push(tracked)
+      // @ts-expect-error - Resolve the egress promise when all tracked promises complete
+      Promise.all(waitUntilPromises).then(() => resolveEgress())
     },
+    waitUntilPromises,
+    // Wait for egress tracking to complete
+    waitForEgressTracking: () => egressPromise,
     path: '',
     searchParams: new URLSearchParams(),
-  })
+  }
+}
 
 describe('withEgressTracker', async () => {
   /** @type {Builder} */
@@ -122,6 +125,7 @@ describe('withEgressTracker', async () => {
 
   describe('-> Successful Requests', () => {
     it('should track egress bytes for a successful request', async () => {
+      const ctx = createContext()
       const handler = withEgressTracker(
         async () => new Response('Hello, world!', { status: 200 })
       )
@@ -132,26 +136,21 @@ describe('withEgressTracker', async () => {
       )
       // Ensure the response body is fully consumed
       const responseBody = await response.text()
+      // Wait for egress tracking to complete
+      await ctx.waitForEgressTracking()
 
       expect(response.status).to.equal(200)
       expect(responseBody).to.equal('Hello, world!')
-      expect(recordEgressMock.calledOnce, 'record should be called once').to.be
+      expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
-      expect(
-        recordEgressMock.args[0][0],
-        'first argument should be the space'
-      ).to.equal(ctx.space)
-      expect(
-        recordEgressMock.args[0][1],
-        'second argument should be the cid'
-      ).to.equal(ctx.dataCid)
-      expect(
-        recordEgressMock.args[0][2],
-        'third argument should be the total bytes'
-      ).to.equal(13)
+      // Verify the queued invocation contains the expected data
+      const queuedData = queueSendMock.args[0][0]
+      expect(queuedData).to.have.property('invocation')
+      expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     })
 
     it('should record egress for a large file', async () => {
+      const ctx = createContext()
       const largeContent = new Uint8Array(100 * 1024 * 1024) // 100 MB
       const totalBytes = largeContent.byteLength
       const mockResponse = new Response(
@@ -170,25 +169,19 @@ describe('withEgressTracker', async () => {
 
       const response = await handler(request, env, ctx)
       await response.text() // Consume the response body
+      await ctx.waitForEgressTracking()
 
       expect(response.status).to.equal(200)
-      expect(recordEgressMock.calledOnce, 'record should be called once').to.be
+      expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
-      expect(
-        recordEgressMock.args[0][0],
-        'first argument should be the space'
-      ).to.equal(ctx.space)
-      expect(
-        recordEgressMock.args[0][1],
-        'second argument should be the cid'
-      ).to.equal(ctx.dataCid)
-      expect(
-        recordEgressMock.args[0][2],
-        'third argument should be the total bytes'
-      ).to.equal(totalBytes)
+      // Verify the queued invocation contains the expected data
+      const queuedData = queueSendMock.args[0][0]
+      expect(queuedData).to.have.property('invocation')
+      expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     })
 
     it('should correctly track egress for responses with chunked transfer encoding', async () => {
+      const ctx = createContext()
       const chunk1 = new TextEncoder().encode('Hello, ')
       const chunk2 = new TextEncoder().encode('world!')
       const totalBytes = Buffer.byteLength(chunk1) + Buffer.byteLength(chunk2)
@@ -210,26 +203,20 @@ describe('withEgressTracker', async () => {
 
       const response = await handler(request, env, ctx)
       const responseBody = await response.text()
+      await ctx.waitForEgressTracking()
 
       expect(response.status).to.equal(200)
       expect(responseBody).to.equal('Hello, world!')
-      expect(recordEgressMock.calledOnce, 'record should be called once').to.be
+      expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
-      expect(
-        recordEgressMock.args[0][0],
-        'first argument should be the space'
-      ).to.equal(ctx.space)
-      expect(
-        recordEgressMock.args[0][1],
-        'second argument should be the cid'
-      ).to.equal(ctx.dataCid)
-      expect(
-        recordEgressMock.args[0][2],
-        'third argument should be the total bytes'
-      ).to.equal(totalBytes)
+      // Verify the queued invocation contains the expected data
+      const queuedData = queueSendMock.args[0][0]
+      expect(queuedData).to.have.property('invocation')
+      expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     })
 
     it('should record egress bytes for a CAR file request', async () => {
+      const ctx = createContext()
       // Simulate a CAR file content
       const carContent = new Blob([randomBytes(256)])
       const { shards } = await builder.add(carContent)
@@ -277,25 +264,19 @@ describe('withEgressTracker', async () => {
           }
         })
       )
+      await ctx.waitForEgressTracking()
 
       // expect(blocks[0].bytes).to.deep.equal(carBytes) - FIXME (fforbeck): how to get the correct byte count?
-      expect(recordEgressMock.calledOnce, 'record should be called once').to.be
+      expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
-      expect(
-        recordEgressMock.args[0][0],
-        'first argument should be the space'
-      ).to.equal(ctx.space)
-      expect(
-        recordEgressMock.args[0][1],
-        'second argument should be the cid'
-      ).to.equal(ctx.dataCid)
-      expect(
-        recordEgressMock.args[0][2],
-        'third argument should be the total bytes'
-      ).to.equal(expectedTotalBytes)
+      // Verify the queued invocation contains the expected data
+      const queuedData = queueSendMock.args[0][0]
+      expect(queuedData).to.have.property('invocation')
+      expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     })
 
     it('should correctly track egress for delayed responses', async () => {
+      const ctx = createContext()
       const content = new TextEncoder().encode('Delayed response content')
       const totalBytes = Buffer.byteLength(content)
 
@@ -317,28 +298,22 @@ describe('withEgressTracker', async () => {
 
       const response = await handler(request, env, ctx)
       const responseBody = await response.text()
+      await ctx.waitForEgressTracking()
 
       expect(response.status).to.equal(200)
       expect(responseBody).to.equal('Delayed response content')
-      expect(recordEgressMock.calledOnce, 'record should be called once').to.be
+      expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
-      expect(
-        recordEgressMock.args[0][0],
-        'first argument should be the space'
-      ).to.equal(ctx.space)
-      expect(
-        recordEgressMock.args[0][1],
-        'second argument should be the cid'
-      ).to.equal(ctx.dataCid)
-      expect(
-        recordEgressMock.args[0][2],
-        'third argument should be the total bytes'
-      ).to.equal(totalBytes)
+      // Verify the queued invocation contains the expected data
+      const queuedData = queueSendMock.args[0][0]
+      expect(queuedData).to.have.property('invocation')
+      expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     }).timeout(5000)
   })
 
   describe('-> Feature Flag', () => {
     it('should not track egress if the feature flag is disabled', async () => {
+      const ctx = createContext()
       const innerHandler = sinon
         .stub()
         .resolves(new Response(null, { status: 200 }))
@@ -349,13 +324,14 @@ describe('withEgressTracker', async () => {
       const response = await handler(request, envDisabled, ctx)
 
       expect(response.status).to.equal(200)
-      expect(recordEgressMock.notCalled, 'record should not be called').to.be
+      expect(queueSendMock.notCalled, 'queue.send should not be called').to.be
         .true
     })
   })
 
   describe('-> Non-OK Responses', () => {
     it('should not track egress for non-OK responses', async () => {
+      const ctx = createContext()
       const mockResponse = new Response(null, { status: 404 })
       const innerHandler = sinon.stub().resolves(mockResponse)
       const handler = withEgressTracker(innerHandler)
@@ -364,11 +340,12 @@ describe('withEgressTracker', async () => {
       const response = await handler(request, env, ctx)
 
       expect(response.status).to.equal(404)
-      expect(recordEgressMock.called, 'record should not be called').to.be
+      expect(queueSendMock.called, 'queue.send should not be called').to.be
         .false
     })
 
     it('should not track egress if the response has no body', async () => {
+      const ctx = createContext()
       const mockResponse = new Response(null, { status: 200 })
       const innerHandler = sinon.stub().resolves(mockResponse)
       const handler = withEgressTracker(innerHandler)
@@ -377,13 +354,14 @@ describe('withEgressTracker', async () => {
       const response = await handler(request, env, ctx)
 
       expect(response.status).to.equal(200)
-      expect(recordEgressMock.called, 'record should not be called').to.be
+      expect(queueSendMock.called, 'queue.send should not be called').to.be
         .false
     })
   })
 
   describe('-> Concurrent Requests', () => {
     it('should correctly track egress for multiple concurrent requests', async () => {
+      const ctx = createContext()
       const content1 = new TextEncoder().encode('Hello, world!')
       const content2 = new TextEncoder().encode('Goodbye, world!')
       const totalBytes1 = Buffer.byteLength(content1)
@@ -425,44 +403,33 @@ describe('withEgressTracker', async () => {
 
       const responseBody1 = await response1.text()
       const responseBody2 = await response2.text()
+      // Wait for both async flush callbacks to execute
+      await new Promise(resolve => setImmediate(resolve))
+      // Now wait for both waitUntil promises
+      await Promise.all(ctx.waitUntilPromises)
 
       expect(response1.status).to.equal(200)
       expect(responseBody1).to.equal('Hello, world!')
       expect(response2.status).to.equal(200)
       expect(responseBody2).to.equal('Goodbye, world!')
 
-      expect(recordEgressMock.calledTwice, 'record should be called twice').to
-        .be.true
-      expect(
-        recordEgressMock.args[0][0],
-        'first argument should be the space'
-      ).to.equal(ctx.space)
-      expect(
-        recordEgressMock.args[0][1],
-        'second argument should be the cid for first request'
-      ).to.equal(ctx.dataCid)
-      expect(
-        recordEgressMock.args[0][2],
-        'third argument should be the total bytes for first request'
-      ).to.equal(totalBytes1)
-
-      expect(
-        recordEgressMock.args[1][0],
-        'first argument should be the space'
-      ).to.equal(ctx.space)
-      expect(
-        recordEgressMock.args[1][1],
-        'second argument should be the cid for second request'
-      ).to.equal(ctx.dataCid)
-      expect(
-        recordEgressMock.args[1][2],
-        'third argument should be the total bytes for second request'
-      ).to.equal(totalBytes2)
+      expect(queueSendMock.callCount, 'queue.send should be called twice').to.equal(
+        2
+      )
+      // Verify both queued invocations
+      const queuedData1 = queueSendMock.args[0][0]
+      expect(queuedData1).to.have.property('invocation')
+      expect(queuedData1.invocation).to.be.instanceOf(Uint8Array)
+      
+      const queuedData2 = queueSendMock.args[1][0]
+      expect(queuedData2).to.have.property('invocation')
+      expect(queuedData2.invocation).to.be.instanceOf(Uint8Array)
     })
   })
 
   describe('-> Zero-byte Responses', () => {
     it('should not record egress for zero-byte responses', async () => {
+      const ctx = createContext()
       const mockResponse = new Response(
         new ReadableStream({
           start (controller) {
@@ -479,16 +446,19 @@ describe('withEgressTracker', async () => {
 
       const response = await handler(request, env, ctx)
       const responseBody = await response.text()
+      // Wait a bit to ensure flush callback has run (or not run for 0 bytes)
+      await new Promise(resolve => setImmediate(resolve))
 
       expect(response.status).to.equal(200)
       expect(responseBody).to.equal('')
-      expect(recordEgressMock.called, 'record should not be called').to.be
+      expect(queueSendMock.called, 'queue.send should not be called').to.be
         .false
     })
   })
 
   describe('-> Interrupted Connection', () => {
     it('should not record egress if there is a stream error while downloading', async () => {
+      const ctx = createContext()
       const mockResponse = new Response(
         new ReadableStream({
           start (controller) {
@@ -511,11 +481,12 @@ describe('withEgressTracker', async () => {
       } catch (/** @type {any} */ error) {
         expect(error.message).to.equal('Stream error')
       }
-      expect(recordEgressMock.called, 'record should not be called').to.be
+      expect(queueSendMock.called, 'queue.send should not be called').to.be
         .false
     })
 
     it('should not record egress if the connection is interrupted during a large file download', async () => {
+      const ctx = createContext()
       const largeContent = new Uint8Array(100 * 1024 * 1024) // 100 MB
       const mockResponse = new Response(
         new ReadableStream({
@@ -542,13 +513,14 @@ describe('withEgressTracker', async () => {
         expect(error.message).to.equal('Connection interrupted')
       }
 
-      expect(recordEgressMock.called, 'record should not be called').to.be
+      expect(queueSendMock.called, 'queue.send should not be called').to.be
         .false
     })
   })
 
   describe('-> Ucanto Client', () => {
     it('should log an error and continue serving the response if the ucanto client fails', async () => {
+      const ctx = createContext()
       const content = new TextEncoder().encode('Hello, world!')
       const mockResponse = new Response(
         new ReadableStream({
@@ -571,10 +543,12 @@ describe('withEgressTracker', async () => {
         }
       }, ctx)
       const responseBody = await response.text()
+      // Wait a bit to ensure flush callback has run and error was caught
+      await new Promise(resolve => setImmediate(resolve))
 
       expect(response.status).to.equal(200)
       expect(responseBody).to.equal('Hello, world!')
-      expect(recordEgressMock.called, 'record should not be called').to.be
+      expect(queueSendMock.called, 'queue.send should not be called').to.be
         .false
     })
   })

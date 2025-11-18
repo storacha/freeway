@@ -123,20 +123,28 @@ export function withAuthorizedSpace (handler) {
         locator: locator.scopeToSpaces([selectedSpace])
       })
     } catch (error) {
-      // If all Spaces failed to authorize, throw the first error.
-      if (
-        error instanceof AggregateError &&
-        error.errors.every((e) => e instanceof Unauthorized)
-      ) {
-        if (env.DEBUG === 'true') {
-          console.log(
-            [
-              'Authorization Failures:',
-              ...error.errors.map((e) => e.message)
-            ].join('\n\n')
-          )
+      // If all Spaces failed to authorize, return 404 (security through obscurity)
+      if (error instanceof AggregateError) {
+        // Check if all errors are authorization failures (not storage errors)
+        const isAuthFailure = error.errors.every((e) => 
+          e instanceof Unauthorized || 
+          (e.message && e.message.includes('not authorized to serve'))
+        )
+        
+        if (isAuthFailure) {
+          if (env.DEBUG === 'true') {
+            console.log(
+              [
+                'Authorization Failures:',
+                ...error.errors.map((e) => e.message)
+              ].join('\n\n')
+            )
+          }
+          // Don't reveal whether content exists in unauthorized spaces
+          throw new HttpError('Not Found', { status: 404, cause: error })
         }
-        throw new HttpError('Forbidden', { status: 403, cause: error })
+        // For storage or other errors, throw the AggregateError as-is
+        throw error
       } else {
         throw error
       }

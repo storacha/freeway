@@ -6,7 +6,7 @@
 
 import { Space } from '@storacha/capabilities'
 import { SpaceDID } from '@storacha/capabilities/utils'
-import * as DID from '@ucanto/principal/ed25519'
+import { DID } from '@ucanto/core'
 
 /**
  * The egress tracking handler must be enabled after the rate limiting, authorized space,
