@@ -55,7 +55,7 @@ const createContext = () => {
   const egressPromise = new Promise(resolve => {
     resolveEgress = resolve
   })
-  
+
   return {
     space: SpaceDID.from(
       'did:key:z6MkknBAHEGCWvBzAi4amdH5FXEXrdKoWF1UJuvc8Psm2Mda'
@@ -66,10 +66,11 @@ const createContext = () => {
     gatewaySigner,
     gatewayIdentity,
     delegationProofs: [],
+    // @ts-ignore - Fake waitUntil to capture promisses and wait for them before making test asserts
     waitUntil: (promise) => {
       // Track the promise synchronously
-      const tracked = promise.catch(error => {
-        // Ignore errors in waitUntil
+      const tracked = promise.catch((error) => {
+        console.error('Error in waitUntil:', error)
       })
       waitUntilPromises.push(tracked)
       // @ts-expect-error - Resolve the egress promise when all tracked promises complete
@@ -79,7 +80,7 @@ const createContext = () => {
     // Wait for egress tracking to complete
     waitForEgressTracking: () => egressPromise,
     path: '',
-    searchParams: new URLSearchParams(),
+    searchParams: new URLSearchParams()
   }
 }
 
@@ -152,7 +153,6 @@ describe('withEgressTracker', async () => {
     it('should record egress for a large file', async () => {
       const ctx = createContext()
       const largeContent = new Uint8Array(100 * 1024 * 1024) // 100 MB
-      const totalBytes = largeContent.byteLength
       const mockResponse = new Response(
         new ReadableStream({
           start (controller) {
@@ -184,7 +184,6 @@ describe('withEgressTracker', async () => {
       const ctx = createContext()
       const chunk1 = new TextEncoder().encode('Hello, ')
       const chunk2 = new TextEncoder().encode('world!')
-      const totalBytes = Buffer.byteLength(chunk1) + Buffer.byteLength(chunk2)
 
       const mockResponse = new Response(
         new ReadableStream({
@@ -227,7 +226,6 @@ describe('withEgressTracker', async () => {
       const carBytes = await bucket.get(key)
       expect(carBytes).to.be.not.undefined
       expect(carBytes).to.be.instanceOf(Uint8Array)
-      const expectedTotalBytes = carBytes.byteLength
 
       // Mock a response with the CAR file content
       const mockResponse = new Response(
@@ -278,7 +276,6 @@ describe('withEgressTracker', async () => {
     it('should correctly track egress for delayed responses', async () => {
       const ctx = createContext()
       const content = new TextEncoder().encode('Delayed response content')
-      const totalBytes = Buffer.byteLength(content)
 
       const mockResponse = new Response(
         new ReadableStream({
@@ -364,8 +361,6 @@ describe('withEgressTracker', async () => {
       const ctx = createContext()
       const content1 = new TextEncoder().encode('Hello, world!')
       const content2 = new TextEncoder().encode('Goodbye, world!')
-      const totalBytes1 = Buffer.byteLength(content1)
-      const totalBytes2 = Buffer.byteLength(content2)
 
       const mockResponse1 = new Response(
         new ReadableStream({
@@ -420,7 +415,7 @@ describe('withEgressTracker', async () => {
       const queuedData1 = queueSendMock.args[0][0]
       expect(queuedData1).to.have.property('invocation')
       expect(queuedData1.invocation).to.be.instanceOf(Uint8Array)
-      
+
       const queuedData2 = queueSendMock.args[1][0]
       expect(queuedData2).to.have.property('invocation')
       expect(queuedData2.invocation).to.be.instanceOf(Uint8Array)
@@ -538,12 +533,12 @@ describe('withEgressTracker', async () => {
       const response = await handler(request, {
         ...env,
         EGRESS_QUEUE: {
-          send: sinon.stub().throws("queue error"),
-          sendBatch: sinon.stub().throws("queue error")
+          send: sinon.stub().throws('queue error'),
+          sendBatch: sinon.stub().throws('queue error')
         }
       }, ctx)
       const responseBody = await response.text()
-      // Wait a bit to ensure flush callback has run and error was caught
+      // @ts-ignore Wait a bit to ensure flush callback has run and error was caught
       await new Promise(resolve => setImmediate(resolve))
 
       expect(response.status).to.equal(200)

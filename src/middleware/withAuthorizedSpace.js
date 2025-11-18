@@ -7,11 +7,11 @@ import { SpaceDID } from '@storacha/capabilities/utils'
 /**
  * Extracts a SpaceDID string from various space object formats.
  * Handles string DIDs, objects with .did() method, and Uint8Arrays.
- * 
+ *
  * @param {any} space - The space object to extract DID from
  * @returns {import('@storacha/capabilities/types').SpaceDID | undefined}
  */
-function extractSpaceDID(space) {
+function extractSpaceDID (space) {
   if (!space) return undefined
 
   try {
@@ -83,7 +83,6 @@ export function withAuthorizedSpace (handler) {
       throw new Error(`failed to locate: ${dataCid}`, { cause: locRes.error })
     }
 
-
     // Legacy behavior: Site results which have no Space attached are from
     // before we started authorizing serving content explicitly. For these, we
     // always serve the content, but only if the request has no authorization
@@ -104,7 +103,7 @@ export function withAuthorizedSpace (handler) {
     const spaces = sitesWithSpace
       .map((site) => extractSpaceDID(site.space))
       .filter((space) => space !== undefined)
-    
+
     try {
       // First space to successfully authorize is the one we'll use.
       const { space: selectedSpace, delegationProofs } = await Promise.any(
@@ -126,11 +125,11 @@ export function withAuthorizedSpace (handler) {
       // If all Spaces failed to authorize, return 404 (security through obscurity)
       if (error instanceof AggregateError) {
         // Check if all errors are authorization failures (not storage errors)
-        const isAuthFailure = error.errors.every((e) => 
-          e instanceof Unauthorized || 
+        const isAuthFailure = error.errors.every((e) =>
+          e instanceof Unauthorized ||
           (e.message && e.message.includes('not authorized to serve'))
         )
-        
+
         if (isAuthFailure) {
           if (env.DEBUG === 'true') {
             console.log(
@@ -167,9 +166,9 @@ const authorize = async (space, ctx) => {
   if (relevantDelegationsResult.error) {
     return relevantDelegationsResult
   }
-  
+
   const delegationProofs = relevantDelegationsResult.ok
-  
+
   // If no delegations found, the server is not authorized to serve this content
   if (!delegationProofs || delegationProofs.length === 0) {
     return fail('The gateway is not authorized to serve this content.')
@@ -195,7 +194,7 @@ const authorize = async (space, ctx) => {
     principal: Verifier,
     validateAuthorization: () => ok({})
   })
-  
+
   if (accessResult.error) {
     return accessResult
   }

@@ -80,12 +80,12 @@ export function withEgressTracker (handler) {
               return
             }
             const serializedInvocation = archiveResult.ok
-            
+
             // Non-blocking call to queue the invocation
             ctx.waitUntil(
               env.EGRESS_QUEUE.send({
                 messageId: delegation.cid,
-                invocation: serializedInvocation, 
+                invocation: serializedInvocation,
                 timestamp: Date.now()
               })
             )
