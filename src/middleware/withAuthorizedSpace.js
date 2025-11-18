@@ -1,5 +1,5 @@
 import { Verifier } from '@ucanto/principal'
-import { ok, access, Unauthorized } from '@ucanto/validator'
+import { ok, access, fail, Unauthorized } from '@ucanto/validator'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as serve from '../capabilities/serve.js'
 import { SpaceDID } from '@storacha/capabilities/utils'
@@ -9,7 +9,7 @@ import { SpaceDID } from '@storacha/capabilities/utils'
  * Handles string DIDs, objects with .did() method, and Uint8Arrays.
  * 
  * @param {any} space - The space object to extract DID from
- * @returns {import('@web3-storage/capabilities/types').SpaceDID | undefined}
+ * @returns {import('@storacha/capabilities/types').SpaceDID | undefined}
  */
 function extractSpaceDID(space) {
   if (!space) return undefined
@@ -17,24 +17,24 @@ function extractSpaceDID(space) {
   try {
     // Already a string DID
     if (typeof space === 'string' && space.startsWith('did:')) {
-      return /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (space)
+      return /** @type {import('@storacha/capabilities/types').SpaceDID} */ (space)
     }
 
     // Object with .did() method (most common case from indexing service)
     if (typeof space === 'object' && typeof /** @type {any} */ (space).did === 'function') {
-      return /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (/** @type {any} */ (space).did())
+      return /** @type {import('@storacha/capabilities/types').SpaceDID} */ (/** @type {any} */ (space).did())
     }
 
     // Uint8Array (fallback case)
     if (ArrayBuffer.isView(space)) {
       const spaceDID = SpaceDID.from(space)
-      return /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (spaceDID.toString())
+      return /** @type {import('@storacha/capabilities/types').SpaceDID} */ (spaceDID.toString())
     }
 
     // Last resort: try String() conversion
     const spaceStr = String(space)
     if (spaceStr.startsWith('did:')) {
-      return /** @type {import('@web3-storage/capabilities/types').SpaceDID} */ (spaceStr)
+      return /** @type {import('@storacha/capabilities/types').SpaceDID} */ (spaceStr)
     }
 
     return undefined
@@ -164,9 +164,7 @@ const authorize = async (space, ctx) => {
   
   // If no delegations found, the server is not authorized to serve this content
   if (!delegationProofs || delegationProofs.length === 0) {
-    return {
-      error: new Unauthorized(`The gateway is not authorized to serve this content.`)
-    }
+    return fail('The gateway is not authorized to serve this content.')
   }
 
   // Create an invocation of the serve capability.

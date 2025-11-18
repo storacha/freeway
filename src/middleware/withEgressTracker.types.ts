@@ -5,7 +5,7 @@ import { GatewayIdentityContext } from './withGatewayIdentity.types.js'
 export interface Environment extends MiddlewareEnvironment {
   FF_EGRESS_TRACKER_ENABLED: string
   FF_EGRESS_TRACKER_ROLLOUT_PERCENTAGE?: string
-  EGRESS_QUEUE: any // Cloudflare Queue type
+  EGRESS_QUEUE: Queue
   UPLOAD_SERVICE_DID: string
 }
 

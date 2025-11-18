@@ -36,6 +36,7 @@
     "test:unit:only": "npm run build:debug && mocha --experimental-vm-modules"
   },
   "dependencies": {
+    "@ipld/dag-pb": "^4.1.5",
     "@microlabs/otel-cf-workers": "^1.0.0-rc.48",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^1.27.0",
@@ -57,12 +58,15 @@
     "multiformats": "^13.0.1"
   },
   "devDependencies": {
+    "@storacha/blob-index": "^1.2.4",
     "@storacha/cli": "^1.6.2",
     "@storacha/client": "^1.8.2",
+    "@storacha/upload-client": "^1.3.6",
     "@types/chai": "^5.0.0",
     "@types/mocha": "^10.0.9",
     "@types/node-fetch": "^2.6.11",
     "@types/sinon": "^17.0.3",
+    "@web3-storage/content-claims": "^5.2.4",
     "@web3-storage/public-bucket": "^1.4.0",
     "carstream": "^2.2.0",
     "chai": "^5.1.1",
@@ -71,6 +75,7 @@
     "miniflare": "^4.20251011.1",
     "mocha": "^10.7.3",
     "multipart-byte-range": "^3.0.1",
+    "sade": "^1.8.1",
     "sinon": "^19.0.2",
     "standard": "^17.1.2",
     "tree-kill": "^1.2.2",

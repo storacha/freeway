@@ -19,14 +19,26 @@ import { ed25519 } from '@ucanto/principal'
  * @typedef {import('../../../src/middleware/withEgressTracker.types.js').Context} EgressTrackerContext
  */
 
+const recordEgressMock = sinon.fake()
+const queueSendMock = sinon.fake()
+
+/**
+ * Mock implementation of Cloudflare Queue.
+ * @returns {Queue<{ invocation: number[] }>}
+ */
+const MockQueue = () => ({
+  send: queueSendMock,
+  sendBatch: sinon.fake() // Not used in our implementation, but required by Queue type
+})
+
 const env =
   /** @satisfies {EgressTrackerEnvironment} */
   ({
     DEBUG: 'true',
-    FF_EGRESS_TRACKER_ENABLED: 'true'
+    FF_EGRESS_TRACKER_ENABLED: 'true',
+    EGRESS_QUEUE: MockQueue(),
+    UPLOAD_SERVICE_DID: 'did:web:test.upload.storacha.network'
   })
-
-const recordEgressMock = sinon.fake()
 
 /**
  * Mock implementation of the AccountingService.
@@ -66,7 +78,6 @@ const ctx =
     },
     path: '',
     searchParams: new URLSearchParams(),
-    egressClient: EgressClient()
   })
 
 describe('withEgressTracker', async () => {
@@ -105,6 +116,7 @@ describe('withEgressTracker', async () => {
 
   afterEach(() => {
     recordEgressMock.resetHistory()
+    queueSendMock.resetHistory()
     bucketData.clear()
   })
 
@@ -256,7 +268,7 @@ describe('withEgressTracker', async () => {
         await response.body
       )
 
-      /** @type {(import('carstream').Block & import('carstream').Position)[]} */
+      /** @type {(import('carstream/api').Block & import('carstream/api').Position)[]} */
       const blocks = []
       await source.pipeThrough(new CARReaderStream()).pipeTo(
         new WritableStream({
@@ -551,16 +563,13 @@ describe('withEgressTracker', async () => {
       const innerHandler = sinon.stub().resolves(mockResponse)
       const handler = withEgressTracker(innerHandler)
       const request = new Request('http://doesnt-matter.com/')
-      const response = await handler(request, env, {
-        ...ctx,
-        egressClient: {
-          ...ctx.egressClient,
-          // Simulate an error in the ucanto client record method
-          record: async () => {
-            throw new Error('ucanto client error')
-          }
+      const response = await handler(request, {
+        ...env,
+        EGRESS_QUEUE: {
+          send: sinon.stub().throws("queue error"),
+          sendBatch: sinon.stub().throws("queue error")
         }
-      })
+      }, ctx)
       const responseBody = await response.text()
 
       expect(response.status).to.equal(200)

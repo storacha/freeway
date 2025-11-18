@@ -125,6 +125,7 @@ function config (env, _trigger) {
     }
   }
   return {
+    // @ts-expect-error - NoopSpanProcessor extends SpanProcessor, but ts doesn't recognize it
     spanProcessors: new NoopSpanProcessor(),
     service: { name: 'freeway' }
   }

@@ -88,7 +88,7 @@ function createStorage (env) {
       try {
         await env.CONTENT_SERVE_DELEGATIONS_STORE.put(
           `${space}:${delegation.cid.toString()}`,
-          value.ok.buffer,
+          /** @type {ArrayBuffer} */ (value.ok.buffer),
           options
         )
         return ok({})
