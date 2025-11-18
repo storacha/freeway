@@ -22,8 +22,8 @@
   "main": "src/index.js",
   "types": "dist/src/index.d.ts",
   "scripts": {
-    "build": "esbuild --bundle src/index.js --format=esm --external:node:buffer --external:node:events --external:node:async_hooks --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
-    "build:debug": "esbuild --bundle src/index.js --format=esm --external:node:buffer --external:node:events --external:node:async_hooks --outfile=dist/worker.mjs",
+    "build": "esbuild --bundle src/index.js --format=esm --external:node:buffer --external:node:events --external:node:async_hooks --external:cloudflare:workers --sourcemap --minify --outfile=dist/worker.mjs && npm run build:tsc",
+    "build:debug": "esbuild --bundle src/index.js --format=esm --external:node:buffer --external:node:events --external:node:async_hooks --external:cloudflare:workers --outfile=dist/worker.mjs",
     "build:tsc": "tsc --build",
     "dev": "npm run build:debug && miniflare dist/worker.mjs --watch --debug -m --r2-persist --global-async-io --global-timers",
     "lint": "standard",
@@ -57,6 +57,7 @@
     "multiformats": "^13.0.1"
   },
   "devDependencies": {
+    "@ipld/dag-ucan": "^3.4.5",
     "@storacha/cli": "^1.6.2",
     "@storacha/client": "^1.8.2",
     "@types/chai": "^5.0.0",
@@ -81,5 +82,6 @@
     "ignore": [
       "*.ts"
     ]
-  }
+  },
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }

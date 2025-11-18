@@ -156,16 +156,22 @@ account_id = "fffa4b4363a7e5250af8357087263b3a"
 # r2_buckets = [
 #  { binding = "CARPARK", bucket_name = "carpark-fforbeck-0", preview_bucket_name = "carpark-fforbeck-preview-0" }
 # ]
-# r2_buckets = [
-#   { binding = "CARPARK", bucket_name = "carpark-staging-0" }
-# ]
+#r2_buckets = [
+#  { binding = "CARPARK", bucket_name = "carpark-prod-0", preview_bucket_name = "carpark-prod-0" }
+#]
+#kv_namespaces = [
+#  { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
+#  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "26cc47fec09749bb9ee42bc6407f9a9d" },
+#  { binding = "DAGPB_CONTENT_CACHE", id = "3f0c253b90fc48c1b384f1563ede54f9" }
+#]
+# Copied from STAGING env
 r2_buckets = [
-  { binding = "CARPARK", bucket_name = "carpark-prod-0", preview_bucket_name = "carpark-prod-0" }
+   { binding = "CARPARK", bucket_name = "carpark-staging-0", preview_bucket_name = "carpark-staging-0" }
 ]
 kv_namespaces = [
-  { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
-  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "26cc47fec09749bb9ee42bc6407f9a9d" },
-  { binding = "DAGPB_CONTENT_CACHE", id = "3f0c253b90fc48c1b384f1563ede54f9" }
+  { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c", preview_id = "6a546b5fc21a423eb4ea07db2d611a91" },
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "99ae45f8b5b3478a9df09302c27e81a3", preview_id = "ec5c429f8b1849a68d73dee7447b4e30" },
+  { binding = "DAGPB_CONTENT_CACHE", id = "c70a74363e7a4f06ad39fa3022aab7c7", preview_id = "fcea72d8d8694b5c831736e1317e9208" }
 ]
 
 [env.fforbeck.vars]
@@ -175,29 +181,42 @@ FF_EGRESS_TRACKER_ENABLED = "true"
 FF_TELEMETRY_ENABLED = "true"
 FF_DELEGATIONS_STORAGE_ENABLED = "true"
 FF_RAMP_UP_PROBABILITY = "100"
-FF_DAGPB_CONTENT_CACHE_TTL_SECONDS = 300
+FF_DAGPB_CONTENT_CACHE_TTL_SECONDS = 0
 FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB = 2
-FF_DAGPB_CONTENT_CACHE_ENABLED = "true"
+FF_DAGPB_CONTENT_CACHE_ENABLED = "false"
 TELEMETRY_RATIO = 1.0
-### staging
-# CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
-# CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
-# GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
-#UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
-#UPLOAD_API_URL = "https://staging.up.web3.storage"
-#INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
-### prod
-CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
-# CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
-GATEWAY_SERVICE_DID = "did:web:w3s.link"
-UPLOAD_SERVICE_DID = "did:web:web3.storage"
-UPLOAD_API_URL = "https://up.web3.storage"
+
+### fforbeck-staging
+CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
+UPLOAD_API_URL = "https://staging.up.web3.storage"
+INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
+CONTENT_SERVE_AUTHORITY_PUB_KEY = "did:key:z6MkhcbEpJpEvNVDd3n5RurquVdqs5dPU16JDU5VZTDtFgnn"
+CONTENT_SERVE_AUTHORITY_DID = "did:web:staging.up.storacha.network"
+
+### fforbeck-prod
+#CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
+#CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
+#GATEWAY_SERVICE_DID = "did:web:w3s.link"
+#UPLOAD_SERVICE_DID = "did:web:web3.storage"
+#UPLOAD_API_URL = "https://up.web3.storage"
+#CONTENT_SERVE_AUTHORITY_PUB_KEY = "did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi"
+#CONTENT_SERVE_AUTHORITY_DID = "did:web:up.storacha.network"
 
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"
 type = "ratelimit"
 namespace_id = "0"
 simple = { limit = 5, period = 60 }
+
+[env.fforbeck.observability]
+[env.fforbeck.observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = false
 
 [env.hannahhoward]
 name = "freeway-hannahhoward"
