@@ -7,6 +7,7 @@
 import { Space } from '@storacha/capabilities'
 import { SpaceDID } from '@storacha/capabilities/utils'
 import { DID } from '@ucanto/core'
+import * as dagJSON from '@ipld/dag-json'
 
 /**
  * The egress tracking handler must be enabled after the rate limiting, authorized space,
@@ -83,11 +84,11 @@ export function withEgressTracker (handler) {
 
             // Non-blocking call to queue the invocation
             ctx.waitUntil(
-              env.EGRESS_QUEUE.send({
+              env.EGRESS_QUEUE.send(dagJSON.encode({
                 messageId: delegation.cid,
                 invocation: serializedInvocation,
                 timestamp: Date.now()
-              })
+              }))
             )
           } catch (error) {
             console.error('Failed to create or queue egress invocation:', error)
