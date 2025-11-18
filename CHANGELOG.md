@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.32.0](https://github.com/storacha/freeway/compare/v2.31.2...v2.32.0) (2025-11-18)
+
+
+### Features
+
+* publish egress events to cf queue ([#191](https://github.com/storacha/freeway/issues/191)) ([28dc194](https://github.com/storacha/freeway/commit/28dc19498d142d7c6b8e9442eb8650ebad39ca43))
+
+
+### Bug Fixes
+
+* dag-json encode egress events ([#193](https://github.com/storacha/freeway/issues/193)) ([ae6c857](https://github.com/storacha/freeway/commit/ae6c857fdfd94a7780b5125dc4ad461f2040e036))
+
 ## [2.31.2](https://github.com/storacha/freeway/compare/v2.31.1...v2.31.2) (2025-10-29)
 
 
