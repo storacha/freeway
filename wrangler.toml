@@ -46,6 +46,10 @@ kv_namespaces = [
   { binding = "DAGPB_CONTENT_CACHE", id = "e1339664614940a0804a3020ce3dae12" }
 ]
 
+[[env.production.queues.producers]]
+queue = "egress-tracking-queue-production"
+binding = "EGRESS_QUEUE"
+
 [env.production.build]
 command = "npm run build"
 
@@ -53,6 +57,7 @@ command = "npm run build"
 MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "true"
+FF_EGRESS_TRACKER_ROLLOUT_PERCENTAGE = "0"
 FF_TELEMETRY_ENABLED = "true"
 FF_DELEGATIONS_STORAGE_ENABLED = "true"
 FF_RAMP_UP_PROBABILITY = "100"
@@ -85,6 +90,10 @@ kv_namespaces = [
   { binding = "DAGPB_CONTENT_CACHE", id = "c70a74363e7a4f06ad39fa3022aab7c7" }
 ]
 
+[[env.staging.queues.producers]]
+queue = "egress-tracking-queue-staging"
+binding = "EGRESS_QUEUE"
+
 [env.staging.build]
 command = "npm run build"
 
@@ -92,6 +101,7 @@ command = "npm run build"
 MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "true"
+FF_EGRESS_TRACKER_ROLLOUT_PERCENTAGE = "100"
 FF_TELEMETRY_ENABLED = "true"
 FF_DELEGATIONS_STORAGE_ENABLED = "true"
 FF_RAMP_UP_PROBABILITY = "100"
@@ -160,18 +170,22 @@ account_id = "fffa4b4363a7e5250af8357087263b3a"
 #   { binding = "CARPARK", bucket_name = "carpark-staging-0" }
 # ]
 r2_buckets = [
-  { binding = "CARPARK", bucket_name = "carpark-prod-0", preview_bucket_name = "carpark-prod-0" }
+  { binding = "CARPARK", bucket_name = "carpark-staging-0" }
 ]
 kv_namespaces = [
   { binding = "AUTH_TOKEN_METADATA", id = "b618bb05deb8493f944ef4a0f538030c" },
-  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "26cc47fec09749bb9ee42bc6407f9a9d" },
+  { binding = "CONTENT_SERVE_DELEGATIONS_STORE", id = "99ae45f8b5b3478a9df09302c27e81a3" },
   { binding = "DAGPB_CONTENT_CACHE", id = "3f0c253b90fc48c1b384f1563ede54f9" }
 ]
+
+[env.fforbeck.observability.logs]
+enabled = true
 
 [env.fforbeck.vars]
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "true"
+FF_EGRESS_TRACKER_ROLLOUT_PERCENTAGE = "100"
 FF_TELEMETRY_ENABLED = "true"
 FF_DELEGATIONS_STORAGE_ENABLED = "true"
 FF_RAMP_UP_PROBABILITY = "100"
@@ -180,24 +194,29 @@ FF_DAGPB_CONTENT_CACHE_MAX_SIZE_MB = 2
 FF_DAGPB_CONTENT_CACHE_ENABLED = "true"
 TELEMETRY_RATIO = 1.0
 ### staging
-# CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
-# CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
-# GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
-#UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
-#UPLOAD_API_URL = "https://staging.up.web3.storage"
-#INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
+CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
+CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
+GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
+UPLOAD_SERVICE_DID = "did:web:staging.up.storacha.network"
+UPLOAD_API_URL = "https://staging.up.storacha.network"
+INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
 ### prod
-CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
-# CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
-GATEWAY_SERVICE_DID = "did:web:w3s.link"
-UPLOAD_SERVICE_DID = "did:web:web3.storage"
-UPLOAD_API_URL = "https://up.web3.storage"
+#CONTENT_CLAIMS_SERVICE_URL = "https://claims.web3.storage"
+#CARPARK_PUBLIC_BUCKET_URL = "https://carpark-prod-0.r2.w3s.link"
+#GATEWAY_SERVICE_DID = "did:web:w3s.link"
+#UPLOAD_SERVICE_DID = "did:web:web3.storage"
+#UPLOAD_API_URL = "https://up.web3.storage"
+#INDEXING_SERVICE_URL = "https://indexer.storacha.network/"
 
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"
 type = "ratelimit"
 namespace_id = "0"
 simple = { limit = 5, period = 60 }
+
+[[env.fforbeck.queues.producers]]
+queue = "egress-tracking-queue-staging"
+binding = "EGRESS_QUEUE"
 
 [env.hannahhoward]
 name = "freeway-hannahhoward"

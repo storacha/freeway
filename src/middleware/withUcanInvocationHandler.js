@@ -30,6 +30,7 @@ export function withUcanInvocationHandler (handler) {
       headers: Object.fromEntries(request.headers)
     })
 
+    // @ts-expect-error - ByteView is compatible with BodyInit but TypeScript doesn't recognize it
     return new Response(body, { headers, status: status ?? 200 })
   }
 }

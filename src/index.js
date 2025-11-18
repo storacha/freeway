@@ -125,6 +125,7 @@ function config (env, _trigger) {
     }
   }
   return {
+    // @ts-expect-error - NoopSpanProcessor extends SpanProcessor, but ts doesn't recognize it
     spanProcessors: new NoopSpanProcessor(),
     service: { name: 'freeway' }
   }
@@ -154,8 +155,13 @@ async function initializeHandler (env) {
   return async (request, env, ctx) => {
     const response = await finalHandler(request, env, ctx)
     const cacheControl = response.headers.get('Cache-Control') ?? ''
-    response.headers.set('Cache-Control', cacheControl ? `${cacheControl}, no-transform` : 'no-transform')
-    return response
+    const newHeaders = new Headers(response.headers)
+    newHeaders.set('Cache-Control', cacheControl ? `${cacheControl}, no-transform` : 'no-transform')
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: newHeaders
+    })
   }
 }
 

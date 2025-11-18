@@ -4,6 +4,10 @@
  * @typedef {import('./withEgressTracker.types.js').Context} EgressTrackerContext
  */
 
+import { Space } from '@storacha/capabilities'
+import { SpaceDID } from '@storacha/capabilities/utils'
+import { DID } from '@ucanto/core'
+
 /**
  * The egress tracking handler must be enabled after the rate limiting, authorized space,
  * and egress client handlers, and before any handler that serves the response body.
@@ -18,14 +22,29 @@ export function withEgressTracker (handler) {
       return handler(req, env, ctx)
     }
 
-    // If the space is not defined, it is a legacy request and we can't track egress
-    const space = ctx.space
-    if (!space) {
+    // Check rollout percentage for gradual deployment
+    const rolloutPercentage = parseInt(env.FF_EGRESS_TRACKER_ROLLOUT_PERCENTAGE || '100')
+    const shouldTrack = Math.random() * 100 < rolloutPercentage
+    if (!shouldTrack) {
       return handler(req, env, ctx)
     }
 
-    if (!ctx.egressClient) {
-      console.error('EgressClient is not defined')
+    // If the space is not defined, it is a legacy request and we can't track egress
+    const space = ctx.space
+    if (!space) {
+      console.log('Egress tracking skipped: no space context available (legacy request)')
+      return handler(req, env, ctx)
+    }
+    console.log('Egress tracking enabled for space:', space)
+
+    // Check if Cloudflare Queue is available for egress tracking
+    if (!env.EGRESS_QUEUE) {
+      console.error('EGRESS_QUEUE is not defined')
+      return handler(req, env, ctx)
+    }
+
+    if (!env.UPLOAD_SERVICE_DID) {
+      console.error('UPLOAD_SERVICE_DID is not defined')
       return handler(req, env, ctx)
     }
 
@@ -35,17 +54,44 @@ export function withEgressTracker (handler) {
     }
 
     const responseBody = response.body.pipeThrough(
-      createByteCountStream((totalBytesServed) => {
+      createByteCountStream(async (totalBytesServed) => {
         if (totalBytesServed > 0) {
-          // Non-blocking call to the accounting service to record egress
-          ctx.waitUntil(
-            ctx.egressClient.record(
-              /** @type {import('@ucanto/principal/ed25519').DIDKey} */(space),
-              ctx.dataCid,
-              totalBytesServed,
-              new Date()
+          try {
+            // Create UCAN invocation for egress record
+            const invocation = Space.egressRecord.invoke({
+              issuer: ctx.gatewayIdentity,
+              audience: DID.parse(env.UPLOAD_SERVICE_DID),
+              with: SpaceDID.from(space),
+              nb: {
+                resource: ctx.dataCid,
+                bytes: totalBytesServed,
+                servedAt: new Date().getTime()
+              },
+              expiration: Infinity,
+              nonce: Date.now().toString(),
+              proofs: ctx.delegationProofs
+            })
+
+            // Serialize and send to Cloudflare Queue
+            const delegation = await invocation.delegate()
+            const archiveResult = await delegation.archive()
+            if (archiveResult.error) {
+              console.error('Failed to serialize egress invocation:', archiveResult.error)
+              return
+            }
+            const serializedInvocation = archiveResult.ok
+
+            // Non-blocking call to queue the invocation
+            ctx.waitUntil(
+              env.EGRESS_QUEUE.send({
+                messageId: delegation.cid,
+                invocation: serializedInvocation,
+                timestamp: Date.now()
+              })
             )
-          )
+          } catch (error) {
+            console.error('Failed to create or queue egress invocation:', error)
+          }
         }
       })
     )

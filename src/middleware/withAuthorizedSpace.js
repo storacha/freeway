@@ -1,8 +1,51 @@
 import { Verifier } from '@ucanto/principal'
-import { ok, access, Unauthorized } from '@ucanto/validator'
+import { ok, access, fail, Unauthorized } from '@ucanto/validator'
 import { HttpError } from '@web3-storage/gateway-lib/util'
 import * as serve from '../capabilities/serve.js'
 import { SpaceDID } from '@storacha/capabilities/utils'
+
+/**
+ * Extracts a SpaceDID string from various space object formats.
+ * Handles string DIDs, objects with .did() method, and Uint8Arrays.
+ *
+ * @param {any} space - The space object to extract DID from
+ * @returns {import('@storacha/capabilities/types').SpaceDID | undefined}
+ */
+function extractSpaceDID (space) {
+  if (!space) return undefined
+
+  try {
+    // Already a string DID
+    if (typeof space === 'string' && space.startsWith('did:')) {
+      return /** @type {import('@storacha/capabilities/types').SpaceDID} */ (space)
+    }
+
+    // Object with .did() method (most common case from indexing service)
+    if (typeof space === 'object' && typeof /** @type {any} */ (space).did === 'function') {
+      return /** @type {import('@storacha/capabilities/types').SpaceDID} */ (/** @type {any} */ (space).did())
+    }
+
+    // Uint8Array (fallback case)
+    if (ArrayBuffer.isView(space)) {
+      const spaceDID = SpaceDID.from(space)
+      return /** @type {import('@storacha/capabilities/types').SpaceDID} */ (spaceDID.toString())
+    }
+
+    // Last resort: try String() conversion
+    const spaceStr = String(space)
+    if (spaceStr.startsWith('did:')) {
+      return /** @type {import('@storacha/capabilities/types').SpaceDID} */ (spaceStr)
+    }
+
+    return undefined
+  } catch (error) {
+    // Log error in debug mode only
+    if (process.env.DEBUG) {
+      console.warn('Failed to extract space DID:', error, 'Raw space:', space)
+    }
+    return undefined
+  }
+}
 
 /**
  * @import * as Ucanto from '@ucanto/interface'
@@ -43,9 +86,12 @@ export function withAuthorizedSpace (handler) {
     // Legacy behavior: Site results which have no Space attached are from
     // before we started authorizing serving content explicitly. For these, we
     // always serve the content, but only if the request has no authorization
-    // token.
+    // token AND there are no sites with space information available.
+    const sitesWithSpace = locRes.ok.site.filter((site) => site.space !== undefined)
+    const sitesWithoutSpace = locRes.ok.site.filter((site) => site.space === undefined)
     const shouldServeLegacy =
-      locRes.ok.site.some((site) => site.space === undefined) &&
+      sitesWithSpace.length === 0 &&
+      sitesWithoutSpace.length > 0 &&
       ctx.authToken === null
 
     if (shouldServeLegacy) {
@@ -53,41 +99,51 @@ export function withAuthorizedSpace (handler) {
     }
 
     // These Spaces all have the content we're to serve, if we're allowed to.
-    const spaces = locRes.ok.site
-      .map((site) => site.space)
-      .filter((s) => s !== undefined)
+    // Extract space DIDs from sites with space information
+    const spaces = sitesWithSpace
+      .map((site) => extractSpaceDID(site.space))
+      .filter((space) => space !== undefined)
 
     try {
       // First space to successfully authorize is the one we'll use.
       const { space: selectedSpace, delegationProofs } = await Promise.any(
         spaces.map(async (space) => {
-          const result = await authorize(SpaceDID.from(space), ctx)
-          if (result.error) throw result.error
+          const result = await authorize(SpaceDID.from(space.toString()), ctx)
+          if (result.error) {
+            throw result.error
+          }
           return result.ok
         })
       )
       return handler(request, env, {
         ...ctx,
-        space: SpaceDID.from(selectedSpace),
+        space: SpaceDID.from(selectedSpace.toString()),
         delegationProofs,
         locator: locator.scopeToSpaces([selectedSpace])
       })
     } catch (error) {
-      // If all Spaces failed to authorize, throw the first error.
-      if (
-        error instanceof AggregateError &&
-        error.errors.every((e) => e instanceof Unauthorized)
-      ) {
-        if (env.DEBUG === 'true') {
-          console.log(
-            [
-              'Authorization Failures:',
-              ...error.errors.map((e) => e.message)
-            ].join('\n\n')
-          )
-        }
+      // If all Spaces failed to authorize, return 404 (security through obscurity)
+      if (error instanceof AggregateError) {
+        // Check if all errors are authorization failures (not storage errors)
+        const isAuthFailure = error.errors.every((e) =>
+          e instanceof Unauthorized ||
+          (e.message && e.message.includes('not authorized to serve'))
+        )
 
-        throw new HttpError('Not Found', { status: 404, cause: error })
+        if (isAuthFailure) {
+          if (env.DEBUG === 'true') {
+            console.log(
+              [
+                'Authorization Failures:',
+                ...error.errors.map((e) => e.message)
+              ].join('\n\n')
+            )
+          }
+          // Don't reveal whether content exists in unauthorized spaces
+          throw new HttpError('Not Found', { status: 404, cause: error })
+        }
+        // For storage or other errors, throw the AggregateError as-is
+        throw error
       } else {
         throw error
       }
@@ -107,8 +163,17 @@ export function withAuthorizedSpace (handler) {
 const authorize = async (space, ctx) => {
   // Look up delegations that might authorize us to serve the content.
   const relevantDelegationsResult = await ctx.delegationsStorage.find(space)
-  if (relevantDelegationsResult.error) return relevantDelegationsResult
+  if (relevantDelegationsResult.error) {
+    return relevantDelegationsResult
+  }
+
   const delegationProofs = relevantDelegationsResult.ok
+
+  // If no delegations found, the server is not authorized to serve this content
+  if (!delegationProofs || delegationProofs.length === 0) {
+    return fail('The gateway is not authorized to serve this content.')
+  }
+
   // Create an invocation of the serve capability.
   const invocation = await serve.transportHttp
     .invoke({
@@ -129,6 +194,7 @@ const authorize = async (space, ctx) => {
     principal: Verifier,
     validateAuthorization: () => ok({})
   })
+
   if (accessResult.error) {
     return accessResult
   }
