@@ -13,6 +13,7 @@ import { Builder, toBlobKey } from '../../helpers/builder.js'
 import { CARReaderStream } from 'carstream'
 import { SpaceDID } from '@storacha/capabilities/utils'
 import { ed25519 } from '@ucanto/principal'
+import * as dagJSON from '@ipld/dag-json'
 
 /**
  * @typedef {import('../../../src/middleware/withEgressTracker.types.js').Environment} EgressTrackerEnvironment
@@ -145,7 +146,10 @@ describe('withEgressTracker', async () => {
       expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
       // Verify the queued invocation contains the expected data
-      const queuedData = queueSendMock.args[0][0]
+      // Queue receives DAG-JSON encoded data
+      const queuedBytes = queueSendMock.args[0][0]
+      expect(queuedBytes).to.be.instanceOf(Uint8Array)
+      const queuedData = dagJSON.decode(queuedBytes)
       expect(queuedData).to.have.property('invocation')
       expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     })
@@ -175,7 +179,10 @@ describe('withEgressTracker', async () => {
       expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
       // Verify the queued invocation contains the expected data
-      const queuedData = queueSendMock.args[0][0]
+      // Queue receives DAG-JSON encoded data
+      const queuedBytes = queueSendMock.args[0][0]
+      expect(queuedBytes).to.be.instanceOf(Uint8Array)
+      const queuedData = dagJSON.decode(queuedBytes)
       expect(queuedData).to.have.property('invocation')
       expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     })
@@ -209,7 +216,10 @@ describe('withEgressTracker', async () => {
       expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
       // Verify the queued invocation contains the expected data
-      const queuedData = queueSendMock.args[0][0]
+      // Queue receives DAG-JSON encoded data
+      const queuedBytes = queueSendMock.args[0][0]
+      expect(queuedBytes).to.be.instanceOf(Uint8Array)
+      const queuedData = dagJSON.decode(queuedBytes)
       expect(queuedData).to.have.property('invocation')
       expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     })
@@ -268,7 +278,10 @@ describe('withEgressTracker', async () => {
       expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
       // Verify the queued invocation contains the expected data
-      const queuedData = queueSendMock.args[0][0]
+      // Queue receives DAG-JSON encoded data
+      const queuedBytes = queueSendMock.args[0][0]
+      expect(queuedBytes).to.be.instanceOf(Uint8Array)
+      const queuedData = dagJSON.decode(queuedBytes)
       expect(queuedData).to.have.property('invocation')
       expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     })
@@ -302,7 +315,10 @@ describe('withEgressTracker', async () => {
       expect(queueSendMock.calledOnce, 'queue.send should be called once').to.be
         .true
       // Verify the queued invocation contains the expected data
-      const queuedData = queueSendMock.args[0][0]
+      // Queue receives DAG-JSON encoded data
+      const queuedBytes = queueSendMock.args[0][0]
+      expect(queuedBytes).to.be.instanceOf(Uint8Array)
+      const queuedData = dagJSON.decode(queuedBytes)
       expect(queuedData).to.have.property('invocation')
       expect(queuedData.invocation).to.be.instanceOf(Uint8Array)
     }).timeout(5000)
@@ -412,11 +428,15 @@ describe('withEgressTracker', async () => {
         2
       )
       // Verify both queued invocations
-      const queuedData1 = queueSendMock.args[0][0]
+      const queuedBytes1 = queueSendMock.args[0][0]
+      expect(queuedBytes1).to.be.instanceOf(Uint8Array)
+      const queuedData1 = dagJSON.decode(queuedBytes1)
       expect(queuedData1).to.have.property('invocation')
       expect(queuedData1.invocation).to.be.instanceOf(Uint8Array)
 
-      const queuedData2 = queueSendMock.args[1][0]
+      const queuedBytes2 = queueSendMock.args[1][0]
+      expect(queuedBytes2).to.be.instanceOf(Uint8Array)
+      const queuedData2 = dagJSON.decode(queuedBytes2)
       expect(queuedData2).to.have.property('invocation')
       expect(queuedData2.invocation).to.be.instanceOf(Uint8Array)
     })
