@@ -10,7 +10,7 @@
     "checkJs": true,
     "strict": true,
     "esModuleInterop": true,
-    "module": "node16",
+    "module": "node18",
     "moduleResolution": "node16",
     "skipLibCheck": true,
     "resolveJsonModule": true,
