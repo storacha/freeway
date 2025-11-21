@@ -1,4 +1,4 @@
-import conf from '../../package.json'
+import conf from '../../package.json' with { type: 'json' }
 
 /**
  * @import { Middleware, Context } from '@web3-storage/gateway-lib'
