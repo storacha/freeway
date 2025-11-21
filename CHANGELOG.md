@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.34.0](https://github.com/storacha/freeway/compare/v2.33.0...v2.34.0) (2025-11-21)
+
+
+### Features
+
+* add a stripped down server for debugging ([#196](https://github.com/storacha/freeway/issues/196)) ([bd7adb2](https://github.com/storacha/freeway/commit/bd7adb2fbe2a0780aeff8c6ed80dfd84552ce004))
+
+
+### Bug Fixes
+
+* disable FF_TELEMETRY_ENABLED in wrangler.toml ([#197](https://github.com/storacha/freeway/issues/197)) ([b63d3c3](https://github.com/storacha/freeway/commit/b63d3c3bfdc24badce41b6f5f2517755ba98a153))
+
 ## [2.33.0](https://github.com/storacha/freeway/compare/v2.32.0...v2.33.0) (2025-11-20)
 
 
