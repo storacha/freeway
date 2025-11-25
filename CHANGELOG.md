@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.34.0](https://github.com/storacha/freeway/compare/v2.33.0...v2.34.0) (2025-11-25)
+
+
+### Features
+
+* add a stripped down server for debugging ([#196](https://github.com/storacha/freeway/issues/196)) ([bd7adb2](https://github.com/storacha/freeway/commit/bd7adb2fbe2a0780aeff8c6ed80dfd84552ce004))
+* bump egress tracking traffic to 5% ([#200](https://github.com/storacha/freeway/issues/200)) ([5b97f6f](https://github.com/storacha/freeway/commit/5b97f6f4945daf177daf73f2d2a7ada5598fc5a1))
+
+
+### Bug Fixes
+
+* disable FF_TELEMETRY_ENABLED in wrangler.toml ([#197](https://github.com/storacha/freeway/issues/197)) ([b63d3c3](https://github.com/storacha/freeway/commit/b63d3c3bfdc24badce41b6f5f2517755ba98a153))
+* skip egress tracking if content found in multiple spaces ([#199](https://github.com/storacha/freeway/issues/199)) ([9a8089f](https://github.com/storacha/freeway/commit/9a8089f82214778a53de1f5891f25ebc51eca289))
+
 ## [2.33.0](https://github.com/storacha/freeway/compare/v2.32.0...v2.33.0) (2025-11-20)
 
 
