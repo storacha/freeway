@@ -326,12 +326,13 @@ describe('withAuthorizedSpace', async () => {
       { ...ctx, authToken: 'space1-token', delegationProofs: [], gatewaySigner }
     )
 
-    expect(await response1.json()).to.deep.equal({
-      CID: cid.toString(),
-      Space: space1.did(),
-      Token: 'space1-token',
-      URLs: ['http://example.com/1/blob']
-    })
+    // When content is in multiple spaces, ctx.space is undefined (egress tracking skipped)
+    // Note: JSON.stringify removes undefined values, so Space won't be in the response
+    const result1 = await response1.json()
+    expect(result1.CID).to.equal(cid.toString())
+    expect(result1.Space).to.be.undefined
+    expect(result1.Token).to.equal('space1-token')
+    expect(result1.URLs).to.deep.equal(['http://example.com/1/blob'])
 
     const error2 = await rejection(
       withAuthorizedSpace(sinon.fake(innerHandler))(
@@ -357,11 +358,64 @@ describe('withAuthorizedSpace', async () => {
       { ...ctx, authToken: 'space3-token', delegationProofs: [], gatewaySigner }
     )
 
-    expect(await response3.json()).to.deep.equal({
+    // When content is in multiple spaces, ctx.space is undefined (egress tracking skipped)
+    // Note: JSON.stringify removes undefined values, so Space won't be in the response
+    const result3 = await response3.json()
+    expect(result3.CID).to.equal(cid.toString())
+    expect(result3.Space).to.be.undefined
+    expect(result3.Token).to.equal('space3-token')
+    expect(result3.URLs).to.deep.equal(['http://example.com/3/blob'])
+  })
+
+  it('should NOT skip egress tracking when content is in a single space', async () => {
+    const cid = createTestCID(0)
+    const space1 = await ed25519.Signer.generate()
+
+    const ctx = {
+      ...context,
+      dataCid: cid,
+      locator: createLocator(cid.multihash, {
+        ok: {
+          digest: cid.multihash,
+          site: [
+            {
+              location: [new URL('http://example.com/1/blob')],
+              range: { offset: 0, length: 100 },
+              space: space1.did()
+            },
+            {
+              location: [new URL('http://example.com/2/blob')],
+              range: { offset: 0, length: 100 },
+              space: space1.did() // Same space, different location
+            }
+          ]
+        },
+        error: undefined
+      }),
+      delegationsStorage: createDelegationStorage([
+        await serve.transportHttp.delegate({
+          issuer: space1,
+          audience: gatewayIdentity,
+          with: space1.did(),
+          nb: { token: 'space1-token' }
+        })
+      ]),
+      gatewayIdentity
+    }
+
+    const response = await withAuthorizedSpace(innerHandler)(
+      request,
+      {},
+      { ...ctx, authToken: 'space1-token', delegationProofs: [], gatewaySigner }
+    )
+
+    // When content is in a single space (even with multiple sites), ctx.space should be set
+    const result = await response.json()
+    expect(result).to.deep.equal({
       CID: cid.toString(),
-      Space: space3.did(),
-      Token: 'space3-token',
-      URLs: ['http://example.com/3/blob']
+      Space: space1.did(),
+      Token: 'space1-token',
+      URLs: ['http://example.com/1/blob', 'http://example.com/2/blob']
     })
   })
 
