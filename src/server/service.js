@@ -6,14 +6,16 @@ import { extractContentServeDelegations } from './utils.js'
 import { claim, Schema } from '@ucanto/validator'
 import * as UcantoServer from '@ucanto/server'
 import { ok } from '@ucanto/client'
+import { getValidatorProofs } from './index.js'
 
 /**
  * @template T
  * @param {import('../middleware/withUcanInvocationHandler.types.js').Context} ctx
- * @param {import('@ucanto/interface').Verifier} contentServeAuthority
+ * @param {import('../middleware/withUcanInvocationHandler.types.js').Environment} env
  * @returns {import('./api.types.js').Service<T>}
  */
-export function createService (ctx, contentServeAuthority) {
+export function createService (ctx, env) {
+
   return {
     access: {
       delegate: UcantoServer.provideAdvanced({
@@ -34,12 +36,15 @@ export function createService (ctx, contentServeAuthority) {
 
           const delegations = result.ok
           console.log('executing claim for delegations: ', delegations)
+          const validatorProofs = await getValidatorProofs(env)
+          console.log('validatorProofs: ', validatorProofs)
           const validationResult = await claim(
             SpaceCapabilities.contentServe,
             delegations,
             {
               ...context,
-              authority: contentServeAuthority
+              authority: ctx.gatewayIdentity,
+              proofs: [...validatorProofs],
             }
           )
           if (validationResult.error) {

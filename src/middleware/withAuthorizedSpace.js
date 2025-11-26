@@ -205,15 +205,15 @@ const authorize = async (space, ctx, env) => {
   
   // Get the content serve authority (upload service) from environment
   // @ts-ignore - env has these properties from wrangler.toml
-  const contentServeAuthority =
-    env.CONTENT_SERVE_AUTHORITY_PUB_KEY && env.CONTENT_SERVE_AUTHORITY_DID
-      ? 
-        // @ts-ignore
-        Verifier.parse(env.CONTENT_SERVE_AUTHORITY_PUB_KEY).withDID(
-          // @ts-ignore
-          env.CONTENT_SERVE_AUTHORITY_DID
-        )
-      : ctx.gatewayIdentity
+  // const contentServeAuthority =
+  //   env.CONTENT_SERVE_AUTHORITY_PUB_KEY && env.CONTENT_SERVE_AUTHORITY_DID
+  //     ? 
+  //       // @ts-ignore
+  //       Verifier.parse(env.CONTENT_SERVE_AUTHORITY_PUB_KEY).withDID(
+  //         // @ts-ignore
+  //         env.CONTENT_SERVE_AUTHORITY_DID
+  //       )
+  //     : ctx.gatewayIdentity
   
   // Create an invocation of the serve capability.
   const invocation = await serve.transportHttp
@@ -232,7 +232,7 @@ const authorize = async (space, ctx, env) => {
   const validatorProofs = await getValidatorProofs(env)
   const accessResult = await access(invocation, {
     capability: serve.transportHttp,
-    authority: contentServeAuthority, // Use upload service as authority
+    authority: ctx.gatewayIdentity,
     principal: Verifier,
     proofs: validatorProofs,
     resolveDIDKey,
