@@ -57,8 +57,8 @@ command = "npm run build"
 MAX_SHARDS = "825"
 FF_RATE_LIMITER_ENABLED = "false"
 FF_EGRESS_TRACKER_ENABLED = "true"
-FF_EGRESS_TRACKER_ROLLOUT_PERCENTAGE = "1"  # Start at 1% - 990K events/day, 11.5 req/s avg
-FF_TELEMETRY_ENABLED = "true"
+FF_EGRESS_TRACKER_ROLLOUT_PERCENTAGE = "50"  # 50% - 5M events/day, ~600 req/s avg (queue limit 5K req/sec)
+FF_TELEMETRY_ENABLED = "false" # FIXME: telemetry is causing directory listings to fail.
 FF_DELEGATIONS_STORAGE_ENABLED = "true"
 FF_RAMP_UP_PROBABILITY = "100"
 # Cache for 30 days by default
