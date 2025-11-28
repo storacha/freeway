@@ -23,7 +23,7 @@ export function withDidDocumentHandler (handler) {
         type: 'Ed25519VerificationKey2020',
         controller: webKey,
         publicKeyMultibase
-      },
+      }
     ]
 
     const headers = { 'Content-Type': 'application/json' }
