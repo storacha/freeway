@@ -10,11 +10,7 @@ import {
   withFixedLengthStream,
   composeMiddleware
 } from '@web3-storage/gateway-lib/middleware'
-import {
-  handleUnixfs,
-  handleBlock,
-  handleCar
-} from '@web3-storage/gateway-lib/handlers'
+import { handleUnixfs } from '@web3-storage/gateway-lib/handlers'
 import {
   withContentClaimsDagula,
   withVersionHeader,
@@ -31,21 +27,15 @@ import {
   withDelegationStubs,
   withOptionsRequest,
   withCarParkFetch,
-  withDidDocumentHandler
+  withDidDocumentHandler,
+  withFormatRawHandler,
+  withFormatCarHandler
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base'
 
 /**
- * @import {
- *   Handler,
- *   Middleware,
- *   Context,
- *   IpfsUrlContext,
- *   BlockContext,
- *   DagContext,
- *   UnixfsContext
- * } from '@web3-storage/gateway-lib'
+ * @import { Handler, Context } from '@web3-storage/gateway-lib'
  * @import { Environment } from './bindings.js'
  */
 
@@ -181,39 +171,3 @@ const handler = {
 }
 
 export default handler
-
-/**
- * @type {Middleware<BlockContext & UnixfsContext & IpfsUrlContext, BlockContext & UnixfsContext & IpfsUrlContext, Environment>}
- */
-export function withFormatRawHandler (handler) {
-  return async (request, env, ctx) => {
-    const { headers } = request
-    const { searchParams } = ctx
-    if (!searchParams) throw new Error('missing URL search params')
-    if (
-      searchParams.get('format') === 'raw' ||
-      headers.get('Accept')?.includes('application/vnd.ipld.raw')
-    ) {
-      return await handleBlock(request, env, ctx)
-    }
-    return handler(request, env, ctx) // pass to other handlers
-  }
-}
-
-/**
- * @type {Middleware<DagContext & IpfsUrlContext, DagContext & IpfsUrlContext, Environment>}
- */
-export function withFormatCarHandler (handler) {
-  return async (request, env, ctx) => {
-    const { headers } = request
-    const { searchParams } = ctx
-    if (!searchParams) throw new Error('missing URL search params')
-    if (
-      searchParams.get('format') === 'car' ||
-      headers.get('Accept')?.includes('application/vnd.ipld.car')
-    ) {
-      return await handleCar(request, env, ctx)
-    }
-    return handler(request, env, ctx) // pass to other handlers
-  }
-}

@@ -104,6 +104,15 @@ export function withAuthorizedSpace (handler) {
       .map((site) => extractSpaceDID(site.space))
       .filter((space) => space !== undefined)
 
+    // If content is found in multiple DIFFERENT spaces, skip egress tracking
+    // by not setting ctx.space (security/billing concern - ambiguous ownership)
+    const uniqueSpaces = [...new Set(spaces.map(s => s.toString()))]
+    const skipEgressTracking = uniqueSpaces.length > 1
+    if (skipEgressTracking && env.DEBUG === 'true') {
+      console.log(`Content found in ${uniqueSpaces.length} different spaces - egress tracking will be skipped`)
+      console.log(`Spaces: ${uniqueSpaces.join(', ')}`)
+    }
+
     try {
       // First space to successfully authorize is the one we'll use.
       const { space: selectedSpace, delegationProofs } = await Promise.any(
@@ -117,7 +126,8 @@ export function withAuthorizedSpace (handler) {
       )
       return handler(request, env, {
         ...ctx,
-        space: SpaceDID.from(selectedSpace.toString()),
+        // Only set space if we're not skipping egress tracking
+        space: skipEgressTracking ? undefined : SpaceDID.from(selectedSpace.toString()),
         delegationProofs,
         locator: locator.scopeToSpaces([selectedSpace])
       })

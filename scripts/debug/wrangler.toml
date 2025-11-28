@@ -1,0 +1,10 @@
+name = "freeway-debug"
+main = "./dist/worker.mjs"
+compatibility_flags = [ "nodejs_compat" ]
+compatibility_date = "2025-09-01"
+
+[vars]
+FF_RAMP_UP_PROBABILITY = "100"
+
+[build]
+command = "npm run build"
