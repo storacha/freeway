@@ -67,6 +67,8 @@ describe('freeway', () => {
         CONTENT_CLAIMS_SERVICE_URL: claimsService.url.toString(),
         CARPARK_PUBLIC_BUCKET_URL: url.toString(),
         GATEWAY_SERVICE_DID: 'did:example:gateway',
+        // did:key:z6MkvB4hvuVZhkKsi67rUKtNTKN4gpWjvWCoGPpBpGUdJMpF
+        GATEWAY_PRINCIPAL_KEY: 'MgCatBcQ1htL3Q/kXNZ9idtpoP9EeFxUSXD106hMWXc8si+0B6ZTgeQlqgoY9Z21skaKK6FpFRAAEF50T1c9WhWTa14w=',
         DAGPB_CONTENT_CACHE: 'DAGPB_CONTENT_CACHE',
         FF_DAGPB_CONTENT_CACHE_ENABLED: 'true',
         FF_DAGPB_CONTENT_CACHE_TTL_SECONDS: 300,
@@ -762,5 +764,30 @@ describe('freeway', () => {
     if (!res.ok) assert.fail(`unexpected response: ${await res.text()}`)
     assertBlobEqual(input, await res.blob())
     assert.equal(cachedContent.keys.length, 0, 'Cache should be empty')
+  })
+
+  it('should return DID document', async () => {
+    const res = await miniflare.dispatchFetch(
+      'http://localhost:8787/.well-known/did.json'
+    )
+    assert(res.ok)
+    const didDoc = await res.json()
+
+    assert(didDoc)
+    assert(typeof didDoc === 'object')
+
+    assert('id' in didDoc)
+    assert.equal(didDoc.id, 'did:example:gateway')
+
+    assert('verificationMethod' in didDoc)
+    assert(Array.isArray(didDoc.verificationMethod))
+    assert(didDoc.verificationMethod.length === 1)
+
+    const method = didDoc.verificationMethod[0]
+    assert('publicKeyMultibase' in method)
+    assert.equal(
+      method.publicKeyMultibase,
+      'z6MkvB4hvuVZhkKsi67rUKtNTKN4gpWjvWCoGPpBpGUdJMpF'
+    )
   })
 })
