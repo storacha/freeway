@@ -30,7 +30,8 @@ import {
   withDelegationsStorage,
   withDelegationStubs,
   withOptionsRequest,
-  withCarParkFetch
+  withCarParkFetch,
+  withDidDocumentHandler
 } from './middleware/index.js'
 import { instrument } from '@microlabs/otel-cf-workers'
 import { NoopSpanProcessor, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base'
@@ -60,6 +61,7 @@ const middleware = composeMiddleware(
   withVersionHeader,
   withErrorHandler,
   withGatewayIdentity,
+  withDidDocumentHandler,
   withDelegationsStorage,
 
   // Handle UCAN invocations (POST requests only)
