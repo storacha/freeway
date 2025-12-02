@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.35.0](https://github.com/storacha/freeway/compare/v2.34.0...v2.35.0) (2025-12-02)
+
+
+### Features
+
+* bump egress tracking to 100% ([#203](https://github.com/storacha/freeway/issues/203)) ([848793c](https://github.com/storacha/freeway/commit/848793caaf5dece851a581d2ab08f91b33bfc9ad))
+
 ## [2.34.0](https://github.com/storacha/freeway/compare/v2.33.0...v2.34.0) (2025-11-25)
 
 
