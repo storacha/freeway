@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.36.0](https://github.com/storacha/freeway/compare/v2.35.0...v2.36.0) (2025-12-03)
+
+
+### Features
+
+* add DID document ([#202](https://github.com/storacha/freeway/issues/202)) ([83c22b9](https://github.com/storacha/freeway/commit/83c22b9dfaffe31738db0b3fa0b016e305cab4ab))
+
 ## [2.35.0](https://github.com/storacha/freeway/compare/v2.34.0...v2.35.0) (2025-12-02)
 
 
