@@ -27,6 +27,7 @@ import {
   withDelegationStubs,
   withOptionsRequest,
   withCarParkFetch,
+  withDidDocumentHandler,
   withFormatRawHandler,
   withFormatCarHandler
 } from './middleware/index.js'
@@ -50,6 +51,7 @@ const middleware = composeMiddleware(
   withVersionHeader,
   withErrorHandler,
   withGatewayIdentity,
+  withDidDocumentHandler,
   withDelegationsStorage,
 
   // Handle UCAN invocations (POST requests only)
