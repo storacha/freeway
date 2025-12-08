@@ -202,18 +202,6 @@ const authorize = async (space, ctx, env) => {
     return fail('The gateway is not authorized to serve this content.')
   }
 
-  // Get the content serve authority (upload service) from environment
-  // @ts-ignore - env has these properties from wrangler.toml
-  // const contentServeAuthority =
-  //   env.CONTENT_SERVE_AUTHORITY_PUB_KEY && env.CONTENT_SERVE_AUTHORITY_DID
-  //     ?
-  //       // @ts-ignore
-  //       Verifier.parse(env.CONTENT_SERVE_AUTHORITY_PUB_KEY).withDID(
-  //         // @ts-ignore
-  //         env.CONTENT_SERVE_AUTHORITY_DID
-  //       )
-  //     : ctx.gatewayIdentity
-
   // Create an invocation of the serve capability.
   const invocation = await serve.transportHttp
     .invoke({

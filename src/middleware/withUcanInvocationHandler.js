@@ -22,13 +22,6 @@ export function withUcanInvocationHandler (handler) {
       return handler(request, env, ctx)
     }
 
-    // const contentServeAuthority =
-    //   env.CONTENT_SERVE_AUTHORITY_PUB_KEY && env.CONTENT_SERVE_AUTHORITY_DID
-    //     ? ed25519.Verifier.parse(env.CONTENT_SERVE_AUTHORITY_PUB_KEY).withDID(
-    //       Schema.DID.from(env.CONTENT_SERVE_AUTHORITY_DID)
-    //     )
-    //     : ctx.gatewayIdentity
-
     const service =
       ctx.service ?? (await createService(ctx, env))
     const server = ctx.server ?? (await createServer(ctx, service, env))
