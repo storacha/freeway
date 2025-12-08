@@ -22,7 +22,7 @@ export function withGatewayIdentity (handler) {
     )
     return handler(req, env, {
       ...ctx,
-      gatewaySigner: gatewayIdentity,
+      gatewaySigner, //: gatewayIdentity,
       gatewayIdentity
     })
   }
