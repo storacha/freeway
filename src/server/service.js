@@ -15,7 +15,6 @@ import { getValidatorProofs } from './index.js'
  * @returns {import('./api.types.js').Service<T>}
  */
 export function createService (ctx, env) {
-
   return {
     access: {
       delegate: UcantoServer.provideAdvanced({
@@ -44,7 +43,7 @@ export function createService (ctx, env) {
             {
               ...context,
               authority: ctx.gatewayIdentity,
-              proofs: [...validatorProofs],
+              proofs: [...validatorProofs]
             }
           )
           if (validationResult.error) {
