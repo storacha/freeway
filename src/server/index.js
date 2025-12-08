@@ -94,7 +94,7 @@ export async function createServer (ctx, service, env) {
     })
   }
   return Server.create({
-    id: ctx.gatewaySigner,
+    id: ctx.gatewaySigner.withDID(ctx.gatewayIdentity.did()),
     codec: CAR.inbound,
     service,
     catch: (err) => console.error(err),
