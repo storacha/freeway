@@ -184,9 +184,6 @@ kv_namespaces = [
   { binding = "DAGPB_CONTENT_CACHE", id = "c70a74363e7a4f06ad39fa3022aab7c7", preview_id = "fcea72d8d8694b5c831736e1317e9208" }
 ]
 
-[env.fforbeck.observability.logs]
-enabled = true
-
 [env.fforbeck.vars]
 DEBUG = "true"
 FF_RATE_LIMITER_ENABLED = "false"
