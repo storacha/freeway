@@ -1,7 +1,6 @@
-import { ed25519 } from '@ucanto/principal'
 import { createServer } from '../server/index.js'
 import { createService } from '../server/service.js'
-import { Schema } from '@ucanto/core'
+
 /**
  * @import { Middleware } from '@web3-storage/gateway-lib'
  * @import {
