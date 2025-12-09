@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.36.1](https://github.com/storacha/freeway/compare/v2.36.0...v2.36.1) (2025-12-09)
+
+
+### Bug Fixes
+
+* handling content-serve delegations ([#189](https://github.com/storacha/freeway/issues/189)) ([21491b4](https://github.com/storacha/freeway/commit/21491b45abb08e31ee4ea518b8d45504e2d5913a))
+
 ## [2.36.0](https://github.com/storacha/freeway/compare/v2.35.0...v2.36.0) (2025-12-03)
 
 
