@@ -12,7 +12,6 @@ export const extractContentServeDelegations = async (
   capability,
   invocation
 ) => {
-  console.log('extracting delegations', capability, invocation)
   /** @type {Map<string, import('@ucanto/interface').Block>} */
   const blocks = new Map()
   for (const block of invocation.iterateIPLDBlocks()) {
@@ -69,14 +68,6 @@ export const extractContentServeDelegations = async (
       error: new InvalidDelegation('no valid delegations found')
     }
   }
-
-  // Only allow a single delegation reference for now
-  // const nbDelegations = new Set(Object.values(capability.nb.delegations))
-  // if (nbDelegations.size !== 1) {
-  //   return {
-  //     error: new InvalidDelegation('nb.delegations has more than one delegation')
-  //   }
-  // }
 
   return { ok: delegations }
 }

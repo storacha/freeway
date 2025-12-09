@@ -201,11 +201,10 @@ TELEMETRY_RATIO = 1.0
 CONTENT_CLAIMS_SERVICE_URL = "https://staging.claims.web3.storage"
 CARPARK_PUBLIC_BUCKET_URL = "https://carpark-staging-0.r2.w3s.link"
 GATEWAY_SERVICE_DID = "did:web:staging.w3s.link"
-UPLOAD_SERVICE_DID = "did:web:staging.web3.storage"
+UPLOAD_SERVICE_DID = "did:web:staging.up.storacha.network"
 UPLOAD_API_URL = "https://staging.up.web3.storage"
 INDEXING_SERVICE_URL = "https://staging.indexer.storacha.network/"
-CONTENT_SERVE_AUTHORITY_PUB_KEY = "did:key:z6MkhcbEpJpEvNVDd3n5RurquVdqs5dPU16JDU5VZTDtFgnn"
-CONTENT_SERVE_AUTHORITY_DID = "did:web:staging.up.storacha.network"
+MAX_SHARDS = "825"
 GATEWAY_VALIDATOR_PROOF = "mAYIEAI0DOqJlcm9vdHOB2CpYJQABcRIg5a/pcyEeJn5snQZHm+wVBzeFbY8RTlfwETn+nMMiCqlndmVyc2lvbgH2AQFxEiD8LRCZwMMfTVlGtNX85n0aVxjp54oE0/G/WTG/dsOOA6dhc1hE7aEDQCEy4qAv4dybXYh/iipwdOLf4DlYjZGFopGvvfDZbVq6Q4MIY5PY9XXHP9D6ELs6qjcvSLfP/nbew/IWbG55RAJhdmUwLjkuMWNhdHSBomNjYW5rdWNhbi9hdHRlc3Rkd2l0aHgYZGlkOndlYjpzdGFnaW5nLnczcy5saW5rY2F1ZFghnRp3ZWI6c3RhZ2luZy51cC5zdG9yYWNoYS5uZXR3b3JrY2V4cPZjaXNzVp0ad2ViOnN0YWdpbmcudzNzLmxpbmtjcHJmgFkBcRIg5a/pcyEeJn5snQZHm+wVBzeFbY8RTlfwETn+nMMiCqmhanVjYW5AMC45LjHYKlglAAFxEiD8LRCZwMMfTVlGtNX85n0aVxjp54oE0/G/WTG/dsOOAw"
 
 ### fforbeck-prod
@@ -214,8 +213,6 @@ GATEWAY_VALIDATOR_PROOF = "mAYIEAI0DOqJlcm9vdHOB2CpYJQABcRIg5a/pcyEeJn5snQZHm+wV
 #GATEWAY_SERVICE_DID = "did:web:w3s.link"
 #UPLOAD_SERVICE_DID = "did:web:web3.storage"
 #UPLOAD_API_URL = "https://up.web3.storage"
-#CONTENT_SERVE_AUTHORITY_PUB_KEY = "did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi"
-#CONTENT_SERVE_AUTHORITY_DID = "did:web:up.storacha.network"
 
 [[env.fforbeck.unsafe.bindings]]
 name = "RATE_LIMITER"

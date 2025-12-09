@@ -76,21 +76,13 @@ function extractSpaceDID (space) {
 export function withAuthorizedSpace (handler) {
   return async (request, env, ctx) => {
     const { locator, dataCid } = ctx
-
-    console.log(`[withAuthorizedSpace] Locating content: ${dataCid}`)
     const locRes = await locator.locate(dataCid.multihash)
     if (locRes.error) {
-      console.log('[withAuthorizedSpace] Location failed:', locRes.error)
       if (locRes.error.name === 'NotFound') {
         throw new HttpError('Not Found', { status: 404, cause: locRes.error })
       }
       throw new Error(`failed to locate: ${dataCid}`, { cause: locRes.error })
     }
-
-    console.log('[withAuthorizedSpace] Location result:', {
-      sites: locRes.ok.site.length,
-      spaces: locRes.ok.site.map(s => s.space).filter(Boolean)
-    })
 
     // Legacy behavior: Site results which have no Space attached are from
     // before we started authorizing serving content explicitly. For these, we
@@ -123,24 +115,18 @@ export function withAuthorizedSpace (handler) {
       console.log(`Spaces: ${uniqueSpaces.join(', ')}`)
     }
 
-    console.log(`[withAuthorizedSpace] Found ${spaces.length} space(s):`, spaces)
-
     try {
       // First space to successfully authorize is the one we'll use.
       const { space: selectedSpace, delegationProofs } = await Promise.any(
         spaces.map(async (space) => {
-          console.log(`[withAuthorizedSpace] Attempting to authorize space: ${space}`)
           // @ts-ignore
           const result = await authorize(SpaceDID.from(space), ctx, env)
           if (result.error) {
-            console.log(`[withAuthorizedSpace] Authorization failed for ${space}:`, result.error.message)
             throw result.error
           }
-          console.log(`[withAuthorizedSpace] ✅ Authorization succeeded for space: ${space}`)
           return result.ok
         })
       )
-      console.log(`[withAuthorizedSpace] Selected space for egress tracking: ${selectedSpace}`)
       return handler(request, env, {
         ...ctx,
         // Only set space if we're not skipping egress tracking

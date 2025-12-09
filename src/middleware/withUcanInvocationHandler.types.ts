@@ -5,7 +5,6 @@ import { Service } from '../server/api.types.js'
 import * as Server from '@ucanto/server'
 export interface Environment extends MiddlewareEnvironment {
   GATEWAY_VALIDATOR_PROOF?: string
-  CONTENT_SERVE_AUTHORITY_PUB_KEY?: string
 }
 
 export interface Context<T = unknown, U = unknown>
