@@ -6,6 +6,7 @@ export interface Environment extends MiddlewareEnvironment {
   RATE_LIMITER: RateLimit
   AUTH_TOKEN_METADATA: KVNamespace
   FF_RATE_LIMITER_ENABLED: string
+  GATEWAY_VALIDATOR_PROOF?: string
 }
 
 export interface TokenMetadata {

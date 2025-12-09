@@ -6,22 +6,27 @@ import { extractContentServeDelegations } from './utils.js'
 import { claim, Schema } from '@ucanto/validator'
 import * as UcantoServer from '@ucanto/server'
 import { ok } from '@ucanto/client'
+import { getValidatorProofs } from './index.js'
 
 /**
  * @template T
  * @param {import('../middleware/withUcanInvocationHandler.types.js').Context} ctx
+ * @param {import('../middleware/withUcanInvocationHandler.types.js').Environment} env
  * @returns {import('./api.types.js').Service<T>}
  */
-export function createService (ctx) {
+export function createService (ctx, env) {
   return {
     access: {
       delegate: UcantoServer.provideAdvanced({
         capability: AccessCapabilities.delegate,
-        audience: Schema.did({ method: 'web' }),
+        audience: Schema.did({ method: 'web' }).or(
+          Schema.did({ method: 'key' })
+        ),
         handler: async ({ capability, invocation, context }) => {
-          const result = extractContentServeDelegations(
+          console.log('extracting delegations: ', capability)
+          const result = await extractContentServeDelegations(
             capability,
-            invocation.proofs
+            invocation
           )
           if (result.error) {
             console.error('error while extracting delegation', result.error)
@@ -29,25 +34,30 @@ export function createService (ctx) {
           }
 
           const delegations = result.ok
-          const validationResults = await Promise.all(
-            delegations.map(async (delegation) => {
-              const validationResult = await claim(
-                SpaceCapabilities.contentServe,
-                [delegation],
-                {
-                  ...context,
-                  authority: ctx.gatewayIdentity
-                }
-              )
-              if (validationResult.error) {
-                console.error(
-                  'error while validating delegation',
-                  validationResult.error
-                )
-                return validationResult
-              }
+          console.log('executing claim for delegations: ', delegations)
+          const validatorProofs = await getValidatorProofs(env)
+          console.log('validatorProofs: ', validatorProofs)
+          const validationResult = await claim(
+            SpaceCapabilities.contentServe,
+            delegations,
+            {
+              ...context,
+              authority: ctx.gatewayIdentity,
+              proofs: [...validatorProofs]
+            }
+          )
+          if (validationResult.error) {
+            console.error(
+              'error while validating delegation',
+              validationResult.error
+            )
+            return validationResult
+          }
 
-              const space = capability.with
+          const space = capability.with
+
+          const validationResults = await Promise.all(
+            delegations.map((delegation) => {
               return ctx.delegationsStorage.store(space, delegation)
             })
           )
